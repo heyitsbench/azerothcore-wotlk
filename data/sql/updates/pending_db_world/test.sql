@@ -1,5 +1,5 @@
 REPLACE INTO `gossip_menu_option_locale` (`MenuID`, `OptionID`, `Locale`, `OptionText`) VALUES
-(161, 0, 'zhCN', '我还需要一套盗贼工具。'),
+(161, 0, 'zhCN', '我还需要一套盗贼工具。'), -- testing
 (231, 0, 'zhCN', '告诉我提尔斯保险箱的密码。'),
 (268, 0, 'zhCN', '什么消息？'),
 (445, 0, 'zhCN', '你能告诉我布瑞恩在哪里吗？'),
