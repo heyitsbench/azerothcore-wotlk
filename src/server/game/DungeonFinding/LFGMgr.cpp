@@ -116,7 +116,7 @@ namespace lfg
         RewardMapStore.clear();
 
         // ORDER BY is very important for GetRandomDungeonReward!
-        QueryResult result = WorldDatabase.Query("SELECT dungeonId, maxLevel, firstQuestId, otherQuestId FROM lfg_dungeon_rewards ORDER BY dungeonId, maxLevel ASC");
+        QueryResult result = WorldDatabase.Query("SELECT DungeonID, MaxLevel, FirstQuestID, OtherQuestID FROM lfg_dungeon_rewards ORDER BY DungeonID, MaxLevel ASC");
 
         if (!result)
         {
@@ -202,7 +202,7 @@ namespace lfg
 
         // Fill teleport locations from DB
         //                                                   0          1           2           3            4
-        QueryResult result = WorldDatabase.Query("SELECT dungeonId, position_x, position_y, position_z, orientation FROM lfg_dungeon_template");
+        QueryResult result = WorldDatabase.Query("SELECT DungeonID, PositionX, PositionY, PositionZ, Orientation FROM lfg_dungeon_template");
 
         if (!result)
         {

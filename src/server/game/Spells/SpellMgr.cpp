@@ -1295,8 +1295,8 @@ void SpellMgr::LoadSpellRanks()
 
     uint32 oldMSTime = getMSTime();
 
-    //                                               0               1          2
-    QueryResult result = WorldDatabase.Query("SELECT first_spell_id, spell_id, `rank` from spell_ranks ORDER BY first_spell_id, `rank`");
+    //                                               0            1         2
+    QueryResult result = WorldDatabase.Query("SELECT BaseSpellID, SpellID, `Rank` from spell_ranks ORDER BY BaseSpellID, `Rank`");
 
     if (!result)
     {
@@ -1407,7 +1407,7 @@ void SpellMgr::LoadSpellRequired()
     mSpellReq.clear();                                         // need for reload case
 
     //                                                   0        1
-    QueryResult result = WorldDatabase.Query("SELECT spell_id, req_spell from spell_required");
+    QueryResult result = WorldDatabase.Query("SELECT SpellID, ReqSpell from spell_required");
 
     if (!result)
     {
@@ -1629,7 +1629,7 @@ void SpellMgr::LoadSpellGroups()
     mSpellGroupMap.clear();                                  // need for reload case
 
     //                                                0     1            2
-    QueryResult result = WorldDatabase.Query("SELECT id, spell_id, special_flag FROM spell_group");
+    QueryResult result = WorldDatabase.Query("SELECT ID, SpellID, SpecialFlags FROM spell_group");
     if (!result)
     {
         LOG_WARN("server.loading", ">> Loaded 0 spell group definitions. DB table `spell_group` is empty.");
@@ -1689,7 +1689,7 @@ void SpellMgr::LoadSpellGroupStackRules()
     mSpellGroupStackMap.clear();                                  // need for reload case
 
     //                                                       0         1
-    QueryResult result = WorldDatabase.Query("SELECT group_id, stack_rule FROM spell_group_stack_rules");
+    QueryResult result = WorldDatabase.Query("SELECT GroupID, StackRule FROM spell_group_stack_rules");
     if (!result)
     {
         LOG_WARN("server.loading", ">> Loaded 0 spell group stack rules. DB table `spell_group_stack_rules` is empty.");
@@ -1740,7 +1740,7 @@ void SpellMgr::LoadSpellProcEvents()
     mSpellProcEventMap.clear();                             // need for reload case
 
     //                                                0      1           2                3                 4                 5                 6          7       8          9             10       11
-    QueryResult result = WorldDatabase.Query("SELECT entry, SchoolMask, SpellFamilyName, SpellFamilyMask0, SpellFamilyMask1, SpellFamilyMask2, procFlags, procEx, procPhase, ppmRate, CustomChance, Cooldown FROM spell_proc_event");
+    QueryResult result = WorldDatabase.Query("SELECT Entry, SchoolMask, SpellFamilyName, SpellFamilyMask1, SpellFamilyMask2, SpellFamilyMask3, ProcFlags, ProcEx, ProcPhase, PPMRate, CustomChance, Cooldown FROM spell_proc_event");
     if (!result)
     {
         LOG_WARN("server.loading", ">> Loaded 0 spell proc event conditions. DB table `spell_proc_event` is empty.");
@@ -1834,7 +1834,7 @@ void SpellMgr::LoadSpellProcs()
     mSpellProcMap.clear();                             // need for reload case
 
     //                                                 0        1           2                3                 4                 5                 6          7              8              9         10              11             12      13        14
-    QueryResult result = WorldDatabase.Query("SELECT SpellId, SchoolMask, SpellFamilyName, SpellFamilyMask0, SpellFamilyMask1, SpellFamilyMask2, ProcFlags, SpellTypeMask, SpellPhaseMask, HitMask, AttributesMask, ProcsPerMinute, Chance, Cooldown, Charges FROM spell_proc");
+    QueryResult result = WorldDatabase.Query("SELECT SpellID, SchoolMask, SpellFamilyName, SpellFamilyMask1, SpellFamilyMask2, SpellFamilyMask3, ProcFlags, SpellTypeMask, SpellPhaseMask, HitMask, AttributesMask, ProcsPerMinute, Chance, Cooldown, Charges FROM spell_proc");
     if (!result)
     {
         LOG_WARN("server.loading", ">> Loaded 0 Spell Proc Conditions And Data. DB table `spell_proc` Is Empty.");
@@ -1966,7 +1966,7 @@ void SpellMgr::LoadSpellBonuses()
     mSpellBonusMap.clear();                             // need for reload case
 
     //                                                0      1             2          3         4
-    QueryResult result = WorldDatabase.Query("SELECT entry, direct_bonus, dot_bonus, ap_bonus, ap_dot_bonus FROM spell_bonus_data");
+    QueryResult result = WorldDatabase.Query("SELECT Entry, DirectBonus, DOTBonus, APBonus, APDOTBonus FROM spell_bonus_data");
     if (!result)
     {
         LOG_WARN("server.loading", ">> Loaded 0 spell bonus data. DB table `spell_bonus_data` is empty.");
@@ -2006,8 +2006,8 @@ void SpellMgr::LoadSpellThreats()
 
     mSpellThreatMap.clear();                                // need for reload case
 
-    //                                                0      1        2       3
-    QueryResult result = WorldDatabase.Query("SELECT entry, flatMod, pctMod, apPctMod FROM spell_threat");
+    //                                                0      1        2           3
+    QueryResult result = WorldDatabase.Query("SELECT Entry, FlatMod, PercentMod, APPercentMod FROM spell_threat");
     if (!result)
     {
         LOG_WARN("server.loading", ">> Loaded 0 aggro generating spells. DB table `spell_threat` is empty.");
@@ -2048,7 +2048,7 @@ void SpellMgr::LoadSpellMixology()
     mSpellMixologyMap.clear();                                // need for reload case
 
     //                                                0      1
-    QueryResult result = WorldDatabase.Query("SELECT entry, pctMod FROM spell_mixology");
+    QueryResult result = WorldDatabase.Query("SELECT Entry, PercentMod FROM spell_mixology");
     if (!result)
     {
         LOG_WARN("server.loading", ">> Loaded 0 mixology bonuses. DB table `spell_mixology` is empty.");
@@ -2766,7 +2766,7 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
     uint32 const customAttrTime = getMSTime();
     uint32 count;
 
-    QueryResult result = WorldDatabase.Query("SELECT spell_id, attributes FROM spell_custom_attr");
+    QueryResult result = WorldDatabase.Query("SELECT SpellID, Attributes FROM spell_custom_attr");
 
     if (!result)
     {

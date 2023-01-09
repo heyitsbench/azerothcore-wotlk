@@ -37,7 +37,7 @@ void SystemMgr::LoadScriptWaypoints()
     uint64 uiCreatureCount = 0;
 
     // Load Waypoints
-    QueryResult result = WorldDatabase.Query("SELECT COUNT(entry) FROM script_waypoint GROUP BY entry");
+    QueryResult result = WorldDatabase.Query("SELECT COUNT(Entry) FROM script_waypoint GROUP BY Entry");
     if (result)
         uiCreatureCount = result->GetRowCount();
 

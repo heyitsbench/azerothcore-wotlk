@@ -918,9 +918,9 @@ void PoolMgr::LoadFromDB()
     {
         uint32 oldMSTime = getMSTime();
 
-        QueryResult result = WorldDatabase.Query("SELECT DISTINCT pool_template.entry, pool_pool.pool_id, pool_pool.mother_pool FROM pool_template"
-                             " LEFT JOIN game_event_pool ON pool_template.entry=game_event_pool.pool_entry"
-                             " LEFT JOIN pool_pool ON pool_template.entry=pool_pool.pool_id WHERE game_event_pool.pool_entry IS NULL");
+        QueryResult result = WorldDatabase.Query("SELECT DISTINCT pool_template.Entry, pool_pool.PoolID, pool_pool.ParentPool FROM pool_template"
+                             " LEFT JOIN game_event_pool ON pool_template.Entry=game_event_pool.PoolEntry"
+                             " LEFT JOIN pool_pool ON pool_template.Entry=pool_pool.PoolID WHERE game_event_pool.PoolEntry IS NULL");
 
         if (!result)
         {

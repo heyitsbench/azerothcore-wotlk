@@ -159,7 +159,7 @@ void CharacterDatabaseConnection::DoPrepareStatements()
     // 0: string, 1: uint32
     PrepareStatement(CHAR_UPD_GUILD_NAME, "UPDATE guild SET Name = ? WHERE GuildID = ?", CONNECTION_ASYNC);
     // 0: uint32, 1: uint32, 2: uint8, 4: string, 5: string
-    PrepareStatement(CHAR_INS_GUILD_MEMBER, "INSERT INTO guild_member (GuildID, GUID, Rank, PlayerNote, OfficerNote) VALUES (?, ?, ?, ?, ?)", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_INS_GUILD_MEMBER, "INSERT INTO guild_member (GuildID, GUID, `Rank`, PlayerNote, OfficerNote) VALUES (?, ?, ?, ?, ?)", CONNECTION_ASYNC);
     PrepareStatement(CHAR_DEL_GUILD_MEMBER, "DELETE FROM guild_member WHERE GUID = ?", CONNECTION_ASYNC); // 0: uint32
     PrepareStatement(CHAR_DEL_GUILD_MEMBERS, "DELETE FROM guild_member WHERE GuildID = ?", CONNECTION_ASYNC); // 0: uint32
     PrepareStatement(CHAR_SEL_GUILD_MEMBER_EXTENDED, "SELECT g.GuildID, g.Name, gr.RankName, gm.PlayerNote, gm.OfficerNote "
@@ -178,7 +178,7 @@ void CharacterDatabaseConnection::DoPrepareStatements()
     PrepareStatement(CHAR_DEL_GUILD_BANK_ITEMS, "DELETE FROM guild_bank_item WHERE GuildID = ?", CONNECTION_ASYNC); // 0: uint32
     // 0: uint32, 1: uint8, 2: uint8, 3: uint8, 4: uint32
     PrepareStatement(CHAR_INS_GUILD_BANK_RIGHT, "INSERT INTO guild_bank_rights (GuildID, TabID, RankID, RightsFlags, SlotPerDay) VALUES (?, ?, ?, ?, ?) "
-                     "ON DUPLICATE KEY UPDATE gbright = VALUES(RightsFlags), SlotPerDay = VALUES(SlotPerDay)", CONNECTION_ASYNC);
+                     "ON DUPLICATE KEY UPDATE RightsFlags = VALUES(RightsFlags), SlotPerDay = VALUES(SlotPerDay)", CONNECTION_ASYNC);
     PrepareStatement(CHAR_DEL_GUILD_BANK_RIGHTS, "DELETE FROM guild_bank_rights WHERE GuildID = ?", CONNECTION_ASYNC); // 0: uint32
     PrepareStatement(CHAR_DEL_GUILD_BANK_RIGHTS_FOR_RANK, "DELETE FROM guild_bank_rights WHERE GuildID = ? AND RankID = ?", CONNECTION_ASYNC); // 0: uint32, 1: uint8
     // 0-1: uint32, 2-3: uint8, 4-5: uint32, 6: uint16, 7: uint8, 8: uint64
@@ -317,7 +317,7 @@ void CharacterDatabaseConnection::DoPrepareStatements()
     PrepareStatement(CHAR_REP_GM_TICKET, "REPLACE INTO gm_ticket (ID, Type, PlayerGUID, Name, Description, CreateTime, MapID, PositionX, PositionY, PositionZ, LastModifiedTime, ClosedBy, AssignedTo, Comment, Response, Completed, Escalated, Viewed, NeedMoreHelp, ResolvedBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
     PrepareStatement(CHAR_DEL_GM_TICKET, "DELETE FROM gm_ticket WHERE ID = ?", CONNECTION_ASYNC);
     PrepareStatement(CHAR_DEL_PLAYER_GM_TICKETS, "DELETE FROM gm_ticket WHERE PlayerGUID = ?", CONNECTION_ASYNC);
-    PrepareStatement(CHAR_UPD_PLAYER_GM_TICKETS_ON_CHAR_DELETION, "UPDATE gm_ticket SET Type = 2 WHERE PlayerUID = ?", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_UPD_PLAYER_GM_TICKETS_ON_CHAR_DELETION, "UPDATE gm_ticket SET Type = 2 WHERE PlayerGUID = ?", CONNECTION_ASYNC);
 
     // GM Survey/subsurvey/lag report
     PrepareStatement(CHAR_INS_GM_SURVEY, "INSERT INTO gm_survey (guid, surveyId, mainSurvey, comment, createTime) VALUES (?, ?, ?, ?, UNIX_TIMESTAMP(NOW()))", CONNECTION_ASYNC);

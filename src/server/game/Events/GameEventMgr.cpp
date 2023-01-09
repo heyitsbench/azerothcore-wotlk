@@ -502,8 +502,8 @@ void GameEventMgr::LoadFromDB()
         uint32 oldMSTime = getMSTime();
 
         //                                                     0              1             2            3                         4                               5                                 6
-        QueryResult result = WorldDatabase.Query("SELECT creature.guid, creature.id1, creature.id2, creature.id3, game_event_model_equip.eventEntry, game_event_model_equip.modelid, game_event_model_equip.equipment_id "
-                             "FROM creature JOIN game_event_model_equip ON creature.guid=game_event_model_equip.guid");
+        QueryResult result = WorldDatabase.Query("SELECT creature.GUID, creature.ID1, creature.ID2, creature.ID3, game_event_model_equip.EventEntry, game_event_model_equip.ModelID, game_event_model_equip.EquipmentID "
+                             "FROM creature JOIN game_event_model_equip ON creature.GUID=game_event_model_equip.GUID");
 
         if (!result)
         {

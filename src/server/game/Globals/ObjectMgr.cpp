@@ -482,20 +482,20 @@ void ObjectMgr::LoadCreatureTemplates()
     uint32 oldMSTime = getMSTime();
 
 //                                                   0      1                   2                   3                   4            5            6         7         8
-    QueryResult result = WorldDatabase.Query("SELECT entry, difficulty_entry_1, difficulty_entry_2, difficulty_entry_3, KillCredit1, KillCredit2, modelid1, modelid2, modelid3, "
+    QueryResult result = WorldDatabase.Query("SELECT Entry, DifficultyEntry1, DifficultyEntry2, DifficultyEntry3, KillCredit1, KillCredit2, ModelID1, ModelID2, ModelID3, "
 //                        9         10    11       12        13              14        15        16   17       18       19          20         21          22
-                         "modelid4, name, subname, IconName, gossip_menu_id, minlevel, maxlevel, exp, faction, npcflag, speed_walk, speed_run, speed_swim, speed_flight, "
+                         "ModelID4, Name, Subname, IconName, GossipMenuID, Minlevel, Maxlevel, Expansion, Faction, NPCFlag, SpeedWalk, SpeedRun, SpeedSwim, SpeedFlight, "
 //                        23               24     25      26         27              28              29               30            31             32          33          34
-                         "detection_range, scale, `rank`, dmgschool, DamageModifier, BaseAttackTime, RangeAttackTime, BaseVariance, RangeVariance, unit_class, unit_flags, unit_flags2, "
+                         "DetectionRange, Scale, `Rank`, DamageSchool, DamageModifier, BaseAttackTime, RangeAttackTime, BaseVariance, RangeVariance, UnitClass, UnitFlags1, UnitFlags2, "
 //                        35            36      37            38             39             40            41
-                         "dynamicflags, family, trainer_type, trainer_spell, trainer_class, trainer_race, type, "
+                         "DynamicFlags, Family, TrainerType, TrainerSpell, TrainerClass, TrainerRace, Type, "
 //                        42          43      44              45        46              47         48       49       50      51
-                         "type_flags, lootid, pickpocketloot, skinloot, PetSpellDataId, VehicleId, mingold, maxgold, AIName, MovementType, "
+                         "TypeFlags, LootID, PickpocketLoot, SkinLoot, PetSpellDataID, VehicleID, MinGold, MaxGold, AIName, MovementType, "
 //                        52          53        54          55          56         57          58                         59           60              61            62             63
                          "ctm.Ground, ctm.Swim, ctm.Flight, ctm.Rooted, ctm.Chase, ctm.Random, ctm.InteractionPauseTimer, HoverHeight, HealthModifier, ManaModifier, ArmorModifier, ExperienceModifier, "
 //                        64            65          66           67                    68                        69           70
-                         "RacialLeader, movementId, RegenHealth, mechanic_immune_mask, spell_school_immune_mask, flags_extra, ScriptName "
-                         "FROM creature_template ct LEFT JOIN creature_template_movement ctm ON ct.entry = ctm.CreatureId;");
+                         "RacialLeader, MovementID, RegenHealth, MechanicImmuneMask, SpellSchoolImmuneMask, FlagsExtra, ScriptName "
+                         "FROM creature_template ct LEFT JOIN creature_template_movement ctm ON ct.Entry = ctm.CreatureID;");
 
     if (!result)
     {
@@ -753,7 +753,7 @@ void ObjectMgr::LoadCreatureTemplateAddons()
     uint32 oldMSTime = getMSTime();
 
     //                                                0       1       2      3       4       5              6               7
-    QueryResult result = WorldDatabase.Query("SELECT entry, path_id, mount, bytes1, bytes2, emote, visibilityDistanceType, auras FROM creature_template_addon");
+    QueryResult result = WorldDatabase.Query("SELECT Entry, PathID, Mount, Bytes1, Bytes2, Emote, VisibilityDistanceType, Auras FROM creature_template_addon");
 
     if (!result)
     {
@@ -1239,7 +1239,7 @@ void ObjectMgr::LoadCreatureAddons()
     uint32 oldMSTime = getMSTime();
 
     //                                                0       1       2      3       4       5             6                7
-    QueryResult result = WorldDatabase.Query("SELECT guid, path_id, mount, bytes1, bytes2, emote, visibilityDistanceType, auras FROM creature_addon");
+    QueryResult result = WorldDatabase.Query("SELECT GUID, PathID, Mount, Bytes1, Bytes2, Emote, VisibilityDistanceType, Auras FROM creature_addon");
 
     if (!result)
     {
@@ -1530,7 +1530,7 @@ void ObjectMgr::LoadCreatureMovementOverrides()
     _creatureMovementOverrides.clear();
 
     // Load the data from creature_movement_override and if NULL fallback to creature_template_movement
-    QueryResult result = WorldDatabase.Query("SELECT cmo.SpawnId,"
+    QueryResult result = WorldDatabase.Query("SELECT cmo.SpawnID,"
                                              "COALESCE(cmo.Ground, ctm.Ground),"
                                              "COALESCE(cmo.Swim, ctm.Swim),"
                                              "COALESCE(cmo.Flight, ctm.Flight),"
@@ -1539,8 +1539,8 @@ void ObjectMgr::LoadCreatureMovementOverrides()
                                              "COALESCE(cmo.Random, ctm.Random),"
                                              "COALESCE(cmo.InteractionPauseTimer, ctm.InteractionPauseTimer) "
                                              "FROM creature_movement_override AS cmo "
-                                             "LEFT JOIN creature AS c ON c.guid = cmo.SpawnId "
-                                             "LEFT JOIN creature_template_movement AS ctm ON ctm.CreatureId = c.id1");
+                                             "LEFT JOIN creature AS c ON c.GUID = cmo.SpawnID "
+                                             "LEFT JOIN creature_template_movement AS ctm ON ctm.CreatureID = c.ID1");
     if (!result)
     {
         LOG_WARN("server.loading", ">> Loaded 0 creature movement overrides. DB table `creature_movement_override` is empty!");
@@ -1664,8 +1664,8 @@ void ObjectMgr::LoadCreatureModelInfo()
 {
     uint32 oldMSTime = getMSTime();
 
-    //                                                   0             1             2          3               4
-    QueryResult result = WorldDatabase.Query("SELECT DisplayID, BoundingRadius, CombatReach, Gender, DisplayID_Other_Gender FROM creature_model_info");
+    //                                                   0             1              2         3         4
+    QueryResult result = WorldDatabase.Query("SELECT DisplayID1, BoundingRadius, CombatReach, Gender, DisplayID2 FROM creature_model_info");
 
     if (!result)
     {
@@ -1954,7 +1954,7 @@ void ObjectMgr::LoadTempSummons()
     uint32 oldMSTime = getMSTime();
 
     //                                                    0           1             2        3      4           5           6           7            8           9
-    QueryResult result = WorldDatabase.Query("SELECT summonerId, summonerType, groupId, entry, position_x, position_y, position_z, orientation, summonType, summonTime FROM creature_summon_groups");
+    QueryResult result = WorldDatabase.Query("SELECT SummonerID, SummonerType, GroupID, Entry, PositionX, PositionY, PositionZ, Orientation, SummonType, SummonTime FROM creature_summon_groups");
 
     if (!result)
     {
@@ -2039,15 +2039,15 @@ void ObjectMgr::LoadCreatures()
 {
     uint32 oldMSTime = getMSTime();
 
-    //                                                     0         1    2    3    4        5            6           7           8            9              10            11
-    QueryResult result = WorldDatabase.Query("SELECT creature.guid, id1, id2, id3, map, equipment_id, position_x, position_y, position_z, orientation, spawntimesecs, wander_distance, "
+    //                                                     0         1    2    3    4        5            6          7          8           9              10           11
+    QueryResult result = WorldDatabase.Query("SELECT creature.GUID, ID1, ID2, ID3, Map, EquipmentID, PositionX, PositionY, PositionZ, Orientation, SpawnTimeSecs, WanderDistance, "
                          //      12            13       14          15           16         17         18          19             20                 21                    22
-                         "currentwaypoint, curhealth, curmana, MovementType, spawnMask, phaseMask, eventEntry, pool_entry, creature.npcflag, creature.unit_flags, creature.dynamicflags, "
+                         "CurrentWaypoint, CurrentHealth, CurrentMana, MovementType, SpawnMask, PhaseMask, EventEntry, PoolEntry, creature.NPCFlag, creature.UnitFlags, creature.DynamicFlags, "
                          //       23
                          "creature.ScriptName "
                          "FROM creature "
-                         "LEFT OUTER JOIN game_event_creature ON creature.guid = game_event_creature.guid "
-                         "LEFT OUTER JOIN pool_creature ON creature.guid = pool_creature.guid");
+                         "LEFT OUTER JOIN game_event_creature ON creature.GUID = game_event_creature.GUID "
+                         "LEFT OUTER JOIN pool_creature ON creature.GUID = pool_creature.GUID");
 
     if (!result)
     {
@@ -2371,13 +2371,13 @@ void ObjectMgr::LoadGameobjects()
     uint32 count = 0;
 
     //                                                0                1   2    3           4           5           6
-    QueryResult result = WorldDatabase.Query("SELECT gameobject.guid, id, map, position_x, position_y, position_z, orientation, "
+    QueryResult result = WorldDatabase.Query("SELECT gameobject.GUID, ID, Map, PositionX, PositionY, PositionZ, Orientation, "
                          //   7          8          9          10         11             12            13     14         15         16          17
-                         "rotation0, rotation1, rotation2, rotation3, spawntimesecs, animprogress, state, spawnMask, phaseMask, eventEntry, pool_entry, "
+                         "Rotation1, Rotation2, Rotation3, Rotation4, SpawnTimeSecs, AnimProgress, State, SpawnMask, PhaseMask, EventEntry, PoolEntry, "
                          //   18
                          "ScriptName "
-                         "FROM gameobject LEFT OUTER JOIN game_event_gameobject ON gameobject.guid = game_event_gameobject.guid "
-                         "LEFT OUTER JOIN pool_gameobject ON gameobject.guid = pool_gameobject.guid");
+                         "FROM gameobject LEFT OUTER JOIN game_event_gameobject ON gameobject.GUID = game_event_gameobject.GUID "
+                         "LEFT OUTER JOIN pool_gameobject ON gameobject.GUID = pool_gameobject.GUID");
 
     if (!result)
     {
@@ -2570,7 +2570,7 @@ void ObjectMgr::LoadItemLocales()
 
     _itemLocaleStore.clear();                                 // need for reload case
 
-    QueryResult result = WorldDatabase.Query("SELECT ID, locale, Name, Description FROM item_template_locale");
+    QueryResult result = WorldDatabase.Query("SELECT ID, Locale, Name, Description FROM item_template_locale");
     if (!result)
         return;
 
@@ -2597,37 +2597,37 @@ void ObjectMgr::LoadItemTemplates()
     uint32 oldMSTime = getMSTime();
 
     //                                                 0      1       2               3              4        5        6       7          8         9        10        11           12
-    QueryResult result = WorldDatabase.Query("SELECT entry, class, subclass, SoundOverrideSubclass, name, displayid, Quality, Flags, FlagsExtra, BuyCount, BuyPrice, SellPrice, InventoryType, "
+    QueryResult result = WorldDatabase.Query("SELECT Entry, Class, Subclass, SoundOverrideSubclass, Name, DisplayID, Quality, Flags, FlagsExtra, BuyCount, BuyPrice, SellPrice, InventoryType, "
                          //                                              13              14           15          16             17               18                19              20
-                         "AllowableClass, AllowableRace, ItemLevel, RequiredLevel, RequiredSkill, RequiredSkillRank, requiredspell, requiredhonorrank, "
+                         "AllowableClass, AllowableRace, ItemLevel, RequiredLevel, RequiredSkill, RequiredSkillRank, RequiredSpell, RequiredHonorRank, "
                          //                                              21                      22                       23               24        25          26             27           28
-                         "RequiredCityRank, RequiredReputationFaction, RequiredReputationRank, maxcount, stackable, ContainerSlots, StatsCount, stat_type1, "
+                         "RequiredCityRank, RequiredReputationFaction, RequiredReputationRank, MaxCount, Stackable, ContainerSlots, StatsCount, StatType1, "
                          //                                            29           30          31           32          33           34          35           36          37           38
-                         "stat_value1, stat_type2, stat_value2, stat_type3, stat_value3, stat_type4, stat_value4, stat_type5, stat_value5, stat_type6, "
+                         "StatValue1, StatType2, StatValue2, StatType3, StatValue3, StatType4, StatValue4, StatType5, StatValue5, StatType6, "
                          //                                            39           40          41           42           43          44           45           46           47
-                         "stat_value6, stat_type7, stat_value7, stat_type8, stat_value8, stat_type9, stat_value9, stat_type10, stat_value10, "
+                         "StatValue6, StatType7, StatValue7, StatType8, StatValue8, StatType9, StatValue9, StatType10, StatValue10, "
                          //                                                   48                    49           50        51        52         53        54         55      56      57        58
-                         "ScalingStatDistribution, ScalingStatValue, dmg_min1, dmg_max1, dmg_type1, dmg_min2, dmg_max2, dmg_type2, armor, holy_res, fire_res, "
+                         "ScalingStatDistribution, ScalingStatValue, DamageMin1, DamageMax1, DamageType1, DamageMin2, DamageMax2, DamageType2, Armor, HolyResistance, FireResistance, "
                          //                                            59          60         61          62       63       64            65            66          67               68
-                         "nature_res, frost_res, shadow_res, arcane_res, delay, ammo_type, RangedModRange, spellid_1, spelltrigger_1, spellcharges_1, "
+                         "NatureResistance, FrostResistance, ShadowResistance, ArcaneResistance, Delay, AmmoType, RangedModRange, SpellID1, SpellTrigger1, SpellCharges1, "
                          //                                              69              70                71                 72                 73           74               75
-                         "spellppmRate_1, spellcooldown_1, spellcategory_1, spellcategorycooldown_1, spellid_2, spelltrigger_2, spellcharges_2, "
+                         "SpellPPMRate1, SpellCooldown1, SpellCategory1, SpellCategoryCooldown1, SpellID2, SpellTrigger2, SpellCharges2, "
                          //                                              76               77              78                  79                 80           81               82
-                         "spellppmRate_2, spellcooldown_2, spellcategory_2, spellcategorycooldown_2, spellid_3, spelltrigger_3, spellcharges_3, "
+                         "SpellPPMRate2, SpellCooldown2, SpellCategory2, SpellCategoryCooldown2, SpellID3, SpellTrigger3, SpellCharges3, "
                          //                                              83               84              85                  86                 87           88               89
-                         "spellppmRate_3, spellcooldown_3, spellcategory_3, spellcategorycooldown_3, spellid_4, spelltrigger_4, spellcharges_4, "
+                         "SpellPPMRate3, SpellCooldown3, SpellCategory3, SpellCategoryCooldown3, SpellID4, SpellTrigger4, SpellCharges4, "
                          //                                              90               91              92                  93                  94          95               96
-                         "spellppmRate_4, spellcooldown_4, spellcategory_4, spellcategorycooldown_4, spellid_5, spelltrigger_5, spellcharges_5, "
+                         "SpellPPMRate4, SpellCooldown4, SpellCategory4, SpellCategoryCooldown4, SpellID5, SpellTrigger5, SpellCharges5, "
                          //                                              97               98              99                  100                 101        102         103       104          105
-                         "spellppmRate_5, spellcooldown_5, spellcategory_5, spellcategorycooldown_5, bonding, description, PageText, LanguageID, PageMaterial, "
+                         "SpellPPMRate5, SpellCooldown5, SpellCategory5, SpellCategoryCooldown5, Bonding, Description, PageText, LanguageID, PageMaterial, "
                          //                                            106       107     108      109          110            111       112     113         114       115   116     117
-                         "startquest, lockid, Material, sheath, RandomProperty, RandomSuffix, block, itemset, MaxDurability, area, Map, BagFamily, "
+                         "StartQuest, LockID, Material, Sheath, RandomProperty, RandomSuffix, Block, ItemSet, MaxDurability, Area, Map, BagFamily, "
                          //                                            118             119             120             121             122            123              124            125
-                         "TotemCategory, socketColor_1, socketContent_1, socketColor_2, socketContent_2, socketColor_3, socketContent_3, socketBonus, "
+                         "TotemCategory, SocketColor1, SocketContent1, SocketColor2, SocketContent2, SocketColor3, SocketContent3, SocketBonus, "
                          //                                            126                 127                     128            129            130            131         132         133
-                         "GemProperties, RequiredDisenchantSkill, ArmorDamageModifier, duration, ItemLimitCategory, HolidayId, ScriptName, DisenchantID, "
+                         "GemProperties, RequiredDisenchantSkill, ArmorDamageModifier, Duration, ItemLimitCategory, HolidayID, ScriptName, DisenchantID, "
                          //                                           134        135            136
-                         "FoodType, minMoneyLoot, maxMoneyLoot, flagsCustom FROM item_template");
+                         "FoodType, MinMoneyLoot, MaxMoneyLoot, CustomFlags FROM item_template");
 
     if (!result)
     {
@@ -3233,7 +3233,7 @@ void ObjectMgr::LoadItemSetNames()
     }
 
     //                                                  0        1            2
-    QueryResult result = WorldDatabase.Query("SELECT `entry`, `name`, `InventoryType` FROM `item_set_names`");
+    QueryResult result = WorldDatabase.Query("SELECT `Entry`, `Name`, `InventoryType` FROM `item_set_names`");
 
     if (!result)
     {
@@ -3304,8 +3304,8 @@ void ObjectMgr::LoadVehicleTemplateAccessories()
 
     uint32 count = 0;
 
-    //                                                  0             1              2          3           4             5
-    QueryResult result = WorldDatabase.Query("SELECT `entry`, `accessory_entry`, `seat_id`, `minion`, `summontype`, `summontimer` FROM `vehicle_template_accessory`");
+    //                                                  0             1            2         3           4             5
+    QueryResult result = WorldDatabase.Query("SELECT `Entry`, `AccessoryEntry`, `SeatID`, `Minion`, `SummonType`, `SummonTimer` FROM `vehicle_template_accessory`");
 
     if (!result)
     {
@@ -3360,8 +3360,8 @@ void ObjectMgr::LoadVehicleAccessories()
 
     uint32 count = 0;
 
-    //                                                  0             1             2          3           4             5
-    QueryResult result = WorldDatabase.Query("SELECT `guid`, `accessory_entry`, `seat_id`, `minion`, `summontype`, `summontimer` FROM `vehicle_accessory`");
+    //                                                  0             1           2         3           4             5
+    QueryResult result = WorldDatabase.Query("SELECT `GUID`, `AccessoryEntry`, `SeatID`, `Minion`, `SummonType`, `SummonTimer` FROM `vehicle_accessory`");
 
     if (!result)
     {
@@ -3400,8 +3400,8 @@ void ObjectMgr::LoadPetLevelInfo()
 {
     uint32 oldMSTime = getMSTime();
 
-    //                                                 0               1      2   3     4    5    6    7     8    9      10       11
-    QueryResult result = WorldDatabase.Query("SELECT creature_entry, level, hp, mana, str, agi, sta, inte, spi, armor, min_dmg, max_dmg FROM pet_levelstats");
+    //                                                     0          1    2    3       4         5        6         7        8       9       10         11
+    QueryResult result = WorldDatabase.Query("SELECT CreatureEntry, Level, HP, Mana, Strength, Agility, Stamina, Intellect, Spirit, Armor, MinDamage, MaxDamage FROM pet_levelstats");
 
     if (!result)
     {
@@ -3937,7 +3937,7 @@ void ObjectMgr::LoadPlayerInfo()
         uint32 oldMSTime = getMSTime();
 
         //                                                0      1      2       3
-        QueryResult result  = WorldDatabase.Query("SELECT class, level, basehp, basemana FROM player_classlevelstats");
+        QueryResult result  = WorldDatabase.Query("SELECT Class, Level, BaseHP, BaseMana FROM player_classlevelstats");
 
         if (!result)
         {
@@ -4157,7 +4157,7 @@ void ObjectMgr::LoadPlayerInfo()
         for (uint8 level = 0; level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL); ++level)
             _playerXPperLevel[level] = 0;
 
-        //                                                 0    1
+        //                                                 0     1
         QueryResult result  = WorldDatabase.Query("SELECT Level, Experience FROM player_xp_for_level");
 
         if (!result)
@@ -4326,7 +4326,7 @@ void ObjectMgr::LoadQuests()
                          //0      1         2           3           4           5             6                 7            8
                          "ID, QuestType, QuestLevel, MinLevel, QuestSortID, QuestInfoID, SuggestedGroupNum, TimeAllowed, AllowableRaces,"
                          //      9                     10                   11                    12
-                         "RequiredFactionId1, RequiredFactionId2, RequiredFactionValue1, RequiredFactionValue2, "
+                         "RequiredFactionID1, RequiredFactionID2, RequiredFactionValue1, RequiredFactionValue2, "
                          //      13                14              15             16                 17                18                 19           20           21
                          "RewardNextQuest, RewardXPDifficulty, RewardMoney, RewardMoneyDifficulty, RewardBonusMoney,  RewardDisplaySpell, RewardSpell, RewardHonor, RewardKillHonor, "
                          //   22       23       24              25                26               27
@@ -4338,17 +4338,17 @@ void ObjectMgr::LoadQuests()
                          //       48                 49                     50                  51                  52                     53                 54                  55                     56                  57                  58                    59                   60                 61                      62
                          "RewardFactionID1, RewardFactionValue1, RewardFactionOverride1, RewardFactionID2, RewardFactionValue2, RewardFactionOverride2, RewardFactionID3, RewardFactionValue3, RewardFactionOverride3, RewardFactionID4, RewardFactionValue4, RewardFactionOverride4, RewardFactionID5, RewardFactionValue5,  RewardFactionOverride5,"
                          //   62        64      65        66
-                         "POIContinent, POIx, POIy, POIPriority, "
+                         "POIContinent, POIX, POIY, POIPriority, "
                          //   67          68               69           70                    71
                          "LogTitle, LogDescription, QuestDescription, AreaDescription, QuestCompletionLog, "
                          //      72                73                74                75                   76                     77                    78                      79
-                         "RequiredNpcOrGo1, RequiredNpcOrGo2, RequiredNpcOrGo3, RequiredNpcOrGo4, RequiredNpcOrGoCount1, RequiredNpcOrGoCount2, RequiredNpcOrGoCount3, RequiredNpcOrGoCount4, "
+                         "RequiredNPCOrGO1, RequiredNPCOrGO2, RequiredNPCOrGO3, RequiredNPCOrGO4, RequiredNPCOrGOCount1, RequiredNPCOrGOCount2, RequiredNPCOrGOCount3, RequiredNPCOrGOCount4, "
                          //  80          81         82         83           84                  85                 86                  87
                          "ItemDrop1, ItemDrop2, ItemDrop3, ItemDrop4, ItemDropQuantity1, ItemDropQuantity2, ItemDropQuantity3, ItemDropQuantity4, "
                          //      88               89               90               91               92               93                94                  95                  96                  97                  98                  99
-                         "RequiredItemId1, RequiredItemId2, RequiredItemId3, RequiredItemId4, RequiredItemId5, RequiredItemId6, RequiredItemCount1, RequiredItemCount2, RequiredItemCount3, RequiredItemCount4, RequiredItemCount5, RequiredItemCount6, "
+                         "RequiredItemID1, RequiredItemID2, RequiredItemID3, RequiredItemID4, RequiredItemID5, RequiredItemID6, RequiredItemCount1, RequiredItemCount2, RequiredItemCount3, RequiredItemCount4, RequiredItemCount5, RequiredItemCount6, "
                          //  100          101             102             103             104
-                         "Unknown0, ObjectiveText1, ObjectiveText2, ObjectiveText3, ObjectiveText4"
+                         "UnkField, ObjectiveText1, ObjectiveText2, ObjectiveText3, ObjectiveText4"
                          " FROM quest_template");
     if (!result)
     {
@@ -5867,14 +5867,14 @@ void ObjectMgr::LoadGossipText()
     uint32 oldMSTime = getMSTime();
 
     QueryResult result = WorldDatabase.Query("SELECT ID, "
-                         "text0_0, text0_1, BroadcastTextID0, lang0, Probability0, em0_0, em0_1, em0_2, em0_3, em0_4, em0_5, "
-                         "text1_0, text1_1, BroadcastTextID1, lang1, Probability1, em1_0, em1_1, em1_2, em1_3, em1_4, em1_5, "
-                         "text2_0, text2_1, BroadcastTextID2, lang2, Probability2, em2_0, em2_1, em2_2, em2_3, em2_4, em2_5, "
-                         "text3_0, text3_1, BroadcastTextID3, lang3, Probability3, em3_0, em3_1, em3_2, em3_3, em3_4, em3_5, "
-                         "text4_0, text4_1, BroadcastTextID4, lang4, Probability4, em4_0, em4_1, em4_2, em4_3, em4_4, em4_5, "
-                         "text5_0, text5_1, BroadcastTextID5, lang5, Probability5, em5_0, em5_1, em5_2, em5_3, em5_4, em5_5, "
-                         "text6_0, text6_1, BroadcastTextID6, lang6, Probability6, em6_0, em6_1, em6_2, em6_3, em6_4, em6_5, "
-                         "text7_0, text7_1, BroadcastTextID7, lang7, Probability7, em7_0, em7_1, em7_2, em7_3, em7_4, em7_5 "
+                         "Text0_0, Text0_1, BroadcastTextID0, Lang0, Probability0, Emote0_0, Emote0_1, Emote0_2, Emote0_3, Emote0_4, Emote0_5, "
+                         "Text1_0, Text1_1, BroadcastTextID1, Lang1, Probability1, Emote1_0, Emote1_1, Emote1_2, Emote1_3, Emote1_4, Emote1_5, "
+                         "Text2_0, Text2_1, BroadcastTextID2, Lang2, Probability2, Emote2_0, Emote2_1, Emote2_2, Emote2_3, Emote2_4, Emote2_5, "
+                         "Text3_0, Text3_1, BroadcastTextID3, Lang3, Probability3, Emote3_0, Emote3_1, Emote3_2, Emote3_3, Emote3_4, Emote3_5, "
+                         "Text4_0, Text4_1, BroadcastTextID4, Lang4, Probability4, Emote4_0, Emote4_1, Emote4_2, Emote4_3, Emote4_4, Emote4_5, "
+                         "Text5_0, Text5_1, BroadcastTextID5, Lang5, Probability5, Emote5_0, Emote5_1, Emote5_2, Emote5_3, Emote5_4, Emote5_5, "
+                         "Text6_0, Text6_1, BroadcastTextID6, Lang6, Probability6, Emote6_0, Emote6_1, Emote6_2, Emote6_3, Emote6_4, Emote6_5, "
+                         "Text7_0, Text7_1, BroadcastTextID7, Lang7, Probability7, Emote7_0, Emote7_1, Emote7_2, Emote7_3, Emote7_4, Emote7_5 "
                          "FROM npc_text");
 
     if (!result)
@@ -6665,8 +6665,8 @@ void ObjectMgr::LoadAccessRequirements()
 
         _accessRequirementStore.clear();                                  // need for reload case
     }
-    //                                                               0       1            2           3          4            5
-    QueryResult access_template_result = WorldDatabase.Query("SELECT id, map_id, difficulty, min_level, max_level, min_avg_item_level FROM dungeon_access_template");
+    //                                                               0   1      2           3         4         5
+    QueryResult access_template_result = WorldDatabase.Query("SELECT ID, MapID, Difficulty, MinLevel, MaxLevel, MinAverageItemLevel FROM dungeon_access_template");
     if (!access_template_result)
     {
         LOG_WARN("server.loading", ">> Loaded 0 access requirement definitions. DB table `dungeon_access_template` is empty.");
@@ -6692,8 +6692,8 @@ void ObjectMgr::LoadAccessRequirements()
         ar->levelMax     = fields[4].Get<uint8>();
         ar->reqItemLevel = fields[5].Get<uint16>();
 
-        //                                                                              0                 1               2                 3        4         6
-        QueryResult progression_requirements_results = WorldDatabase.Query("SELECT requirement_type, requirement_id, requirement_note, faction, priority, leader_only FROM dungeon_access_requirements where dungeon_access_id = {}", dungeon_access_id);
+        //                                                                              0                 1               2            3        4          6
+        QueryResult progression_requirements_results = WorldDatabase.Query("SELECT RequirementType, RequirementID, RequirementNote, Faction, Priority, LeaderOnly FROM dungeon_access_requirements where DungeonAccessID = {}", dungeon_access_id);
         if (progression_requirements_results)
         {
             do
@@ -6960,7 +6960,7 @@ void ObjectMgr::LoadGameObjectLocales()
     _gameObjectLocaleStore.clear(); // need for reload case
 
     //                                               0      1       2     3
-    QueryResult result = WorldDatabase.Query("SELECT entry, locale, name, castBarCaption FROM gameobject_template_locale");
+    QueryResult result = WorldDatabase.Query("SELECT Entry, Locale, Name, CastBarCaption FROM gameobject_template_locale");
     if (!result)
         return;
 
@@ -7045,12 +7045,12 @@ void ObjectMgr::LoadGameObjectTemplate()
 {
     uint32 oldMSTime = getMSTime();
 
-    //                                                 0      1      2        3       4             5          6      7
-    QueryResult result = WorldDatabase.Query("SELECT entry, type, displayId, name, IconName, castBarCaption, unk1, size, "
+    //                                                 0      1      2        3       4             5          6         7
+    QueryResult result = WorldDatabase.Query("SELECT Entry, Type, DisplayID, Name, IconName, CastBarCaption, UnkField, Scale, "
                          //                                          8      9      10     11     12     13     14     15     16     17     18      19      20
-                         "Data0, Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Data11, Data12, "
+                         "Data1, Data2, Data3, Data4, Data5, Data6, Data7, Data8, Data9, Data10, Data11, Data12, Data13, "
                          //                                          21      22      23      24      25      26      27      28      29      30      31      32        33
-                         "Data13, Data14, Data15, Data16, Data17, Data18, Data19, Data20, Data21, Data22, Data23, AIName, ScriptName "
+                         "Data14, Data15, Data16, Data17, Data18, Data19, Data20, Data21, Data22, Data23, Data24, AIName, ScriptName "
                          "FROM gameobject_template");
 
     if (!result)
@@ -7235,7 +7235,7 @@ void ObjectMgr::LoadGameObjectTemplateAddons()
     uint32 oldMSTime = getMSTime();
 
     //                                                0       1       2      3        4       5        6        7        8
-    QueryResult result = WorldDatabase.Query("SELECT entry, faction, flags, mingold, maxgold, artkit0, artkit1, artkit2, artkit3 FROM gameobject_template_addon");
+    QueryResult result = WorldDatabase.Query("SELECT Entry, Faction, Flags, MinGold, MaxGold, ArtKit1, ArtKit2, ArtKit3, ArtKit4 FROM gameobject_template_addon");
 
     if (!result)
     {
@@ -7427,7 +7427,7 @@ void ObjectMgr::LoadReputationRewardRate()
     _repRewardRateStore.clear();                             // for reload case
 
     uint32 count = 0; //                                0          1             2                  3                  4                 5                      6             7
-    QueryResult result = WorldDatabase.Query("SELECT faction, quest_rate, quest_daily_rate, quest_weekly_rate, quest_monthly_rate, quest_repeatable_rate, creature_rate, spell_rate FROM reputation_reward_rate");
+    QueryResult result = WorldDatabase.Query("SELECT Faction, QuestRate, QuestDailyRate, QuestWeeklyRate, QuestMonthlyRate, QuestRepeatableRate, CreatureRate, SpellRate FROM reputation_reward_rate");
     if (!result)
     {
         LOG_INFO("server.loading", ">> Loaded `reputation_reward_rate`, table is empty!");
@@ -7518,10 +7518,10 @@ void ObjectMgr::LoadReputationOnKill()
     uint32 count = 0;
 
     //                                                0            1                     2
-    QueryResult result = WorldDatabase.Query("SELECT creature_id, RewOnKillRepFaction1, RewOnKillRepFaction2, "
+    QueryResult result = WorldDatabase.Query("SELECT CreatureID, RewOnKillRepFaction1, RewOnKillRepFaction2, "
                          //   3             4             5                   6             7             8                   9
                          "IsTeamAward1, MaxStanding1, RewOnKillRepValue1, IsTeamAward2, MaxStanding2, RewOnKillRepValue2, TeamDependent "
-                         "FROM creature_onkill_reputation");
+                         "FROM creature_kill_reputation");
 
     if (!result)
     {
@@ -7589,7 +7589,7 @@ void ObjectMgr::LoadReputationSpilloverTemplate()
     _repSpilloverTemplateStore.clear();                      // for reload case
 
     uint32 count = 0; //                                0         1        2       3        4       5       6         7        8      9        10       11     12
-    QueryResult result = WorldDatabase.Query("SELECT faction, faction1, rate_1, rank_1, faction2, rate_2, rank_2, faction3, rate_3, rank_3, faction4, rate_4, rank_4 FROM reputation_spillover_template");
+    QueryResult result = WorldDatabase.Query("SELECT BaseFaction, SpillFaction1, RepRate1, MaxRank1, SpillFaction2, RepRate2, MaxRank2, SpillFaction3, RepRate3, MaxRank3, SpillFaction4, RepRate4, MaxRank4 FROM reputation_spillover_template");
 
     if (!result)
     {
@@ -7759,8 +7759,8 @@ void ObjectMgr::LoadQuestPOI()
         return;
     }
 
-    //                                                  0       1   2  3
-    QueryResult points = WorldDatabase.Query("SELECT QuestID, Idx1, X, Y FROM quest_poi_points ORDER BY QuestID DESC, Idx2");
+    //                                                  0       1     2  3
+    QueryResult points = WorldDatabase.Query("SELECT QuestID, Index1, X, Y FROM quest_poi_points ORDER BY QuestID DESC, Idx2");
 
     std::vector<std::vector<std::vector<QuestPOIPoint> > > POIs;
 
@@ -8308,7 +8308,7 @@ bool ObjectMgr::LoadAcoreStrings()
     uint32 oldMSTime = getMSTime();
 
     _acoreStringStore.clear(); // for reload case
-    QueryResult result = WorldDatabase.Query("SELECT entry, content_default, locale_koKR, locale_frFR, locale_deDE, locale_zhCN, locale_zhTW, locale_esES, locale_esMX, locale_ruRU FROM acore_string");
+    QueryResult result = WorldDatabase.Query("SELECT Entry, ContentDefault, `Locale-koKR`, `Locale-frFR`, `Locale-deDE`, `Locale-zhCN`, `Locale-zhTW`, `Locale-esES`, `Locale-esMX`, `Locale-ruRU` FROM acore_string");
     if (!result)
     {
         LOG_WARN("server.loading", ">> Loaded 0 acore strings. DB table `acore_strings` is empty.");
@@ -8952,7 +8952,7 @@ void ObjectMgr::LoadGossipMenuItems()
 
     QueryResult result = WorldDatabase.Query(
                              //      0       1         2           3           4                      5           6              7             8            9         10        11       12
-                             "SELECT MenuID, OptionID, OptionIcon, OptionText, OptionBroadcastTextID, OptionType, OptionNpcFlag, ActionMenuID, ActionPoiID, BoxCoded, BoxMoney, BoxText, BoxBroadcastTextID "
+                             "SELECT MenuID, OptionID, OptionIcon, OptionText, OptionBroadcastTextID, OptionType, OptionNPCFlag, ActionMenuID, ActionPOIID, BoxCoded, BoxMoney, BoxText, BoxBroadcastTextID "
                              "FROM gossip_menu_option ORDER BY MenuID, OptionID");
 
     if (!result)
@@ -9146,7 +9146,7 @@ void ObjectMgr::LoadScriptNames()
     _scriptNamesStore.emplace_back("");
 
     QueryResult result = WorldDatabase.Query(
-                             "SELECT DISTINCT(ScriptName) FROM achievement_criteria_data WHERE ScriptName <> '' AND type = 11 "
+                             "SELECT DISTINCT(ScriptName) FROM achievement_criteria_data WHERE ScriptName <> '' AND Type = 11 "
                              "UNION "
                              "SELECT DISTINCT(ScriptName) FROM battleground_template WHERE ScriptName <> '' "
                              "UNION "
@@ -9160,7 +9160,7 @@ void ObjectMgr::LoadScriptNames()
                              "UNION "
                              "SELECT DISTINCT(ScriptName) FROM item_template WHERE ScriptName <> '' "
                              "UNION "
-                             "SELECT DISTINCT(ScriptName) FROM areatrigger_scripts WHERE ScriptName <> '' "
+                             "SELECT DISTINCT(ScriptName) FROM area_trigger_scripts WHERE ScriptName <> '' "
                              "UNION "
                              "SELECT DISTINCT(ScriptName) FROM spell_script_names WHERE ScriptName <> '' "
                              "UNION "
@@ -9369,11 +9369,11 @@ void ObjectMgr::LoadCreatureClassLevelStats()
 {
     uint32 oldMSTime = getMSTime();
 
-    QueryResult result = WorldDatabase.Query("SELECT level, class, basehp0, basehp1, basehp2, basemana, basearmor, attackpower, rangedattackpower, damage_base, damage_exp1, damage_exp2 FROM creature_classlevelstats");
+    QueryResult result = WorldDatabase.Query("SELECT Level, Class, BaseHP0, BaseHP1, BaseHP2, BaseMana, BaseArmor, AttackPower, RangedAttackPower, DamageBase0, DamageBase1, DamageBase2 FROM creature_class_level_stats");
 
     if (!result)
     {
-        LOG_WARN("server.loading", ">> Loaded 0 creature base stats. DB table `creature_classlevelstats` is empty.");
+        LOG_WARN("server.loading", ">> Loaded 0 creature base stats. DB table `creature_class_level_stats` is empty.");
         LOG_INFO("server.loading", " ");
         return;
     }
@@ -9452,7 +9452,7 @@ void ObjectMgr::LoadFactionChangeAchievements()
 {
     uint32 oldMSTime = getMSTime();
 
-    QueryResult result = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_achievement");
+    QueryResult result = WorldDatabase.Query("SELECT AllianceID, HordeID FROM player_factionchange_achievement");
 
     if (!result)
     {
@@ -9488,7 +9488,7 @@ void ObjectMgr::LoadFactionChangeItems()
 {
     uint32 oldMSTime = getMSTime();
 
-    QueryResult result = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_items");
+    QueryResult result = WorldDatabase.Query("SELECT AllianceID, HordeID FROM player_factionchange_items");
 
     if (!result)
     {
@@ -9524,7 +9524,7 @@ void ObjectMgr::LoadFactionChangeQuests()
 {
     uint32 oldMSTime = getMSTime();
 
-    QueryResult result = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_quests");
+    QueryResult result = WorldDatabase.Query("SELECT AllianceID, HordeID FROM player_factionchange_quests");
 
     if (!result)
     {
@@ -9560,7 +9560,7 @@ void ObjectMgr::LoadFactionChangeReputations()
 {
     uint32 oldMSTime = getMSTime();
 
-    QueryResult result = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_reputations");
+    QueryResult result = WorldDatabase.Query("SELECT AllianceID, HordeID FROM player_factionchange_reputations");
 
     if (!result)
     {
@@ -9596,7 +9596,7 @@ void ObjectMgr::LoadFactionChangeSpells()
 {
     uint32 oldMSTime = getMSTime();
 
-    QueryResult result = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_spells");
+    QueryResult result = WorldDatabase.Query("SELECT AllianceID, HordeID FROM player_factionchange_spells");
 
     if (!result)
     {
@@ -9632,7 +9632,7 @@ void ObjectMgr::LoadFactionChangeTitles()
 {
     uint32 oldMSTime = getMSTime();
 
-    QueryResult result = WorldDatabase.Query("SELECT alliance_id, horde_id FROM player_factionchange_titles");
+    QueryResult result = WorldDatabase.Query("SELECT AllianceID, HordeID FROM player_factionchange_titles");
 
     if (!result)
     {
@@ -9756,11 +9756,11 @@ void ObjectMgr::LoadCreatureQuestItems()
     uint32 oldMSTime = getMSTime();
 
     //                                               0              1
-    QueryResult result = WorldDatabase.Query("SELECT CreatureEntry, ItemId FROM creature_questitem ORDER BY Idx ASC");
+    QueryResult result = WorldDatabase.Query("SELECT CreatureEntry, ItemID FROM creature_quest_item ORDER BY Index ASC");
 
     if (!result)
     {
-        LOG_WARN("server.loading", ">> Loaded 0 creature quest items. DB table `creature_questitem` is empty.");
+        LOG_WARN("server.loading", ">> Loaded 0 creature quest items. DB table `creature_quest_item` is empty.");
         return;
     }
 

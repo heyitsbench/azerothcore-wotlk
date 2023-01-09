@@ -51,7 +51,7 @@ void TransportMgr::LoadTransportTemplates()
 {
     uint32 oldMSTime = getMSTime();
 
-    QueryResult result = WorldDatabase.Query("SELECT entry FROM gameobject_template WHERE type = 15 ORDER BY entry ASC");
+    QueryResult result = WorldDatabase.Query("SELECT Entry FROM gameobject_template WHERE Type = 15 ORDER BY Entry ASC");
 
     if (!result)
     {

@@ -198,7 +198,7 @@ ALTER TABLE `character_achievement_progress`
 	RENAME COLUMN `guid`					TO `GUID`,
 	RENAME COLUMN `criteria`				TO `Criteria`,
 	RENAME COLUMN `counter`					TO `Counter`,
-	RENAME COLUMN `date`					TO `Data`;
+	RENAME COLUMN `date`					TO `Date`;
 ALTER TABLE `character_action`
 	RENAME COLUMN `guid`					TO `GUID`,
 	RENAME COLUMN `spec`					TO `Spec`,
@@ -509,7 +509,7 @@ ALTER TABLE `gm_ticket`
 	RENAME COLUMN `posX`					TO `PositionX`,
 	RENAME COLUMN `posY`					TO `PositionY`,
 	RENAME COLUMN `posZ`					TO `PositionZ`,
-	RENAME COLUMN `lastModifiedTime`		TO `LasModifiedTime`,
+	RENAME COLUMN `lastModifiedTime`		TO `LastModifiedTime`,
 	RENAME COLUMN `closedBy`				TO `ClosedBy`,
 	RENAME COLUMN `assignedTo`				TO `AssignedTo`,
 	RENAME COLUMN `comment`					TO `Comment`,

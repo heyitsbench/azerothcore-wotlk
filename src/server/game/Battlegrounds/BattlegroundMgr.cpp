@@ -792,7 +792,7 @@ void BattlegroundMgr::LoadBattleMastersEntry()
 
     mBattleMastersMap.clear();                                  // need for reload case
 
-    QueryResult result = WorldDatabase.Query("SELECT entry, bg_template FROM battlemaster_entry");
+    QueryResult result = WorldDatabase.Query("SELECT Entry, BattlegroundTemplate FROM battlemaster_entry");
 
     if (!result)
     {

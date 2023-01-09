@@ -2645,7 +2645,7 @@ void AchievementGlobalMgr::LoadAchievementCriteriaData()
 
     _criteriaDataMap.clear();                              // need for reload case
 
-    QueryResult result = WorldDatabase.Query("SELECT criteria_id, type, value1, value2, ScriptName FROM achievement_criteria_data");
+    QueryResult result = WorldDatabase.Query("SELECT CriteriaID, Type, Value1, Value2, ScriptName FROM achievement_criteria_data");
 
     if (!result)
     {
