@@ -183,9 +183,9 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
         }
 
         void JustSummoned(Creature* summon) override
@@ -250,9 +250,6 @@ public:
                     me->CastCustomSpell(SPELL_SUMMON_ENSLAVED_SOUL, SPELLVALUE_MAX_TARGETS, 1, me, false);
                     break;
             }
-
-            if (!UpdateVictim())
-                return;
         }
 
         bool CheckEvadeIfOutOfCombatArea() const override
@@ -330,7 +327,7 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(SUFF_SAY_FREED);
             me->CastSpell(me, SPELL_AURA_OF_SUFFERING, true);
@@ -440,7 +437,7 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(DESI_SAY_FREED);
             me->CastSpell(me, SPELL_AURA_OF_DESIRE, true);
@@ -532,7 +529,7 @@ public:
                     Unit::Kill(summoner, summoner);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(ANGER_SAY_FREED);
             me->CastSpell(me, SPELL_AURA_OF_ANGER, true);

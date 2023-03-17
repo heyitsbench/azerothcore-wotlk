@@ -59,33 +59,33 @@ void Unit::UpdateAllResistances()
 
 void Unit::UpdateDamagePhysical(WeaponAttackType attType)
 {
-    float totalMin = 0.f;
-    float totalMax = 0.f;
+    float minDamage = 0.0f;
+    float maxDamage = 0.0f;
 
-    float tmpMin, tmpMax;
-    for (uint8 i = 0; i < MAX_ITEM_PROTO_DAMAGES; ++i)
-    {
-        CalculateMinMaxDamage(attType, false, true, tmpMin, tmpMax, i);
-        totalMin += tmpMin;
-        totalMax += tmpMax;
-    }
+    CalculateMinMaxDamage(attType, false, true, minDamage, maxDamage);
 
     switch (attType)
     {
         case BASE_ATTACK:
         default:
-            SetStatFloatValue(UNIT_FIELD_MINDAMAGE, totalMin);
-            SetStatFloatValue(UNIT_FIELD_MAXDAMAGE, totalMax);
+            SetStatFloatValue(UNIT_FIELD_MINDAMAGE, minDamage);
+            SetStatFloatValue(UNIT_FIELD_MAXDAMAGE, maxDamage);
             break;
         case OFF_ATTACK:
-            SetStatFloatValue(UNIT_FIELD_MINOFFHANDDAMAGE, totalMin);
-            SetStatFloatValue(UNIT_FIELD_MAXOFFHANDDAMAGE, totalMax);
+            SetStatFloatValue(UNIT_FIELD_MINOFFHANDDAMAGE, minDamage);
+            SetStatFloatValue(UNIT_FIELD_MAXOFFHANDDAMAGE, maxDamage);
             break;
         case RANGED_ATTACK:
-            SetStatFloatValue(UNIT_FIELD_MINRANGEDDAMAGE, totalMin);
-            SetStatFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE, totalMax);
+            SetStatFloatValue(UNIT_FIELD_MINRANGEDDAMAGE, minDamage);
+            SetStatFloatValue(UNIT_FIELD_MAXRANGEDDAMAGE, maxDamage);
             break;
     }
+}
+
+void Unit::UpdateThorns()
+{
+    float value = GetTotalAuraModValue(UNIT_MOD_THORNS);
+    SetForgeStat(FORGE_STAT_THORNS, value);
 }
 
 /*#######################################
@@ -212,6 +212,7 @@ bool Player::UpdateAllStats()
     UpdateExpertise(OFF_ATTACK);
     RecalculateRating(CR_ARMOR_PENETRATION);
     UpdateAllResistances();
+    UpdateThorns();
 
     return true;
 }
@@ -330,7 +331,7 @@ void Player::ApplyFeralAPBonus(int32 amount, bool apply)
 void Player::UpdateAttackPowerAndDamage(bool ranged)
 {
     float val2 = 0.0f;
-    float level = float(GetLevel());
+    float level = float(getLevel());
 
     sScriptMgr->OnBeforeUpdateAttackPowerAndDamage(this, level, val2, ranged);
 
@@ -454,14 +455,14 @@ void Player::UpdateAttackPowerAndDamage(bool ranged)
                     switch (GetShapeshiftForm())
                     {
                         case FORM_CAT:
-                            val2 = (GetLevel() * mLevelMult) + GetStat(STAT_STRENGTH) * 2.0f + GetStat(STAT_AGILITY) - 20.0f + weapon_bonus + m_baseFeralAP;
+                            val2 = (getLevel() * mLevelMult) + GetStat(STAT_STRENGTH) * 2.0f + GetStat(STAT_AGILITY) - 20.0f + weapon_bonus + m_baseFeralAP;
                             break;
                         case FORM_BEAR:
                         case FORM_DIREBEAR:
-                            val2 = (GetLevel() * mLevelMult) + GetStat(STAT_STRENGTH) * 2.0f - 20.0f + weapon_bonus + m_baseFeralAP;
+                            val2 = (getLevel() * mLevelMult) + GetStat(STAT_STRENGTH) * 2.0f - 20.0f + weapon_bonus + m_baseFeralAP;
                             break;
                         case FORM_MOONKIN:
-                            val2 = (GetLevel() * mLevelMult) + GetStat(STAT_STRENGTH) * 2.0f - 20.0f + m_baseFeralAP;
+                            val2 = (getLevel() * mLevelMult) + GetStat(STAT_STRENGTH) * 2.0f - 20.0f + m_baseFeralAP;
                             break;
                         default:
                             val2 = GetStat(STAT_STRENGTH) * 2.0f - 20.0f;
@@ -531,23 +532,8 @@ void Player::UpdateShieldBlockValue()
     SetUInt32Value(PLAYER_SHIELD_BLOCK, GetShieldBlockValue());
 }
 
-void Player::CalculateMinMaxDamage(WeaponAttackType attType, bool normalized, bool addTotalPct, float& minDamage, float& maxDamage, uint8 damageIndex)
+void Player::CalculateMinMaxDamage(WeaponAttackType attType, bool normalized, bool addTotalPct, float& minDamage, float& maxDamage)
 {
-    // Only proto damage, not affected by any mods
-    if (damageIndex != 0)
-    {
-        minDamage = 0.0f;
-        maxDamage = 0.0f;
-
-        if (!IsInFeralForm() && CanUseAttackType(attType))
-        {
-            minDamage = GetWeaponDamageRange(attType, MINDAMAGE, damageIndex);
-            maxDamage = GetWeaponDamageRange(attType, MAXDAMAGE, damageIndex);
-        }
-
-        return;
-    }
-
     UnitMods unitMod;
 
     switch (attType)
@@ -576,7 +562,7 @@ void Player::CalculateMinMaxDamage(WeaponAttackType attType, bool normalized, bo
 
     if (IsInFeralForm()) // check if player is druid and in cat or bear forms
     {
-        uint8 lvl = GetLevel();
+        uint8 lvl = getLevel();
         if (lvl > 60)
             lvl = 60;
 
@@ -595,11 +581,11 @@ void Player::CalculateMinMaxDamage(WeaponAttackType attType, bool normalized, bo
         weaponMinDamage = BASE_MINDAMAGE;
         weaponMaxDamage = BASE_MAXDAMAGE;
     }
-    else if (attType == RANGED_ATTACK) // add ammo DPS to ranged damage
-    {
-        weaponMinDamage += GetAmmoDPS() * attackSpeedMod;
-        weaponMaxDamage += GetAmmoDPS() * attackSpeedMod;
-    }
+    //else if (attType == RANGED_ATTACK) // add ammo DPS to ranged damage
+    //{
+    //    weaponMinDamage += GetAmmoDPS() * attackSpeedMod;
+    //    weaponMaxDamage += GetAmmoDPS() * attackSpeedMod;
+    //}
 
     minDamage = ((weaponMinDamage + baseValue) * basePct + totalValue) * totalPct;
     maxDamage = ((weaponMaxDamage + baseValue) * basePct + totalValue) * totalPct;
@@ -983,6 +969,16 @@ void Player::UpdateRuneRegen(RuneType rune)
     SetFloatValue(PLAYER_RUNE_REGEN_1 + uint8(rune), regen);
 }
 
+void Player::UpdateThorns()
+{
+    UnitMods unitMod = UNIT_MOD_THORNS;
+
+    float value = GetModifierValue(unitMod, BASE_VALUE);
+    value += GetModifierValue(unitMod, TOTAL_VALUE);
+
+    SetForgeStat(FORGE_STAT_THORNS, value);
+}
+
 void Player::_ApplyAllStatBonuses()
 {
     SetCanModifyStats(false);
@@ -1096,16 +1092,8 @@ void Creature::UpdateAttackPowerAndDamage(bool ranged)
     }
 }
 
-void Creature::CalculateMinMaxDamage(WeaponAttackType attType, bool normalized, bool addTotalPct, float& minDamage, float& maxDamage, uint8 damageIndex /*= 0*/)
+void Creature::CalculateMinMaxDamage(WeaponAttackType attType, bool normalized, bool addTotalPct, float& minDamage, float& maxDamage)
 {
-    // creatures only have one damage
-    if (damageIndex != 0)
-    {
-        minDamage = 0.f;
-        maxDamage = 0.f;
-        return;
-    }
-
     UnitMods unitMod;
     float variance = 1.0f;
     switch (attType)
@@ -1159,6 +1147,12 @@ void Creature::CalculateMinMaxDamage(WeaponAttackType attType, bool normalized, 
         maxDamage = 0.0f;
     if (minDamage > maxDamage)
         minDamage = maxDamage;
+}
+
+void Creature::UpdateThorns()
+{
+    float value = GetTotalAuraModValue(UNIT_MOD_THORNS);
+    SetForgeStat(FORGE_STAT_THORNS, value);
 }
 
 /*#######################################
@@ -1380,4 +1374,10 @@ void Guardian::UpdateDamagePhysical(WeaponAttackType attType)
 
     SetStatFloatValue(UNIT_FIELD_MINDAMAGE, mindamage);
     SetStatFloatValue(UNIT_FIELD_MAXDAMAGE, maxdamage);
+}
+
+void Guardian::UpdateThorns()
+{
+    float value = GetTotalAuraModValue(UNIT_MOD_THORNS);
+    SetForgeStat(FORGE_STAT_THORNS, value);
 }

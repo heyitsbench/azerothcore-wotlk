@@ -47,9 +47,9 @@ public:
     {
         boss_hedrumAI(Creature* creature) : BossAI(creature, DATA_HEDRUM) {}
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
-            _JustEngagedWith();
+            _EnterCombat();
             events.ScheduleEvent(SPELL_PARALYZING, 0.2 * (int) TIMER_PARALYZING);
             events.ScheduleEvent(SPELL_BANEFUL, 0.2 * (int) TIMER_BANEFUL);
             events.ScheduleEvent(SPELL_WEB_EXPLOSION, 0.2 * (int) TIMER_WEB_EXPLOSION);

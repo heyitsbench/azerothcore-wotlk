@@ -39,7 +39,6 @@ public:
     virtual void OnGameObjectRemove(GameObject*) { }
 
     virtual void OnUnitDeath(Unit*) { }
-    virtual void OnCreatureEvade(Creature*) { }
 
     //All-purpose data storage 64 bit
     virtual ObjectGuid GetGuidData(uint32 /*DataId*/) const { return ObjectGuid::Empty; }

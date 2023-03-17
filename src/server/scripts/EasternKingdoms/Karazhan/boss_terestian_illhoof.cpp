@@ -91,7 +91,7 @@ public:
             AmplifyTimer = 2000;
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
         }
 
@@ -148,7 +148,7 @@ public:
             SacrificeGUID.Clear();
         }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
         void AttackStart(Unit* /*who*/) override { }
         void MoveInLineOfSight(Unit* /*who*/) override { }
 
@@ -219,7 +219,7 @@ public:
             FireboltTimer = 2000;
         }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
 
         void UpdateAI(uint32 diff) override
         {
@@ -313,7 +313,7 @@ public:
                 DoCast(me, SPELL_SUMMON_IMP, true);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(SAY_AGGRO);
             DoZoneInCombat();

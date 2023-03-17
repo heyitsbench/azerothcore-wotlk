@@ -116,7 +116,7 @@ public:
                 me->Attack(who, true);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             events.ScheduleEvent(EVENT_SPELL_WHIRL, 18000);
             events.ScheduleEvent(EVENT_SPELL_SPOUT, 45000);
@@ -187,7 +187,7 @@ public:
                 target = me->GetVictim();
             else
             {
-                ThreatContainer::StorageType const& t_list = me->GetThreatMgr().GetThreatList();
+                ThreatContainer::StorageType const& t_list = me->GetThreatMgr().getThreatList();
                 for (ThreatContainer::StorageType::const_iterator itr = t_list.begin(); itr != t_list.end(); ++itr)
                     if (Unit* threatTarget = ObjectAccessor::GetUnit(*me, (*itr)->getUnitGuid()))
                         if (me->IsWithinMeleeRange(threatTarget))

@@ -80,7 +80,7 @@ public:
             switch (param)
             {
                 case EVENT_SUMMON_SPIRITS:
-                    _events.ScheduleEvent(EVENT_SUMMON_SPIRITS, 12s, 14s);
+                    _events.ScheduleEvent(EVENT_SUMMON_SPIRITS, urand(12, 14)*IN_MILLISECONDS);
                     break;
             }
         }
@@ -104,13 +104,13 @@ public:
                     dwarfRune->SetGoState(state);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
-            _events.ScheduleEvent(EVENT_SPELL_FIREBLAST, 2s);
+            _events.ScheduleEvent(EVENT_SPELL_FIREBLAST, 2 * IN_MILLISECONDS);
 
             // Spawn 7 Embers initially
             for (int i = 0; i < 4; ++i)
-                _events.ScheduleEvent(EVENT_SUMMON_SPIRITS, 4s);
+                _events.ScheduleEvent(EVENT_SUMMON_SPIRITS, 4 * IN_MILLISECONDS);
 
             // Activate the runes (Start burning)
             TurnRunes(true);
@@ -183,7 +183,7 @@ public:
         {
             // Make the Spirits chase Ambassador Flamelash
             me->SummonCreature(NPC_FIRE_SPIRIT, SummonPositions[getValidRandomPosition()], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 60 * IN_MILLISECONDS);
-            _events.ScheduleEvent(EVENT_SUMMON_SPIRITS, 12s, 14s);
+            _events.ScheduleEvent(EVENT_SUMMON_SPIRITS, urand(12, 14) * IN_MILLISECONDS);
         }
 
         void UpdateAI(uint32 diff) override
@@ -198,7 +198,7 @@ public:
             {
                 case EVENT_SPELL_FIREBLAST:
                     DoCastVictim(SPELL_FIREBLAST);
-                    _events.ScheduleEvent(EVENT_SPELL_FIREBLAST, 7s);
+                    _events.ScheduleEvent(EVENT_SPELL_FIREBLAST, 7 * IN_MILLISECONDS);
                     break;
                 case EVENT_SUMMON_SPIRITS:
                     SummonSpirits();
@@ -219,15 +219,10 @@ public:
     {
         npc_burning_spiritAI(Creature* creature) : ScriptedAI(creature) {}
 
-        void IsSummonedBy(WorldObject* summoner) override
+        void IsSummonedBy(Unit* summoner) override
         {
-            if (summoner->GetTypeId() != TYPEID_UNIT)
-            {
-                return;
-            }
-
             _flamelasherGUID = summoner->GetGUID();
-            me->GetMotionMaster()->MoveFollow(summoner->ToCreature(), 0.f, 0.f);
+            me->GetMotionMaster()->MoveFollow(summoner, 0.f, 0.f);
         }
 
         void EnterEvadeMode(EvadeReason /*why*/) override

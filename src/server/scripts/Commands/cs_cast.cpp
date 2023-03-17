@@ -56,17 +56,6 @@ public:
         return commandTable;
     }
 
-    static bool CheckSpellCastResult(ChatHandler* handler, SpellCastResult result)
-    {
-        if (result != SPELL_CAST_OK)
-        {
-            handler->PSendSysMessage(LANG_CMD_CAST_ERROR_CODE, EnumUtils::ToTitle(SpellCastResult(result)), result);
-            return false;
-        }
-
-        return true;
-    }
-
     static bool CheckSpellExistsAndIsValid(ChatHandler* handler, SpellInfo const* spell)
     {
         if (!spell)
@@ -114,11 +103,7 @@ public:
         if (!triggerFlags)
             return false;
 
-        if (!CheckSpellCastResult(handler, handler->GetSession()->GetPlayer()->CastSpell(target, spell->Id, *triggerFlags)))
-        {
-            handler->SetSentErrorMessage(true);
-            return false;
-        }
+        handler->GetSession()->GetPlayer()->CastSpell(target, spell->Id, *triggerFlags);
 
         return true;
     }
@@ -140,11 +125,7 @@ public:
         if (!triggerFlags)
             return false;
 
-        if (!CheckSpellCastResult(handler, caster->CastSpell(handler->GetSession()->GetPlayer(), spell->Id, *triggerFlags)))
-        {
-            handler->SetSentErrorMessage(true);
-            return false;
-        }
+        caster->CastSpell(handler->GetSession()->GetPlayer(), spell->Id, *triggerFlags);
 
         return true;
     }
@@ -160,12 +141,7 @@ public:
 
         float x, y, z;
         handler->GetSession()->GetPlayer()->GetClosePoint(x, y, z, dist);
-
-        if (!CheckSpellCastResult(handler, handler->GetSession()->GetPlayer()->CastSpell(x, y, z, spell->Id, *triggerFlags)))
-        {
-            handler->SetSentErrorMessage(true);
-            return false;
-        }
+        handler->GetSession()->GetPlayer()->CastSpell(x, y, z, spell->Id, *triggerFlags);
 
         return true;
     }
@@ -187,11 +163,7 @@ public:
         if (!triggerFlags)
             return false;
 
-        if (!CheckSpellCastResult(handler, target->CastSpell(target, spell->Id, *triggerFlags)))
-        {
-            handler->SetSentErrorMessage(true);
-            return false;
-        }
+        target->CastSpell(target, spell->Id, *triggerFlags);
 
         return true;
     }
@@ -220,11 +192,7 @@ public:
         if (!triggerFlags)
             return false;
 
-        if (!CheckSpellCastResult(handler, caster->CastSpell(caster->GetVictim(), spell->Id, *triggerFlags)))
-        {
-            handler->SetSentErrorMessage(true);
-            return false;
-        }
+        caster->CastSpell(caster->GetVictim(), spell->Id, *triggerFlags);
 
         return true;
     }
@@ -246,11 +214,7 @@ public:
         if (!triggerFlags)
             return false;
 
-        if (!CheckSpellCastResult(handler, caster->CastSpell(x, y, z, spell->Id, *triggerFlags)))
-        {
-            handler->SetSentErrorMessage(true);
-            return false;
-        }
+        caster->CastSpell(x, y, z, spell->Id, *triggerFlags);
 
         return true;
     }

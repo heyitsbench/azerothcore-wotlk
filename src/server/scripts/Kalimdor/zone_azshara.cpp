@@ -67,7 +67,7 @@ public:
             spellhit = false;
         }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
 
         void SpellHit(Unit* unit, SpellInfo const* spell) override
         {
@@ -237,7 +237,7 @@ public:
             Reached = false;
         }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
 
         void AttackStart(Unit* who) override
         {
@@ -422,7 +422,7 @@ public:
             WeMustDieTimer = 1000;
         }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
 
         void AttackStart(Unit* /*who*/) override { }
 

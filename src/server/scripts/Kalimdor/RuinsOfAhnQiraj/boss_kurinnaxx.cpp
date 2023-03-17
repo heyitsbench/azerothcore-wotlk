@@ -16,154 +16,121 @@
  */
 
 #include "CreatureTextMgr.h"
-#include "GameObjectAI.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
-#include "TaskScheduler.h"
 #include "ruins_of_ahnqiraj.h"
 
 enum Spells
 {
-    SPELL_MORTAL_WOUND      = 25646,
-    SPELL_SAND_TRAP         = 25648,
+    SPELL_MORTALWOUND       = 25646,
+    SPELL_SANDTRAP          = 25648,
     SPELL_ENRAGE            = 26527,
     SPELL_SUMMON_PLAYER     = 26446,
-    SPELL_WIDE_SLASH        = 25814,
-    SPELL_THRASH            = 3391
+    SPELL_TRASH             =  3391, // Should perhaps be triggered by an aura? Couldn't find any though
+    SPELL_WIDE_SLASH        = 25814
 };
 
 enum Events
 {
     EVENT_MORTAL_WOUND      = 1,
-    EVENT_SAND_TRAP         = 2,
-    EVENT_WIDE_SLASH        = 3,
-    EVENT_THRASH            = 4
+    EVENT_SANDTRAP          = 2,
+    EVENT_TRASH             = 3,
+    EVENT_WIDE_SLASH        = 4
 };
 
 enum Texts
 {
-    SAY_KURINNAXX_DEATH     = 5 // Yell by 'Ossirian the Unscarred'
+    SAY_KURINAXX_DEATH      = 5, // Yelled by Ossirian the Unscarred
 };
 
-struct boss_kurinnaxx : public BossAI
+class boss_kurinnaxx : public CreatureScript
 {
-    boss_kurinnaxx(Creature* creature) : BossAI(creature, DATA_KURINNAXX) {}
+public:
+    boss_kurinnaxx() : CreatureScript("boss_kurinnaxx") { }
 
-    void InitializeAI() override
+    struct boss_kurinnaxxAI : public BossAI
     {
-        me->m_CombatDistance = 50.0f;
-        Reset();
-    }
-
-    void Reset() override
-    {
-        BossAI::Reset();
-        _enraged = false;
-        events.ScheduleEvent(EVENT_MORTAL_WOUND, 8s, 10s);
-        events.ScheduleEvent(EVENT_SAND_TRAP, 5s, 15s);
-        events.ScheduleEvent(EVENT_WIDE_SLASH, 10s, 15s);
-        events.ScheduleEvent(EVENT_THRASH, 16s);
-    }
-
-    void DamageTaken(Unit*, uint32& /*damage*/, DamageEffectType, SpellSchoolMask) override
-    {
-        if (!_enraged && HealthBelowPct(30))
+        boss_kurinnaxxAI(Creature* creature) : BossAI(creature, DATA_KURINNAXX)
         {
-            DoCastSelf(SPELL_ENRAGE);
-            _enraged = true;
         }
-    }
 
-    void JustDied(Unit* killer) override
-    {
-        if (killer)
+        void Reset() override
         {
-            killer->GetMap()->LoadGrid(-9502.80f, 2042.65f); // Ossirian grid
+            _Reset();
+            _enraged = false;
+            events.ScheduleEvent(EVENT_MORTAL_WOUND, 8000);
+            events.ScheduleEvent(EVENT_SANDTRAP, urand(5000, 15000));
+            events.ScheduleEvent(EVENT_TRASH, 1000);
+            events.ScheduleEvent(EVENT_WIDE_SLASH, 11000);
+        }
 
-            if (Player* player = killer->GetCharmerOrOwnerPlayerOrPlayerItself())
+        void DamageTaken(Unit*, uint32& /*damage*/, DamageEffectType, SpellSchoolMask) override
+        {
+            if (!_enraged && HealthBelowPct(30))
             {
-                player->SummonCreature(NPC_ANDOROV, -8538.177f, 1486.0956f, 32.39054f, 3.7638654f, TEMPSUMMON_CORPSE_DESPAWN, 600000000);
+                DoCast(me, SPELL_ENRAGE);
+                _enraged = true;
             }
         }
 
-        if (Creature* ossirian = instance->GetCreature(DATA_OSSIRIAN))
+        void JustDied(Unit* /*killer*/) override
         {
-            ossirian->setActive(true);
-            if (ossirian->GetAI())
-                ossirian->AI()->Talk(SAY_KURINNAXX_DEATH);
+            _JustDied();
+            if (Creature* Ossirian = me->GetMap()->GetCreature(instance->GetGuidData(DATA_OSSIRIAN)))
+                sCreatureTextMgr->SendChat(Ossirian, SAY_KURINAXX_DEATH, nullptr, CHAT_MSG_ADDON, LANG_ADDON, TEXT_RANGE_ZONE);
         }
-        BossAI::JustDied(killer);
-    }
 
-    void UpdateAI(uint32 diff) override
-    {
-        if (!UpdateVictim())
-            return;
-
-        events.Update(diff);
-
-        if (me->HasUnitState(UNIT_STATE_CASTING))
-            return;
-
-        while (uint32 eventId = events.ExecuteEvent())
+        void UpdateAI(uint32 diff) override
         {
-            switch (eventId)
+            if (!UpdateVictim())
+                return;
+
+            events.Update(diff);
+
+            if (me->HasUnitState(UNIT_STATE_CASTING))
+                return;
+
+            while (uint32 eventId = events.ExecuteEvent())
             {
-                case EVENT_MORTAL_WOUND:
-                    DoCastVictim(SPELL_MORTAL_WOUND);
-                    events.ScheduleEvent(EVENT_MORTAL_WOUND, 8s, 10s);
-                    break;
-                case EVENT_SAND_TRAP:
-                    if (Unit* target = SelectTarget(SelectTargetMethod::Random, 1, 100.f, true))
-                    {
-                        target->CastSpell(target, SPELL_SAND_TRAP, true, nullptr, nullptr, me->GetGUID());
-                    }
-                    events.ScheduleEvent(EVENT_SAND_TRAP, 5s, 15s);
-                    break;
-                case EVENT_WIDE_SLASH:
-                    DoCastSelf(SPELL_WIDE_SLASH);
-                    events.ScheduleEvent(EVENT_WIDE_SLASH, 12s, 15s);
-                    break;
-                case EVENT_THRASH:
-                    DoCastSelf(SPELL_THRASH);
-                    events.ScheduleEvent(EVENT_THRASH, 16s);
-                    break;
-                default:
-                    break;
+                switch (eventId)
+                {
+                    case EVENT_MORTAL_WOUND:
+                        DoCastVictim(SPELL_MORTALWOUND);
+                        events.ScheduleEvent(EVENT_MORTAL_WOUND, 8000);
+                        break;
+                    case EVENT_SANDTRAP:
+                        if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0, 100, true))
+                            target->CastSpell(target, SPELL_SANDTRAP, true);
+                        else if (Unit* victim = me->GetVictim())
+                            victim->CastSpell(victim, SPELL_SANDTRAP, true);
+                        events.ScheduleEvent(EVENT_SANDTRAP, urand(5000, 15000));
+                        break;
+                    case EVENT_WIDE_SLASH:
+                        DoCast(me, SPELL_WIDE_SLASH);
+                        events.ScheduleEvent(EVENT_WIDE_SLASH, 11000);
+                        break;
+                    case EVENT_TRASH:
+                        DoCast(me, SPELL_TRASH);
+                        events.ScheduleEvent(EVENT_WIDE_SLASH, 16000);
+                        break;
+                    default:
+                        break;
+                }
             }
+
+            DoMeleeAttackIfReady();
         }
+    private:
+        bool _enraged;
+    };
 
-        DoMeleeAttackIfReady();
-    }
-private:
-    bool _enraged;
-};
-
-struct go_sand_trap : public GameObjectAI
-{
-    go_sand_trap(GameObject* go) : GameObjectAI(go) { }
-
-    void Reset() override
+    CreatureAI* GetAI(Creature* creature) const override
     {
-        _scheduler.Schedule(5s, [this](TaskContext /*context*/)
-        {
-            if (InstanceScript* instance = me->GetInstanceScript())
-                if (Creature* kurinnaxx = instance->GetCreature(DATA_KURINNAXX))
-                    me->Use(kurinnaxx);
-        });
+        return GetRuinsOfAhnQirajAI<boss_kurinnaxxAI>(creature);
     }
-
-    void UpdateAI(uint32 const diff) override
-    {
-        _scheduler.Update(diff);
-    }
-
-protected:
-    TaskScheduler _scheduler;
 };
 
 void AddSC_boss_kurinnaxx()
 {
-    RegisterRuinsOfAhnQirajCreatureAI(boss_kurinnaxx);
-    RegisterGameObjectAI(go_sand_trap);
+    new boss_kurinnaxx();
 }

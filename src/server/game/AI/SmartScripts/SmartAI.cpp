@@ -297,12 +297,12 @@ void SmartAI::EndPath(bool fail)
         mEscortNPCFlags = 0;
     }
 
-    ObjectVector const* targets = GetScript()->GetStoredTargetVector(SMART_ESCORT_TARGETS, *me);
+    ObjectList* targets = GetScript()->GetTargetList(SMART_ESCORT_TARGETS);
     if (targets && mEscortQuestID)
     {
         if (targets->size() == 1 && GetScript()->IsPlayer((*targets->begin())))
         {
-            Player* player = targets->front()->ToPlayer();
+            Player* player = (*targets->begin())->ToPlayer();
             if (Group* group = player->GetGroup())
             {
                 for (GroupReference* groupRef = group->GetFirstMember(); groupRef != nullptr; groupRef = groupRef->next())
@@ -327,11 +327,11 @@ void SmartAI::EndPath(bool fail)
         }
         else
         {
-            for (WorldObject* target : *targets)
+            for (ObjectList::iterator iter = targets->begin(); iter != targets->end(); ++iter)
             {
-                if (GetScript()->IsPlayer(target))
+                if (GetScript()->IsPlayer((*iter)))
                 {
-                    Player* player = target->ToPlayer();
+                    Player* player = (*iter)->ToPlayer();
                     if (!fail && player->IsAtGroupRewardDistance(me) && !player->HasCorpse())
                         player->AreaExploredOrEventHappens(mEscortQuestID);
                     else if (fail && player->GetQuestStatus(mEscortQuestID) == QUEST_STATUS_INCOMPLETE)
@@ -524,17 +524,7 @@ void SmartAI::UpdateAI(uint32 diff)
     }
 
     if (!IsAIControlled())
-    {
-        if (CharmInfo* charmInfo = me->GetCharmInfo())
-        {
-            if (charmInfo->IsCommandAttack() && mCanAutoAttack)
-            {
-                DoMeleeAttackIfReady();
-            }
-        }
-
         return;
-    }
 
     if (!UpdateVictim())
         return;
@@ -545,7 +535,8 @@ void SmartAI::UpdateAI(uint32 diff)
 
 bool SmartAI::IsEscortInvokerInRange()
 {
-    if (ObjectVector const* targets = GetScript()->GetStoredTargetVector(SMART_ESCORT_TARGETS, *me))
+    ObjectList* targets = GetScript()->GetTargetList(SMART_ESCORT_TARGETS);
+    if (targets)
     {
         float checkDist = me->GetInstanceScript() ? SMART_ESCORT_MAX_PLAYER_DIST * 2 : SMART_ESCORT_MAX_PLAYER_DIST;
         if (targets->size() == 1 && GetScript()->IsPlayer((*targets->begin())))
@@ -567,11 +558,11 @@ bool SmartAI::IsEscortInvokerInRange()
         }
         else
         {
-            for (WorldObject* target : *targets)
+            for (ObjectList::iterator iter = targets->begin(); iter != targets->end(); ++iter)
             {
-                if (GetScript()->IsPlayer(target))
+                if (GetScript()->IsPlayer((*iter)))
                 {
-                    if (me->GetDistance(target->ToPlayer()) <= checkDist)
+                    if (me->GetDistance((*iter)->ToPlayer()) <= checkDist)
                         return true;
                 }
             }
@@ -704,7 +695,7 @@ void SmartAI::MoveInLineOfSight(Unit* who)
     if (me->HasReactState(REACT_PASSIVE) || AssistPlayerInCombatAgainst(who))
         return;
 
-    if (me->HasReactState(REACT_AGGRESSIVE) && me->CanStartAttack(who))
+    if (me->CanStartAttack(who))
     {
         if (me->HasUnitState(UNIT_STATE_DISTRACTED))
         {
@@ -772,6 +763,13 @@ void SmartAI::JustRespawned()
     mFollowArrivedAlive = true;
 }
 
+int SmartAI::Permissible(Creature const* creature)
+{
+    if (creature->GetAIName() == "SmartAI")
+        return PERMIT_BASE_SPECIAL;
+    return PERMIT_BASE_NO;
+}
+
 void SmartAI::JustReachedHome()
 {
     GetScript()->OnReset();
@@ -787,7 +785,7 @@ void SmartAI::JustReachedHome()
     mJustReset = false;
 }
 
-void SmartAI::JustEngagedWith(Unit* enemy)
+void SmartAI::EnterCombat(Unit* enemy)
 {
     // Xinef: Interrupt channeled spells
     if (IsAIControlled())
@@ -810,21 +808,6 @@ void SmartAI::KilledUnit(Unit* victim)
 void SmartAI::JustSummoned(Creature* creature)
 {
     GetScript()->ProcessEventsFor(SMART_EVENT_SUMMONED_UNIT, creature);
-    GetScript()->AddCreatureSummon(creature->GetGUID());
-
-    if (me->IsEngaged() && !creature->IsInEvadeMode())
-    {
-        if (Unit* victim = me->GetVictim())
-        {
-            creature->SetInCombatWith(victim);
-            victim->SetInCombatWith(creature);
-
-            if (creature->CanHaveThreatList())
-            {
-                creature->AddThreat(victim, 0.0f);
-            }
-        }
-    }
 }
 
 void SmartAI::SummonedCreatureDies(Creature* summon, Unit* /*killer*/)
@@ -892,9 +875,9 @@ void SmartAI::ReceiveEmote(Player* player, uint32 textEmote)
     GetScript()->ProcessEventsFor(SMART_EVENT_RECEIVE_EMOTE, player, textEmote);
 }
 
-void SmartAI::IsSummonedBy(WorldObject* summoner)
+void SmartAI::IsSummonedBy(Unit* summoner)
 {
-    GetScript()->ProcessEventsFor(SMART_EVENT_JUST_SUMMONED, summoner->ToUnit(), 0, 0, false, nullptr, summoner->ToGameObject());
+    GetScript()->ProcessEventsFor(SMART_EVENT_JUST_SUMMONED, summoner);
 }
 
 void SmartAI::DamageDealt(Unit* doneTo, uint32& damage, DamageEffectType /*damagetype*/)
@@ -905,7 +888,6 @@ void SmartAI::DamageDealt(Unit* doneTo, uint32& damage, DamageEffectType /*damag
 void SmartAI::SummonedCreatureDespawn(Creature* unit)
 {
     GetScript()->ProcessEventsFor(SMART_EVENT_SUMMON_DESPAWNED, unit);
-    GetScript()->RemoveCreatureSummon(unit->GetGUID());
 }
 
 void SmartAI::CorpseRemoved(uint32& respawnDelay)
@@ -1151,6 +1133,13 @@ void SmartGameObjectAI::SummonedCreatureDies(Creature* summon, Unit* /*killer*/)
     GetScript()->ProcessEventsFor(SMART_EVENT_SUMMONED_UNIT_DIES, summon);
 }
 
+int SmartGameObjectAI::Permissible(GameObject const* g)
+{
+    if (g->GetAIName() == "SmartGameObjectAI")
+        return PERMIT_BASE_SPECIAL;
+    return PERMIT_BASE_NO;
+}
+
 void SmartGameObjectAI::UpdateAI(uint32 diff)
 {
     GetScript()->OnUpdate(diff);
@@ -1245,16 +1234,6 @@ void SmartGameObjectAI::EventInform(uint32 eventId)
 void SmartGameObjectAI::SpellHit(Unit* unit, SpellInfo const* spellInfo)
 {
     GetScript()->ProcessEventsFor(SMART_EVENT_SPELLHIT, unit, 0, 0, false, spellInfo);
-}
-
-void SmartGameObjectAI::JustSummoned(Creature* creature)
-{
-    GetScript()->ProcessEventsFor(SMART_EVENT_SUMMONED_UNIT, creature);
-}
-
-void SmartGameObjectAI::SummonedCreatureDespawn(Creature* unit)
-{
-    GetScript()->ProcessEventsFor(SMART_EVENT_SUMMON_DESPAWNED, unit, unit->GetEntry());
 }
 
 class SmartTrigger : public AreaTriggerScript

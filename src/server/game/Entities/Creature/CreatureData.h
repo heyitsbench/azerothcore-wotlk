@@ -42,7 +42,7 @@ constexpr Milliseconds PET_FOCUS_REGEN_INTERVAL = 4s;
 
 enum class VisibilityDistanceType : uint8;
 
-/// @todo: Implement missing flags from TC in places that custom flags from xinef&pussywizzard use flag values.
+// TODO: Implement missing flags from TC in places that custom flags from xinef&pussywizzard use flag values.
 // EnumUtils: DESCRIBE THIS
 enum CreatureFlagsExtra : uint32
 {
@@ -57,7 +57,7 @@ enum CreatureFlagsExtra : uint32
     CREATURE_FLAG_EXTRA_NO_TAUNT                        = 0x00000100,   // creature is immune to taunt auras and 'attack me' effects
     CREATURE_FLAG_EXTRA_NO_MOVE_FLAGS_UPDATE            = 0x00000200,   // creature won't update movement flags
     CREATURE_FLAG_EXTRA_GHOST_VISIBILITY                = 0x00000400,   // creature will only be visible to dead players
-    CREATURE_FLAG_EXTRA_UNUSED_12                       = 0x00000800,   /// @todo: Implement CREATURE_FLAG_EXTRA_USE_OFFHAND_ATTACK (creature will use offhand attacks)
+    CREATURE_FLAG_EXTRA_UNUSED_12                       = 0x00000800,   // TODO: Implement CREATURE_FLAG_EXTRA_USE_OFFHAND_ATTACK (creature will use offhand attacks)
     CREATURE_FLAG_EXTRA_NO_SELL_VENDOR                  = 0x00001000,   // players can't sell items to this vendor
     CREATURE_FLAG_EXTRA_IGNORE_COMBAT                   = 0x00002000,
     CREATURE_FLAG_EXTRA_WORLDEVENT                      = 0x00004000,   // custom flag for world event creatures (left room for merging)
@@ -71,7 +71,7 @@ enum CreatureFlagsExtra : uint32
     CREATURE_FLAG_EXTRA_AVOID_AOE                       = 0x00400000,   // pussywizard: ignored by aoe attacks (for icc blood prince council npc - Dark Nucleus)
     CREATURE_FLAG_EXTRA_NO_DODGE                        = 0x00800000,   // xinef: target cannot dodge
     CREATURE_FLAG_EXTRA_MODULE                          = 0x01000000,
-    CREATURE_FLAG_EXTRA_IGNORE_ASSISTANCE_CALL          = 0x02000000,   // Creatures are not aggroed by other mobs assistance functions
+    CREATURE_FLAG_EXTRA_UNUSED_26                       = 0x02000000,
     CREATURE_FLAG_EXTRA_UNUSED_27                       = 0x04000000,
     CREATURE_FLAG_EXTRA_UNUSED_28                       = 0x08000000,
     CREATURE_FLAG_EXTRA_DUNGEON_BOSS                    = 0x10000000,   // creature is a dungeon boss (SET DYNAMICALLY, DO NOT ADD IN DB)
@@ -80,7 +80,8 @@ enum CreatureFlagsExtra : uint32
     CREATURE_FLAG_EXTRA_HARD_RESET                      = 0x80000000,
 
     // Masks
-    CREATURE_FLAG_EXTRA_UNUSED                          = (CREATURE_FLAG_EXTRA_UNUSED_12 | CREATURE_FLAG_EXTRA_UNUSED_27 | CREATURE_FLAG_EXTRA_UNUSED_28), // SKIP
+    CREATURE_FLAG_EXTRA_UNUSED                          = (CREATURE_FLAG_EXTRA_UNUSED_12 | CREATURE_FLAG_EXTRA_UNUSED_26 |
+                                                           CREATURE_FLAG_EXTRA_UNUSED_27 | CREATURE_FLAG_EXTRA_UNUSED_28), // SKIP
 
     CREATURE_FLAG_EXTRA_DB_ALLOWED                      = (0xFFFFFFFF & ~(CREATURE_FLAG_EXTRA_UNUSED | CREATURE_FLAG_EXTRA_DUNGEON_BOSS)) // SKIP
 };
@@ -208,10 +209,6 @@ struct CreatureTemplate
     uint32  unit_flags2;                                    // enum UnitFlags2 mask values
     uint32  dynamicflags;
     uint32  family;                                         // enum CreatureFamily values (optional)
-    uint32  trainer_type;
-    uint32  trainer_spell;
-    uint32  trainer_class;
-    uint32  trainer_race;
     uint32  type;                                           // enum CreatureType values
     uint32  type_flags;                                     // enum CreatureTypeFlags mask values
     uint32  lootid;
@@ -491,39 +488,6 @@ struct VendorItemCount
 };
 
 typedef std::list<VendorItemCount> VendorItemCounts;
-
-struct TrainerSpell
-{
-    TrainerSpell()
-    {
-        for (unsigned int & i : learnedSpell)
-            i = 0;
-    }
-
-    uint32 spell{0};
-    uint32 spellCost{0};
-    uint32 reqSkill{0};
-    uint32 reqSkillValue{0};
-    uint32 reqLevel{0};
-    uint32 learnedSpell[3];
-    uint32 reqSpell{0};
-
-    // helpers
-    [[nodiscard]] bool IsCastable() const { return learnedSpell[0] != spell; }
-};
-
-typedef std::unordered_map<uint32 /*spellid*/, TrainerSpell> TrainerSpellMap;
-
-struct TrainerSpellData
-{
-    TrainerSpellData()  = default;
-    ~TrainerSpellData() { spellList.clear(); }
-
-    TrainerSpellMap spellList;
-    uint32 trainerType{0};                                     // trainer type based at trainer spells, can be different from creature_template value.
-    // req. for correct show non-prof. trainers like weaponmaster, allowed values 0 and 2.
-    [[nodiscard]] TrainerSpell const* Find(uint32 spell_id) const;
-};
 
 struct CreatureSpellCooldown
 {

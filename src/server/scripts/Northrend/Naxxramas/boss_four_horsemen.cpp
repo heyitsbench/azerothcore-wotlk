@@ -193,16 +193,16 @@ public:
             currentWaypoint = 0;
             me->SetReactState(REACT_AGGRESSIVE);
             events.Reset();
-            events.RescheduleEvent(EVENT_MARK_CAST, 24s);
-            events.RescheduleEvent(EVENT_BERSERK, 10min);
+            events.RescheduleEvent(EVENT_MARK_CAST, 24000);
+            events.RescheduleEvent(EVENT_BERSERK, 600000);
             if ((me->GetEntry() != NPC_LADY_BLAUMEUX && me->GetEntry() != NPC_SIR_ZELIEK))
             {
-                events.RescheduleEvent(EVENT_PRIMARY_SPELL, 10s, 15s);
+                events.RescheduleEvent(EVENT_PRIMARY_SPELL, 10000 + rand() % 5000);
             }
             else
             {
-                events.RescheduleEvent(EVENT_PUNISH, 5s);
-                events.RescheduleEvent(EVENT_SECONDARY_SPELL, 15s);
+                events.RescheduleEvent(EVENT_PUNISH, 5000);
+                events.RescheduleEvent(EVENT_SECONDARY_SPELL, 15000);
             }
             if (pInstance)
             {
@@ -295,9 +295,9 @@ public:
             Talk(SAY_DEATH);
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
             if (movementPhase == MOVE_PHASE_NONE)
             {
                 Talk(SAY_AGGRO);
@@ -337,7 +337,7 @@ public:
             {
                 case EVENT_MARK_CAST:
                     me->CastSpell(me, TABLE_SPELL_MARK[horsemanId], false);
-                    events.Repeat((me->GetEntry() == NPC_LADY_BLAUMEUX || me->GetEntry() == NPC_SIR_ZELIEK) ? 15s : 12s);
+                    events.RepeatEvent((me->GetEntry() == NPC_LADY_BLAUMEUX || me->GetEntry() == NPC_SIR_ZELIEK) ? 15000 : 12000);
                     return;
                 case EVENT_BERSERK:
                     Talk(SAY_SPECIAL);
@@ -346,7 +346,7 @@ public:
                 case EVENT_PRIMARY_SPELL:
                     Talk(SAY_TAUNT);
                     me->CastSpell(me->GetVictim(), RAID_MODE(TABLE_SPELL_PRIMARY_10[horsemanId], TABLE_SPELL_PRIMARY_25[horsemanId]), false);
-                    events.Repeat(15s);
+                    events.RepeatEvent(15000);
                     return;
                 case EVENT_PUNISH:
                     if (!SelectTarget(SelectTargetMethod::MaxDistance, 0, 45.0f, true))
@@ -354,11 +354,11 @@ public:
                         me->CastSpell(me, TABLE_SPELL_PUNISH[horsemanId], false);
                         Talk(EMOTE_RAGECAST);
                     }
-                    events.Repeat(2s);
+                    events.RepeatEvent(2010);
                     return;
                 case EVENT_SECONDARY_SPELL:
                     me->CastSpell(me->GetVictim(), RAID_MODE(TABLE_SPELL_SECONDARY_10[horsemanId], TABLE_SPELL_SECONDARY_25[horsemanId]), false);
-                    events.Repeat(15s);
+                    events.RepeatEvent(15000);
                     return;
             }
 

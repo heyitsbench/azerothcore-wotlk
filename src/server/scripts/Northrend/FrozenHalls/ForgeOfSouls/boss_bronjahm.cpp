@@ -89,16 +89,16 @@ public:
                 pInstance->SetData(DATA_BRONJAHM, NOT_STARTED);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(SAY_AGGRO);
             me->RemoveAurasDueToSpell(SPELL_SOULSTORM_CHANNEL_OOC);
 
             DoZoneInCombat();
             events.Reset();
-            events.RescheduleEvent(EVENT_SPELL_SHADOW_BOLT, 2s);
-            events.RescheduleEvent(EVENT_SPELL_MAGICS_BANE, 5s, 10s);
-            events.RescheduleEvent(EVENT_SPELL_CORRUPT_SOUL, 14s, 20s);
+            events.RescheduleEvent(EVENT_SPELL_SHADOW_BOLT, 2000);
+            events.RescheduleEvent(EVENT_SPELL_MAGICS_BANE, urand(5000, 10000));
+            events.RescheduleEvent(EVENT_SPELL_CORRUPT_SOUL, urand(14000, 20000));
 
             if (pInstance)
                 pInstance->SetData(DATA_BRONJAHM, IN_PROGRESS);
@@ -114,7 +114,7 @@ public:
                 me->CastSpell(me, SPELL_TELEPORT, false);
                 events.CancelEvent(EVENT_SPELL_CORRUPT_SOUL);
                 events.DelayEvents(6000);
-                events.RescheduleEvent(EVENT_SPELL_FEAR, 8s, 14s);
+                events.RescheduleEvent(EVENT_SPELL_FEAR, urand(8000, 14000));
             }
         }
 
@@ -123,7 +123,7 @@ public:
             if (spell->Id == SPELL_TELEPORT)
             {
                 me->CastSpell(me, SPELL_TELEPORT_VISUAL, true);
-                events.RescheduleEvent(EVENT_START_SOULSTORM, 1ms);
+                events.RescheduleEvent(EVENT_START_SOULSTORM, 1);
             }
         }
 
@@ -148,16 +148,16 @@ public:
                 case EVENT_SPELL_SHADOW_BOLT:
                     if (!me->IsWithinMeleeRange(me->GetVictim()))
                         me->CastSpell(me->GetVictim(), SPELL_SHADOW_BOLT, false);
-                    events.Repeat(2s);
+                    events.RepeatEvent(2000);
                     break;
                 case EVENT_SPELL_FEAR:
                     if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0, 10.0f, true))
                         me->CastCustomSpell(SPELL_FEAR, SPELLVALUE_MAX_TARGETS, 1, target, false);
-                    events.Repeat(8s, 12s);
+                    events.RepeatEvent(urand(8000, 12000));
                     break;
                 case EVENT_SPELL_MAGICS_BANE:
                     me->CastSpell(me->GetVictim(), SPELL_MAGICS_BANE, false);
-                    events.Repeat(10s, 15s);
+                    events.RepeatEvent(urand(10000, 15000));
                     break;
                 case EVENT_SPELL_CORRUPT_SOUL:
                     if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0, 100.0f, true))
@@ -165,7 +165,7 @@ public:
                         Talk(SAY_CORRUPT_SOUL);
                         me->CastSpell(target, SPELL_CORRUPT_SOUL, false);
                     }
-                    events.Repeat(20s, 25s);
+                    events.RepeatEvent(urand(20000, 25000));
                     break;
                 case EVENT_START_SOULSTORM:
                     Talk(SAY_SOUL_STORM);

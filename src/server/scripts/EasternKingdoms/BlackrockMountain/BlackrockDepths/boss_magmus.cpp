@@ -25,6 +25,14 @@ enum Spells
     SPELL_WARSTOMP                                         = 24375
 };
 
+enum SpellTimers
+{
+    SPELL_FIERYBURST_MIN = 4000,
+    SPELL_FIERYBURST_MAX = 8000,
+    SPELL_WARSTOMP_MIN   = 8000,
+    SPELL_WARSTOMP_MAX   = 12000
+};
+
 class boss_magmus : public CreatureScript
 {
 public:
@@ -45,12 +53,13 @@ public:
             instance->SetData(TYPE_IRON_HALL, NOT_STARTED);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             instance->SetData(TYPE_IRON_HALL, IN_PROGRESS);
-            _JustEngagedWith();
-            events.ScheduleEvent(SPELL_WARSTOMP, 8s, 12s);
-            events.ScheduleEvent(SPELL_FIERYBURST, 4s, 8s);
+            _EnterCombat();
+            events.ScheduleEvent(SPELL_FIERYBURST, urand(SPELL_FIERYBURST_MIN, SPELL_FIERYBURST_MAX));
+            events.ScheduleEvent(SPELL_WARSTOMP, urand(SPELL_WARSTOMP_MIN, SPELL_WARSTOMP_MAX));
+
         }
 
         void UpdateAI(uint32 diff) override
@@ -68,11 +77,11 @@ public:
                 {
                 case SPELL_WARSTOMP:
                     DoCastVictim(SPELL_WARSTOMP);
-                    events.ScheduleEvent(SPELL_WARSTOMP, 8s, 12s);
+                    events.ScheduleEvent(SPELL_WARSTOMP, urand(SPELL_WARSTOMP_MIN, SPELL_WARSTOMP_MAX));
                     break;
                 case SPELL_FIERYBURST:
                     DoCastVictim(SPELL_FIERYBURST);
-                    events.ScheduleEvent(SPELL_FIERYBURST, 4s, 8s);
+                    events.ScheduleEvent(SPELL_FIERYBURST, urand(SPELL_FIERYBURST_MIN, SPELL_FIERYBURST_MAX));
                     break;
                 default:
                     break;

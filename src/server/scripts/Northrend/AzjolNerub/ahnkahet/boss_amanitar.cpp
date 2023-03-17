@@ -114,13 +114,13 @@ struct boss_amanitar : public BossAI
         mushroomsSummoned = false;
     }
 
-    void JustEngagedWith(Unit* /*attacker*/) override
+    void EnterCombat(Unit* /*attacker*/) override
     {
-        events.ScheduleEvent(EVENT_ROOTS, 5s, 9s);
-        events.ScheduleEvent(EVENT_BASH, 10s, 14s);
-        events.ScheduleEvent(EVENT_BOLT, 15s, 20s);
-        events.ScheduleEvent(EVENT_MINI, 1s);
-        events.ScheduleEvent(EVENT_RESPAWN, 40s, 60s);
+        events.ScheduleEvent(EVENT_ROOTS, urand(5000, 9000));
+        events.ScheduleEvent(EVENT_BASH, urand(10000, 14000));
+        events.ScheduleEvent(EVENT_BOLT, urand(15000, 20000));
+        events.ScheduleEvent(EVENT_MINI, 1000);
+        events.ScheduleEvent(EVENT_RESPAWN, 40000, 60000);
     }
 
     void JustDied(Unit* /*killer*/) override
@@ -158,7 +158,7 @@ struct boss_amanitar : public BossAI
                     _mushroomsDeque.pop_front();
                 }
 
-                events.Repeat(40s, 60s);
+                events.RepeatEvent(urand(40000, 60000));
                 break;
             }
             case EVENT_ROOTS:
@@ -168,13 +168,13 @@ struct boss_amanitar : public BossAI
                     DoCast(pTarget, SPELL_ENTANGLING_ROOTS, false);
                 }
 
-                events.Repeat(10s, 15s);
+                events.RepeatEvent(urand(10000, 15000));
                 break;
             }
             case EVENT_BASH:
             {
                 DoCastVictim(SPELL_BASH, false);
-                events.Repeat(15s, 20s);
+                events.RepeatEvent(urand(15000, 20000));
                 break;
             }
             case EVENT_BOLT:
@@ -184,13 +184,13 @@ struct boss_amanitar : public BossAI
                     DoCast(pTarget, SPELL_VENOM_BOLT_VOLLEY, false);
                 }
 
-                events.Repeat(15s, 20s);
+                events.RepeatEvent(urand(15000, 20000));
                 break;
             }
             case EVENT_REMOVE_MUSHROOM_POWER:
             {
                 DoCastAOE(SPELL_REMOVE_MUSHROOM_POWER, true);
-                events.RescheduleEvent(EVENT_MINI, 1s);
+                events.RescheduleEvent(EVENT_MINI, 1000);
                 break;
             }
             case EVENT_MINI:
@@ -204,11 +204,11 @@ struct boss_amanitar : public BossAI
                     }
                 }
 
-                if (SelectTarget(SelectTargetMethod::Random, 0, 0.0f, true, true, -SPELL_MINI))
+                if (SelectTarget(SelectTargetMethod::Random, 0, 0.0f, true, -SPELL_MINI))
                 {
                     DoCastSelf(SPELL_REMOVE_MUSHROOM_POWER, true);
                     DoCastAOE(SPELL_MINI);
-                    events.RescheduleEvent(EVENT_REMOVE_MUSHROOM_POWER, 29s);
+                    events.RescheduleEvent(EVENT_REMOVE_MUSHROOM_POWER, 29000);
                 }
                 else
                 {
@@ -243,7 +243,7 @@ struct npc_amanitar_mushrooms : public ScriptedAI
     }
 
     // Disabled events
-    void JustEngagedWith(Unit* /*who*/) override {}
+    void EnterCombat(Unit* /*who*/) override {}
     void AttackStart(Unit* /*victim*/) override {}
     void EnterEvadeMode(EvadeReason /*why*/) override {}
 
@@ -261,11 +261,11 @@ struct npc_amanitar_mushrooms : public ScriptedAI
             DoCastSelf(SPELL_HEALTHY_MUSHROOM_VISUAL_AURA, true);
         }
 
-        events.ScheduleEvent(EVENT_GROW, 800ms);
+        events.ScheduleEvent(EVENT_GROW, 800);
 
         if (me->GetEntry() == NPC_POISONOUS_MUSHROOM)
         {
-            events.ScheduleEvent(EVENT_CHECK_PLAYER, 250ms);
+            events.ScheduleEvent(EVENT_CHECK_PLAYER, 250);
         }
     }
 
@@ -300,11 +300,11 @@ struct npc_amanitar_mushrooms : public ScriptedAI
                         DoCastSelf(SPELL_POISONOUS_MUSHROOM_VISUAL_AREA);
                         DoCastSelf(SPELL_POISONOUS_MUSHROOM_POISON_CLOUD);
                         DoCastSelf(SPELL_SHRINK);
-                        events.ScheduleEvent(EVENT_KILLSELF, 4s);
+                        events.ScheduleEvent(EVENT_KILLSELF, 4000);
                     }
                     else
                     {
-                        events.Repeat(250ms);
+                        events.RepeatEvent(250);
                     }
 
                     break;

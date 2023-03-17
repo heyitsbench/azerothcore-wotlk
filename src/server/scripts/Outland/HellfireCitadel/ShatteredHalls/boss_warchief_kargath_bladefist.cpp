@@ -83,10 +83,10 @@ public:
                     executioner->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
         }
 
-        void JustEngagedWith(Unit*  /*who*/) override
+        void EnterCombat(Unit*  /*who*/) override
         {
             Talk(SAY_AGGRO);
-            _JustEngagedWith();
+            _EnterCombat();
 
             events.ScheduleEvent(EVENT_CHECK_ROOM, 5000);
             events.ScheduleEvent(EVENT_SUMMON_ADDS, 30000);

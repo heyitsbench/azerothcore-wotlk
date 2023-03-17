@@ -182,12 +182,15 @@ public:
     Channel(std::string const& name, uint32 channel_id, uint32 channelDBId, TeamId teamId = TEAM_NEUTRAL, bool announce = true, bool ownership = true);
     [[nodiscard]] std::string const& GetName() const { return _name; }
     [[nodiscard]] uint32 GetChannelId() const { return _channelId; }
-    [[nodiscard]] uint32 GetChannelDBId() const { return _channelDBId; }
     [[nodiscard]] bool IsConstant() const { return _channelId != 0; }
     [[nodiscard]] bool IsAnnounce() const { return _announce; }
     [[nodiscard]] bool IsLFG() const { return GetFlags() & CHANNEL_FLAG_LFG; }
     [[nodiscard]] std::string const& GetPassword() const { return _password; }
-    void SetPassword(std::string const& npassword) { _password = npassword; }
+    void SetPassword(std::string const& npassword)
+    {
+        if (_name != "World")
+            _password = npassword;
+    }
     [[nodiscard]] uint32 GetNumPlayers() const { return playersStore.size(); }
     [[nodiscard]] uint8 GetFlags() const { return _flags; }
     [[nodiscard]] bool HasFlag(uint8 flag) const { return _flags & flag; }

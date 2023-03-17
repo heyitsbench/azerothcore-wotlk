@@ -58,7 +58,7 @@ void WorldSession::HandleClientCastFlags(WorldPacket& recvPacket, uint8 castFlag
 
 void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
 {
-    /// @todo: add targets.read() check
+    // TODO: add targets.read() check
     Player* pUser = _player;
 
     // ignore for remote control state
@@ -233,19 +233,16 @@ void WorldSession::HandleOpenItemOpcode(WorldPacket& recvPacket)
         }
     }
 
-    if (sScriptMgr->OnBeforeOpenItem(pUser, item))
+    if (item->HasFlag(ITEM_FIELD_FLAGS, ITEM_FIELD_FLAG_WRAPPED))// wrapped?
     {
-        if (item->HasFlag(ITEM_FIELD_FLAGS, ITEM_FIELD_FLAG_WRAPPED))// wrapped?
-        {
-            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_GIFT_BY_ITEM);
-            stmt->SetData(0, item->GetGUID().GetCounter());
-            _queryProcessor.AddCallback(CharacterDatabase.AsyncQuery(stmt)
-                .WithPreparedCallback(std::bind(&WorldSession::HandleOpenWrappedItemCallback, this, bagIndex, slot, item->GetGUID().GetCounter(), std::placeholders::_1)));
-        }
-        else
-        {
-            pUser->SendLoot(item->GetGUID(), LOOT_CORPSE);
-        }
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_GIFT_BY_ITEM);
+        stmt->SetData(0, item->GetGUID().GetCounter());
+        _queryProcessor.AddCallback(CharacterDatabase.AsyncQuery(stmt)
+            .WithPreparedCallback(std::bind(&WorldSession::HandleOpenWrappedItemCallback, this, bagIndex, slot, item->GetGUID().GetCounter(), std::placeholders::_1)));
+    }
+    else
+    {
+        pUser->SendLoot(item->GetGUID(), LOOT_CORPSE);
     }
 }
 
@@ -384,7 +381,7 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
                 }
             }
 
-            /// @todo: Preparation for #23204
+            // TODO: Preparation for #23204
             // allow casting of spells triggered by clientside periodic trigger auras
             /*
              if (caster->HasAuraTypeWithTriggerSpell(SPELL_AURA_PERIODIC_TRIGGER_SPELL_FROM_CLIENT, spellId))
@@ -458,7 +455,7 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
     // auto-selection buff level base at target level (in spellInfo)
     if (targets.GetUnitTarget())
     {
-        SpellInfo const* actualSpellInfo = spellInfo->GetAuraRankForLevel(targets.GetUnitTarget()->GetLevel());
+        SpellInfo const* actualSpellInfo = spellInfo->GetAuraRankForLevel(targets.GetUnitTarget()->getLevel());
 
         // if rank not found then function return nullptr but in explicit cast case original spell can be casted and later failed with appropriate error message
         if (actualSpellInfo)
@@ -494,7 +491,7 @@ void WorldSession::HandleCancelAuraOpcode(WorldPacket& recvPacket)
     if (!spellInfo)
         return;
 
-    // not allow remove spells with attr SPELL_ATTR0_NO_AURA_CANCEL
+    // not allow remove spells with attr SPELL_ATTR0_CANT_CANCEL
     if (spellInfo->HasAttribute(SPELL_ATTR0_NO_AURA_CANCEL))
     {
         return;
@@ -572,33 +569,12 @@ void WorldSession::HandleCancelAutoRepeatSpellOpcode(WorldPacket& /*recvPacket*/
 
 void WorldSession::HandleCancelChanneling(WorldPacket& recvData)
 {
-    uint32 spellID = 0;
-    recvData >> spellID;
+    recvData.read_skip<uint32>();                          // spellid, not used
 
     // ignore for remote control state (for player case)
     Unit* mover = _player->m_mover;
-    if (!mover)
-    {
+    if (mover != _player && mover->GetTypeId() == TYPEID_PLAYER)
         return;
-    }
-
-    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellID);
-    if (!spellInfo)
-    {
-        return;
-    }
-
-    // not allow remove spells with attr SPELL_ATTR0_NO_AURA_CANCEL
-    if (spellInfo->HasAttribute(SPELL_ATTR0_NO_AURA_CANCEL))
-    {
-        return;
-    }
-
-    Spell* spell = mover->GetCurrentSpell(CURRENT_CHANNELED_SPELL);
-    if (!spell || spell->GetSpellInfo()->Id != spellInfo->Id)
-    {
-        return;
-    }
 
     mover->InterruptSpell(CURRENT_CHANNELED_SPELL);
 }
@@ -651,7 +627,7 @@ void WorldSession::HandleSpellClick(WorldPacket& recvData)
     if (!unit)
         return;
 
-    /// @todo: Unit::SetCharmedBy: 28782 is not in world but 0 is trying to charm it! -> crash
+    // TODO: Unit::SetCharmedBy: 28782 is not in world but 0 is trying to charm it! -> crash
     if (!unit->IsInWorld())
         return;
 

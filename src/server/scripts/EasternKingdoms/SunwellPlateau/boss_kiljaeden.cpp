@@ -364,7 +364,7 @@ public:
                 Talk(SAY_KJ_SLAY);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             events2.ScheduleEvent(EVENT_TEXT_SPEACH11, 26000, EVENT_GROUP_SPEACH);
             Talk(SAY_KJ_EMERGE);
@@ -398,7 +398,7 @@ public:
             switch (events2.ExecuteEvent())
             {
                 case EVENT_KILL_SELF:
-                    me->KillSelf();
+                    Unit::Kill(me, me);
                     break;
                 case EVENT_REBIRTH:
                     me->SetVisible(true);

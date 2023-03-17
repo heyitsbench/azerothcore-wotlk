@@ -81,14 +81,14 @@ public:
             summons.DespawnAll();
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(SAY_AGGRO);
             DoZoneInCombat();
             events.Reset();
-            events.RescheduleEvent(EVENT_SPELL_SHROUD_OF_DARKNESS, 5s, 7s);
-            events.RescheduleEvent(EVENT_SPELL_VOID_SHIFT, 23s, 25s);
-            events.RescheduleEvent(EVENT_SPELL_SUMMON_VOID_SENTRY, 10s);
+            events.RescheduleEvent(EVENT_SPELL_SHROUD_OF_DARKNESS, urand(5000, 7000));
+            events.RescheduleEvent(EVENT_SPELL_VOID_SHIFT, urand(23000, 25000));
+            events.RescheduleEvent(EVENT_SPELL_SUMMON_VOID_SENTRY, 10000);
             if (pInstance)
                 pInstance->SetData(DATA_ACHIEV, 1);
         }
@@ -110,7 +110,7 @@ public:
                 case EVENT_SPELL_SHROUD_OF_DARKNESS:
                     me->CastSpell(me, SPELL_SHROUD_OF_DARKNESS, false);
                     Talk(SAY_SHIELD);
-                    events.Repeat(20s);
+                    events.RepeatEvent(20000);
                     break;
                 case EVENT_SPELL_VOID_SHIFT:
                     if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0, 60.0f, true))
@@ -118,11 +118,11 @@ public:
                         me->CastSpell(target, SPELL_VOID_SHIFT, false);
                         me->Whisper("Gaze... into the void.", LANG_UNIVERSAL, target->ToPlayer());
                     }
-                    events.Repeat(18s, 22s);
+                    events.RepeatEvent(urand(18000, 22000));
                     break;
                 case EVENT_SPELL_SUMMON_VOID_SENTRY:
                     me->CastSpell((Unit*)nullptr, SPELL_SUMMON_VOID_SENTRY, false);
-                    events.Repeat(12s);
+                    events.RepeatEvent(12000);
                     break;
             }
 
@@ -246,7 +246,7 @@ public:
                         if (s->IsAlive())
                             good = true;
                 if (!good)
-                    me->KillSelf();
+                    Unit::Kill(me, me);
             }
             else
                 checkTimer -= diff;

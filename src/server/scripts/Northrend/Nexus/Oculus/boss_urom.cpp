@@ -141,7 +141,7 @@ public:
             me->ApplySpellImmune(0, IMMUNITY_ID, 49838, true);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             if( lock )
                 return;
@@ -159,9 +159,9 @@ public:
                 if( me->FindCurrentSpellBySpellId(SPELL_EVOCATION) )
                     me->InterruptNonMeleeSpells(false);
 
-                events.RescheduleEvent(EVENT_FROSTBOMB, 7s, 11s);
-                events.RescheduleEvent(EVENT_TELEPORT_TO_CENTER, 30s, 35s);
-                events.RescheduleEvent(EVENT_TIME_BOMB, 20s, 25s);
+                events.RescheduleEvent(EVENT_FROSTBOMB, urand(7000, 11000));
+                events.RescheduleEvent(EVENT_TELEPORT_TO_CENTER, urand(30000, 35000));
+                events.RescheduleEvent(EVENT_TIME_BOMB, urand(20000, 25000));
             }
             else
             {
@@ -332,20 +332,20 @@ public:
                 case EVENT_FROSTBOMB:
                     if( Unit* v = me->GetVictim() )
                         me->CastSpell(v, SPELL_FROSTBOMB, false);
-                    events.Repeat(7s, 11s);
+                    events.RepeatEvent(urand(7000, 11000));
                     break;
                 case EVENT_TIME_BOMB:
                     if( Unit* target = SelectTarget(SelectTargetMethod::Random, 0, 100.0f, true) )
                         DoCast(target, DUNGEON_MODE(SPELL_TIME_BOMB_N, SPELL_TIME_BOMB_H));
-                    events.Repeat(20s, 25s);
+                    events.RepeatEvent(urand(20000, 25000));
                     break;
                 case EVENT_TELEPORT_TO_CENTER:
                     x = me->GetPositionX();
                     y = me->GetPositionY();
                     z = me->GetPositionZ();
                     me->CastSpell(me, SPELL_TELEPORT, false);
-                    events.Repeat(25s, 30s);
-                    events.DelayEvents(10s);
+                    events.RepeatEvent(urand(25000, 30000));
+                    events.DelayEvents(10000);
                     break;
                 case EVENT_TELE_BACK:
                     me->GetMotionMaster()->MoveIdle();

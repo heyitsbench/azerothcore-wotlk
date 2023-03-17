@@ -20,7 +20,7 @@
 
 #include "OutdoorPvP.h"
 
-/// @todo: "sometimes" set to neutral
+// TODO: "sometimes" set to neutral
 
 enum OutdoorPvPNASpells
 {
@@ -323,8 +323,6 @@ public:
     void SendRemoveWorldStates(Player* player) override;
 
     void HandleKillImpl(Player* player, Unit* killed) override;
-
-    OPvPCapturePointNA* GetCapturePoint() { return m_obj; }
 
 private:
     OPvPCapturePointNA* m_obj;

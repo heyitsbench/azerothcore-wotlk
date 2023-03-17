@@ -21,9 +21,84 @@
 #include "Define.h"
 #include "EnumFlag.h"
 #include <cassert>
+#include <string>
+#include <list>
+#include <vector>
+#include <unordered_map>
 
 float const GROUND_HEIGHT_TOLERANCE = 0.05f; // Extra tolerance to z position to check if it is in air or on ground.
 constexpr float Z_OFFSET_FIND_HEIGHT = 2.0f;
+const std::string MSG_TYPE_FORGE = "FORGE";
+static std::vector<uint32> PRESTIGE_IGNORE_SPELLS = {};
+extern std::unordered_map<uint32, float> PlayerSpellScaleMap;
+
+enum class ForgeTopic
+{
+    GET_TALENTS = 0,
+    LEARN_TALENT = 1,
+    // a single talent
+    UNLEARN_TALENT = 2,
+    // respec talents
+    RESPEC_TALENTS = 3,
+    RESPEC_TALENTS_ERROR = 4,
+    UPDATE_SPEC = 5,
+    ACTIVATE_SPEC = 6,
+    PRESTIGE = 7,
+    TALENT_TREE_LAYOUT = 8,
+    GET_SHOP_ITEMS = 9,
+    UPDATE_SPEC_ERROR = 10,
+    ACTIVATE_SPEC_ERROR = 11,
+    LEARN_TALENT_ERROR = 12,
+    BUY_ITEM_ERROR = 13,
+    UNLEARN_TALENT_ERROR = 14,
+    GET_TALENT_ERROR = 15,
+    BUY_ITEMS = 16,
+    GET_ITEM_FROM_COLLECTION = 17,
+    GET_PLAYER_COLLECTION = 18,
+    GET_SHOP_LAYOUT = 19,
+    HOLIDAYS = 20,
+    GET_CHARACTER_SPECS = 21,
+    PRESTIGE_ERROR = 22,
+    ACTIVATE_CLASS_SPEC = 23,
+    ACTIVATE_CLASS_SPEC_ERROR = 24,
+    GET_TOOLTIPS = 25,
+    FORGET_TOOLTIP = 26,
+    GET_GAME_MODES = 27,
+    SET_GAME_MODES = 28,
+    SET_GAME_MODES_ERROR = 29,
+    END_GAME_MODES = 30,
+    COLLECTION_INIT = 31,
+    OUTFIT_COST = 32,
+    LOAD_XMOG_SET = 33,
+    LOAD_XMOG_SET_ERROR = 34,
+    SEARCH_XMOG = 35,
+    LOAD_XMOG = 36,
+    LOAD_MOUNTS = 37,
+    LOAD_PETS = 38,
+    LOAD_TOYS = 39,
+    LOAD_HEIRLOOM = 40,
+    MISSING_XMOG = 41,
+    PREVIEW_XMOG = 42,
+    PLAYER_XMOG = 43,
+    LEARN_MOUNT = 44,
+    USE_TOY = 45,
+    GET_XMOG_COST = 46,
+    APPLY_XMOG = 47,
+    REMOVE_XMOG_SET = 48,
+    SAVE_XMOG_SET = 49,
+    RENAME_XMOG_SET = 50,
+    MAX_OUTFITS = 51,
+    COLLECTION_SETUP_STARTED = 52,
+    COLLECTION_SETUP_FINISHED = 53,
+    ADD_XMOG = 54,
+    APPLY_XMOG_ERROR = 55
+};
+
+enum class ForgeError
+{
+    OK = 0,
+    UNKNOWN_SPELL = 1
+};
 
 enum SpellEffIndex
 {
@@ -122,6 +197,7 @@ enum Classes
     //CLASS_UNK           = 10,
     CLASS_DRUID         = 11 // TITLE Druid
 };
+
 
 // max+1 for player class
 #define MAX_CLASSES       12
@@ -536,7 +612,7 @@ enum SpellAttr4 : uint32
 // EnumUtils: DESCRIBE THIS
 enum SpellAttr5 : uint32
 {
-    SPELL_ATTR5_ALLOW_ACTION_DURING_CHANNEL                    = 0x00000001, // TITLE Can be channeled while moving/casting
+    SPELL_ATTR5_ALLOW_ACTION_DURING_CHANNEL                    = 0x00000001, // TITLE Can be channeled while moving
     SPELL_ATTR5_NO_REAGENT_COST_WITH_AURA                      = 0x00000002, // TITLE No reagents during arena preparation
     SPELL_ATTR5_REMOVE_ENTERING_ARENA                          = 0x00000004, // TITLE Remove when entering arena DESCRIPTION Force this aura to be removed on entering arena, regardless of other properties
     SPELL_ATTR5_ALLOW_WHILE_STUNNED                            = 0x00000008, // TITLE Usable while stunned
@@ -1285,6 +1361,7 @@ enum AuraStateType
     //AURA_STATE_UNKNOWN21                  = 21,           //     | not used
     AURA_STATE_UNKNOWN22                    = 22,           // C  t| varius spells (63884, 50240)
     AURA_STATE_HEALTH_ABOVE_75_PERCENT      = 23,           // C   |
+    AURA_STATE_POWER_BELOW_50_PERCENT       = 24,           // C   |
 };
 
 #define PER_CASTER_AURA_STATE_MASK (\
@@ -1483,6 +1560,7 @@ enum Targets
     TARGET_UNK_DEST_AREA_UNK_107       = 107, // not enough info - only generic spells avalible
     TARGET_GAMEOBJECT_CONE             = 108,
     TARGET_DEST_UNK_110                = 110, // 1 spell
+    TARGET_UNIT_CASTER_AREA_SUMMONS    = 111,
     TOTAL_SPELL_TARGETS
 };
 
@@ -1504,12 +1582,12 @@ enum SpellMissInfo
 
 enum SpellHitType
 {
-    SPELL_HIT_TYPE_CRIT_DEBUG           = 0x01,
-    SPELL_HIT_TYPE_CRIT                 = 0x02,
-    SPELL_HIT_TYPE_HIT_DEBUG            = 0x04,
-    SPELL_HIT_TYPE_SPLIT                = 0x08,
-    SPELL_HIT_TYPE_VICTIM_IS_ATTACKER   = 0x10,
-    SPELL_HIT_TYPE_ATTACK_TABLE_DEBUG   = 0x20
+    SPELL_HIT_TYPE_UNK1 = 0x00001,
+    SPELL_HIT_TYPE_CRIT = 0x00002,
+    SPELL_HIT_TYPE_UNK3 = 0x00004,
+    SPELL_HIT_TYPE_UNK4 = 0x00008,
+    SPELL_HIT_TYPE_UNK5 = 0x00010,                          // replace caster?
+    SPELL_HIT_TYPE_UNK6 = 0x00020
 };
 
 enum SpellDmgClass
@@ -2584,16 +2662,6 @@ enum LockType
     LOCKTYPE_OPEN_FROM_VEHICLE     = 21
 };
 
-enum TrainerType                                            // this is important type for npcs!
-{
-    TRAINER_TYPE_CLASS             = 0,
-    TRAINER_TYPE_MOUNTS            = 1,                     // on blizz it's 2
-    TRAINER_TYPE_TRADESKILLS       = 2,
-    TRAINER_TYPE_PETS              = 3
-};
-
-#define MAX_TRAINER_TYPE 4
-
 // CreatureType.dbc
 enum CreatureType
 {
@@ -3418,32 +3486,12 @@ uint8 constexpr PVP_TEAMS_COUNT = 2;
 
 inline PvPTeamId GetPvPTeamId(TeamId teamId)
 {
-    if (teamId == TEAM_ALLIANCE)
-    {
-        return PVP_TEAM_ALLIANCE;
-    }
-
-    if (teamId == TEAM_HORDE)
-    {
-        return PVP_TEAM_HORDE;
-    }
-
-    return PVP_TEAM_NEUTRAL;
+    return teamId == TEAM_ALLIANCE ? PVP_TEAM_ALLIANCE : PVP_TEAM_HORDE;
 }
 
 inline TeamId GetTeamId(PvPTeamId teamId)
 {
-    if (teamId == PVP_TEAM_ALLIANCE)
-    {
-        return TEAM_ALLIANCE;
-    }
-
-    if (teamId == PVP_TEAM_HORDE)
-    {
-        return TEAM_HORDE;
-    }
-
-    return TEAM_NEUTRAL;
+    return teamId == PVP_TEAM_ALLIANCE ? TEAM_ALLIANCE : TEAM_HORDE;
 }
 
 // indexes of BattlemasterList.dbc

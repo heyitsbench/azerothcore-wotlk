@@ -120,7 +120,7 @@ public:
         void SetForm(bool corrupt, bool initial)
         {
             events.CancelEventGroup(GROUP_ABILITIES);
-            DoResetThreatList();
+            DoResetThreat();
 
             if (corrupt)
             {
@@ -168,9 +168,9 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
             Talk(SAY_AGGRO);
 
             events.ScheduleEvent(EVENT_SPELL_ENRAGE, 600000);

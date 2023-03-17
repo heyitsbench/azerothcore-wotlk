@@ -127,7 +127,7 @@ public:
             me->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
 
         void DamageTaken(Unit*, uint32& damage, DamageEffectType, SpellSchoolMask) override
         {
@@ -172,7 +172,7 @@ public:
 
         void MoveInLineOfSight(Unit* /*who*/) override { }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
 
         void DamageTaken(Unit*, uint32& damage, DamageEffectType, SpellSchoolMask) override
         {
@@ -215,7 +215,7 @@ public:
                 TargetGUID = who->GetGUID();
         }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
 
         void DamageTaken(Unit*, uint32& damage, DamageEffectType, SpellSchoolMask) override
         {
@@ -325,7 +325,7 @@ public:
                 return;
 
             // Now lets get archimode threat list
-            ThreatContainer::StorageType const& t_list = me->GetThreatMgr().GetThreatList();
+            ThreatContainer::StorageType const& t_list = me->GetThreatMgr().getThreatList();
 
             if (t_list.empty())
                 return;
@@ -347,7 +347,7 @@ public:
                 }
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             me->InterruptSpell(CURRENT_CHANNELED_SPELL);
             Talk(SAY_AGGRO);
@@ -435,7 +435,7 @@ public:
                 if (victim && me->IsWithinMeleeRange(victim))
                     return false;
 
-                ThreatContainer::StorageType const& threatlist = me->GetThreatMgr().GetThreatList();
+                ThreatContainer::StorageType const& threatlist = me->GetThreatMgr().getThreatList();
                 if (threatlist.empty())
                     return false;
 

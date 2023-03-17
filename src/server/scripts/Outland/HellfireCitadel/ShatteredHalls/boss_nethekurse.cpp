@@ -168,7 +168,7 @@ public:
             ScriptedAI::MoveInLineOfSight(who);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
         }
 

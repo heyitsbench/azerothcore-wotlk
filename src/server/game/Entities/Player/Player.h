@@ -185,9 +185,17 @@ struct SpellModifier
     SpellModType type : 8;
     int16 charges     : 16;
     int32 value{0};
+    int32 exvalue{0};
     flag96 mask;
     uint32 spellId{0};
     Aura* const ownerAura;
+};
+
+struct ForgeAddonMessage
+{
+    Player* player;
+    std::string topic;
+    std::string message;
 };
 
 typedef std::unordered_map<uint32, PlayerTalent*> PlayerTalentMap;
@@ -209,13 +217,20 @@ struct SpellCooldown
 typedef std::map<uint32, SpellCooldown> SpellCooldowns;
 typedef std::unordered_map<uint32 /*instanceId*/, time_t/*releaseTime*/> InstanceTimeMap;
 
-enum TrainerSpellState
+struct SpellCharge
 {
-    TRAINER_SPELL_GREEN = 0,
-    TRAINER_SPELL_RED   = 1,
-    TRAINER_SPELL_GRAY  = 2,
-    TRAINER_SPELL_GREEN_DISABLED = 10                       // custom value, not send to client: formally green but learn not allowed
+    uint32 end;
+    uint16 category;
+    uint32 itemid;
+    uint32 maxduration;
+    uint8 charges;
+    uint8 maxcharges;
+    uint32 chargeaura;
+    bool sendToSpectator : 1;
+    bool needSendToClient : 1;
 };
+
+typedef std::map<flag96, SpellCharge> SpellCharges;
 
 enum ActionButtonUpdateState
 {
@@ -289,8 +304,8 @@ typedef std::list<PlayerCreateInfoItem> PlayerCreateInfoItems;
 struct PlayerClassLevelInfo
 {
     PlayerClassLevelInfo()  = default;
-    uint32 basehealth{0};
-    uint32 basemana{0};
+    uint16 basehealth{0};
+    uint16 basemana{0};
 };
 
 struct PlayerClassInfo
@@ -302,12 +317,9 @@ struct PlayerClassInfo
 
 struct PlayerLevelInfo
 {
-    PlayerLevelInfo()
-    {
-        stats.fill(0);
-    }
+    PlayerLevelInfo() { for (unsigned char & stat : stats) stat = 0; }
 
-    std::array<uint32, MAX_STATS> stats = { };
+    uint8 stats[MAX_STATS];
 };
 
 typedef std::list<uint32> PlayerCreateInfoSpells;
@@ -887,6 +899,7 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOAD_CORPSE_LOCATION         = 35,
     PLAYER_LOGIN_QUERY_LOAD_CHARACTER_SETTINGS      = 36,
     PLAYER_LOGIN_QUERY_LOAD_PET_SLOTS               = 37,
+    PLAYER_LOGIN_QUERY_LOAD_SPELL_CHARGES           = 38,
     MAX_PLAYER_LOGIN_QUERY
 };
 
@@ -1035,11 +1048,11 @@ struct EntryPointData
     }
 
     uint32 mountSpell{0};
-    std::array<uint32, 2> taxiPath;
+    std::vector<uint32> taxiPath;
     WorldLocation joinPos;
 
-    void ClearTaxiPath() { taxiPath.fill(0); }
-    [[nodiscard]] bool HasTaxiPath() const { return taxiPath[0] && taxiPath[1]; }
+    void ClearTaxiPath()     { taxiPath.clear(); }
+    [[nodiscard]] bool HasTaxiPath() const { return !taxiPath.empty(); }
 };
 
 class Player : public Unit, public GridObject<Player>
@@ -1102,6 +1115,7 @@ public:
 
     void SendInitialPacketsBeforeAddToMap();
     void SendInitialPacketsAfterAddToMap();
+    void SendSupercededSpell(uint32 oldSpell, uint32 newSpell);
     void SendTransferAborted(uint32 mapid, TransferAbortReason reason, uint8 arg = 0);
     void SendInstanceResetWarning(uint32 mapid, Difficulty difficulty, uint32 time, bool onEnterMap);
 
@@ -1121,12 +1135,11 @@ public:
     PlayerSocial* GetSocial() { return m_social; }
 
     PlayerTaxi m_taxi;
-    void InitTaxiNodesForLevel() { m_taxi.InitTaxiNodesForLevel(getRace(), getClass(), GetLevel()); }
+    void InitTaxiNodesForLevel() { m_taxi.InitTaxiNodesForLevel(getRace(), getClass(), getLevel()); }
     bool ActivateTaxiPathTo(std::vector<uint32> const& nodes, Creature* npc = nullptr, uint32 spellid = 1);
     bool ActivateTaxiPathTo(uint32 taxi_path_id, uint32 spellid = 1);
     void CleanupAfterTaxiFlight();
     void ContinueTaxiFlight();
-    void SendTaxiNodeStatusMultiple();
     // mount_id can be used in scripting calls
 
     [[nodiscard]] bool IsDeveloper() const { return HasPlayerFlag(PLAYER_FLAGS_DEVELOPER); }
@@ -1201,6 +1214,16 @@ public:
     /// Handles whispers from Addons and players based on sender, receiver's guid and language.
     void Whisper(std::string_view text, Language language, Player* receiver, bool = false) override;
     void Whisper(uint32 textId, Player* target, bool isBossWhisper = false) override;
+
+    /// <summary>
+    ///     Sends a message to be recieved by the Forge IU
+    /// </summary>
+    /// <param name="topic">Type of message</param>
+    /// <param name="message">the message</param>
+    void SendForgeUIMsg(std::string topic, std::string message);
+    std::vector<std::string> SplitString(const std::string& str, int splitLength);
+    void SendForgeUIMsg(ForgeTopic topic, std::string message);
+    void SendForgeUIMsg(int topic, std::string message);
 
     /*********************************************************/
     /***                    STORAGE SYSTEM                 ***/
@@ -1280,7 +1303,7 @@ public:
     bool StoreNewItemInBestSlots(uint32 item_id, uint32 item_count);
     void AutoStoreLoot(uint8 bag, uint8 slot, uint32 loot_id, LootStore const& store, bool broadcast = false);
     void AutoStoreLoot(uint32 loot_id, LootStore const& store, bool broadcast = false) { AutoStoreLoot(NULL_BAG, NULL_SLOT, loot_id, store, broadcast); }
-    LootItem* StoreLootItem(uint8 lootSlot, Loot* loot, InventoryResult& msg);
+    void StoreLootItem(uint8 lootSlot, Loot* loot);
     void UpdateLootAchievements(LootItem* item, Loot* loot);
     void UpdateTitansGrip();
 
@@ -1316,7 +1339,7 @@ public:
     void DestroyZoneLimitedItem(bool update, uint32 new_zone);
     void SplitItem(uint16 src, uint16 dst, uint32 count);
     void SwapItem(uint16 src, uint16 dst);
-    void AddItemToBuyBackSlot(Item* pItem, uint32 money);
+    void AddItemToBuyBackSlot(Item* pItem);
     Item* GetItemFromBuyBackSlot(uint32 slot);
     void RemoveItemFromBuyBackSlot(uint32 slot, bool del);
     [[nodiscard]] uint32 GetMaxKeyringSize() const { return KEYRING_SLOT_END - KEYRING_SLOT_START; }
@@ -1327,6 +1350,7 @@ public:
     void AddArmorProficiency(uint32 newflag) { m_ArmorProficiency |= newflag; }
     [[nodiscard]] uint32 GetWeaponProficiency() const { return m_WeaponProficiency; }
     [[nodiscard]] uint32 GetArmorProficiency() const { return m_ArmorProficiency; }
+    PlayerSpellMap GetKnownSpells() { return m_spells;  }
 
     [[nodiscard]] bool IsTwoHandUsed() const
     {
@@ -1337,8 +1361,7 @@ public:
     bool BuyItemFromVendorSlot(ObjectGuid vendorguid, uint32 vendorslot, uint32 item, uint8 count, uint8 bag, uint8 slot);
     bool _StoreOrEquipNewItem(uint32 vendorslot, uint32 item, uint8 count, uint8 bag, uint8 slot, int32 price, ItemTemplate const* pProto, Creature* pVendor, VendorItem const* crItem, bool bStore);
 
-    [[nodiscard]] float GetReputationPriceDiscount(Creature const* creature) const;
-    [[nodiscard]] float GetReputationPriceDiscount(FactionTemplateEntry const* factionTemplate) const;
+    float GetReputationPriceDiscount(Creature const* creature) const;
 
     [[nodiscard]] Player* GetTrader() const { return m_trade ? m_trade->GetTrader() : nullptr; }
     [[nodiscard]] TradeData* GetTradeData() const { return m_trade; }
@@ -1388,7 +1411,7 @@ public:
     /***                    QUEST SYSTEM                   ***/
     /*********************************************************/
 
-    int32 GetQuestLevel(Quest const* quest) const { return quest && (quest->GetQuestLevel() > 0) ? quest->GetQuestLevel() : GetLevel(); }
+    int32 GetQuestLevel(Quest const* quest) const { return quest && (quest->GetQuestLevel() > 0) ? quest->GetQuestLevel() : getLevel(); }
 
     void PrepareQuestMenu(ObjectGuid guid);
     void SendPreparedQuest(ObjectGuid guid);
@@ -1648,17 +1671,17 @@ public:
     void SendRemoveControlBar();
     [[nodiscard]] bool HasSpell(uint32 spell) const override;
     [[nodiscard]] bool HasActiveSpell(uint32 spell) const;            // show in spellbook
-    TrainerSpellState GetTrainerSpellState(TrainerSpell const* trainer_spell) const;
     [[nodiscard]] bool IsSpellFitByClassAndRace(uint32 spell_id) const;
     bool IsNeedCastPassiveSpellAtLearn(SpellInfo const* spellInfo) const;
 
     void SendProficiency(ItemClass itemClass, uint32 itemSubclassMask);
     void SendInitialSpells();
+    void SendUnlearnSpells();
     void SendLearnPacket(uint32 spellId, bool learn);
     bool addSpell(uint32 spellId, uint8 addSpecMask, bool updateActive, bool temporary = false, bool learnFromSkill = false);
     bool _addSpell(uint32 spellId, uint8 addSpecMask, bool temporary, bool learnFromSkill = false);
-    void learnSpell(uint32 spellId, bool temporary = false, bool learnFromSkill = false);
-    void removeSpell(uint32 spellId, uint8 removeSpecMask, bool onlyTemporary);
+    void learnSpell(uint32 spellId, bool temporary = false, bool learnFromSkill = false, bool sendPlayerUpdate = true);
+    void removeSpell(uint32 spellId, uint8 removeSpecMask, bool onlyTemporary, bool sendPlayerUpdate = true);
     void resetSpells();
     void LearnCustomSpells();
     void LearnDefaultSkills();
@@ -1677,7 +1700,7 @@ public:
     void BuildPlayerTalentsInfoData(WorldPacket* data);
     void BuildPetTalentsInfoData(WorldPacket* data);
     void SendTalentsInfoData(bool pet);
-    void LearnTalent(uint32 talentId, uint32 talentRank, bool command = false);
+    void LearnTalent(uint32 talentId, uint32 talentRank);
     void LearnPetTalent(ObjectGuid petGuid, uint32 talentId, uint32 talentRank);
 
     bool addTalent(uint32 spellId, uint8 addSpecMask, uint8 oldTalentRank);
@@ -1729,11 +1752,14 @@ public:
     [[nodiscard]] SpellCooldowns const& GetSpellCooldownMap() const { return m_spellCooldowns; }
     SpellCooldowns&       GetSpellCooldownMap()       { return m_spellCooldowns; }
 
+    [[nodiscard]] SpellCharges const& GetSpellChargesMap() const { return m_spellCharges; }
+    SpellCharges& GetSpellChargesMap() { return m_spellCharges; }
+
     void AddSpellMod(SpellModifier* mod, bool apply);
     bool IsAffectedBySpellmod(SpellInfo const* spellInfo, SpellModifier* mod, Spell* spell = nullptr);
     bool HasSpellMod(SpellModifier* mod, Spell* spell);
-    template <class T>
-    void ApplySpellMod(uint32 spellId, SpellModOp op, T& basevalue, Spell* spell = nullptr, bool temporaryPet = false);
+    template <class T> T ApplySpellMod(uint32 spellId, SpellModOp op, T& basevalue, Spell* spell = nullptr, bool temporaryPet = false, int32 exValue = 0);
+    template <class T> T ApplySpellMod(SpellInfo const* spellInfo, SpellModOp op, T& basevalue, Spell* spell = nullptr, bool temporaryPet = false, int32 exValue = 0);
     void RemoveSpellMods(Spell* spell);
     void RestoreSpellMods(Spell* spell, uint32 ownerAuraId = 0, Aura* aura = nullptr);
     void RestoreAllSpellMods(uint32 ownerAuraId = 0, Aura* aura = nullptr);
@@ -1743,14 +1769,27 @@ public:
     [[nodiscard]] bool HasSpellCooldown(uint32 spell_id) const override;
     [[nodiscard]] bool HasSpellItemCooldown(uint32 spell_id, uint32 itemid) const override;
     [[nodiscard]] uint32 GetSpellCooldownDelay(uint32 spell_id) const;
+    void UpdateChargeCooldown(const SpellInfo* spellInfo, SpellEffIndex chargeAuraIndex);
+    void UpdateChargeCooldowns();
+    bool ConsumeSpellCharge(uint32 spell_id);
+    void InitializeSpellCharges();
+    void AddNewSpellCharges(SpellEffectInfo spellEff, flag96 classMask);
+    void AddNewSpellCharges(flag96 classMask, uint8 maxCharges, uint8 currentCharges, uint32 maxDuration, uint32 currentDuration, uint32 chargeAura);
     void AddSpellAndCategoryCooldowns(SpellInfo const* spellInfo, uint32 itemId, Spell* spell = nullptr, bool infinityCooldown = false);
+    void AddCategoryCooldowns(const SpellInfo* spellInfo, int32 recoveryTime, bool sendCooldowns = true);
     void AddSpellCooldown(uint32 spell_id, uint32 itemid, uint32 end_time, bool needSendToClient = false, bool forceSendToSpectator = false) override;
     void _AddSpellCooldown(uint32 spell_id, uint16 categoryId, uint32 itemid, uint32 end_time, bool needSendToClient = false, bool forceSendToSpectator = false);
     void ModifySpellCooldown(uint32 spellId, int32 cooldown);
+    void ModifySpellCooldowns(int32 cooldown);
+    void ModifySpellCharges(int32 cooldown);
     void SendCooldownEvent(SpellInfo const* spellInfo, uint32 itemId = 0, Spell* spell = nullptr, bool setCooldown = true);
     void ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs) override;
+    void RemoveSpellCharges(flag96 familyFlags);
     void RemoveSpellCooldown(uint32 spell_id, bool update = false);
     void SendClearCooldown(uint32 spell_id, Unit* target);
+    SpellInfo* GetLatestSpellEffect(uint32 SpellId, uint32 enchanceId);
+    SpellInfo* GetLatestSpellEffectForDummy(uint32 SpellId);
+    SpellInfo* GetLatestSpellEffectForEnhacement(uint32 enchanceId);
 
     GlobalCooldownMgr& GetGlobalCooldownMgr() { return m_GlobalCooldownMgr; }
 
@@ -1759,6 +1798,8 @@ public:
     void RemoveAllSpellCooldown();
     void _LoadSpellCooldowns(PreparedQueryResult result);
     void _SaveSpellCooldowns(CharacterDatabaseTransaction trans, bool logout);
+    void _LoadSpellCharges(PreparedQueryResult result);
+    void _SaveSpellCharges(CharacterDatabaseTransaction trans, bool logout);
     uint32 GetLastPotionId() { return m_lastPotionId; }
     void SetLastPotionId(uint32 item_id) { m_lastPotionId = item_id; }
     void UpdatePotionCooldown(Spell* spell = nullptr);
@@ -1906,7 +1947,7 @@ public:
     void UpdateRating(CombatRating cr);
     void UpdateAllRatings();
 
-    void CalculateMinMaxDamage(WeaponAttackType attType, bool normalized, bool addTotalPct, float& minDamage, float& maxDamage, uint8 damageIndex) override;
+    void CalculateMinMaxDamage(WeaponAttackType attType, bool normalized, bool addTotalPct, float& minDamage, float& maxDamage) override;
 
     void UpdateDefenseBonusesMod();
     inline void RecalculateRating(CombatRating cr) { ApplyRatingMod(cr, 0, true);}
@@ -1939,6 +1980,7 @@ public:
     void ApplyHealthRegenBonus(int32 amount, bool apply);
     void UpdateManaRegen();
     void UpdateRuneRegen(RuneType rune);
+    void UpdateThorns();
 
     [[nodiscard]] ObjectGuid GetLootGUID() const { return m_lootGuid; }
     void SetLootGUID(ObjectGuid guid) { m_lootGuid = guid; }
@@ -2118,6 +2160,8 @@ public:
 
     [[nodiscard]] inline SpellCooldowns GetSpellCooldowns() const { return m_spellCooldowns; }
 
+    [[nodiscard]] inline SpellCharges GetSpellCharges() const { return m_spellCharges; }
+
     void SetDrunkValue(uint8 newDrunkValue, uint32 itemId = 0);
     [[nodiscard]] uint8 GetDrunkValue() const { return GetByteValue(PLAYER_BYTES_3, 1); }
     static DrunkenState GetDrunkenstateByValue(uint8 value);
@@ -2147,8 +2191,6 @@ public:
     void _RemoveAllStatBonuses();
 
     void ResetAllPowers();
-
-    SpellSchoolMask GetMeleeDamageSchoolMask(WeaponAttackType attackType = BASE_ATTACK, uint8 damageIndex = 0) const override;
 
     void _ApplyWeaponDependentAuraMods(Item* item, WeaponAttackType attackType, bool apply);
     void _ApplyWeaponDependentAuraCritMod(Item* item, WeaponAttackType attackType, AuraEffect const* aura, bool apply);
@@ -2259,21 +2301,9 @@ public:
     /***               FLOOD FILTER SYSTEM                 ***/
     /*********************************************************/
 
-    struct ChatFloodThrottle
-    {
-        enum Index
-        {
-            REGULAR = 0,
-            ADDON = 1,
-            MAX
-        };
-
-        time_t Time = 0;
-        uint32 Count = 0;
-    };
-
-    void UpdateSpeakTime(ChatFloodThrottle::Index index);
+    void UpdateSpeakTime(uint32 specialMessageLimit = 0);
     [[nodiscard]] bool CanSpeak() const;
+    void ChangeSpeakTime(int utime);
 
     /*********************************************************/
     /***                 VARIOUS SYSTEMS                   ***/
@@ -2298,8 +2328,8 @@ public:
     void SetSeer(WorldObject* target) { m_seer = target; }
     void SetViewpoint(WorldObject* target, bool apply);
     [[nodiscard]] WorldObject* GetViewpoint() const;
-    void StopCastingCharm(Aura* except = nullptr);
-    void StopCastingBindSight(Aura* except = nullptr);
+    void StopCastingCharm();
+    void StopCastingBindSight();
 
     [[nodiscard]] uint32 GetSaveTimer() const { return m_nextSave; }
     void SetSaveTimer(uint32 timer) { m_nextSave = timer; }
@@ -2320,7 +2350,6 @@ public:
     float m_homebindX;
     float m_homebindY;
     float m_homebindZ;
-    float m_homebindO;
 
     [[nodiscard]] WorldLocation GetStartPosition() const;
 
@@ -2331,8 +2360,8 @@ public:
     GuidUnorderedSet m_clientGUIDs;
     std::vector<Unit*> m_newVisible; // pussywizard
 
-    [[nodiscard]] bool HaveAtClient(WorldObject const* u) const;
-    [[nodiscard]] bool HaveAtClient(ObjectGuid guid) const;
+    bool HaveAtClient(WorldObject const* u) const { return u == this || m_clientGUIDs.find(u->GetGUID()) != m_clientGUIDs.end(); }
+    [[nodiscard]] bool HaveAtClient(ObjectGuid guid) const { return guid == GetGUID() || m_clientGUIDs.find(guid) != m_clientGUIDs.end(); }
 
     [[nodiscard]] bool IsNeverVisible() const override;
 
@@ -2446,8 +2475,6 @@ public:
 
     bool CanTeleport() { return m_canTeleport; }
     void SetCanTeleport(bool value) { m_canTeleport = value; }
-    bool CanKnockback() { return m_canKnockback; }
-    void SetCanKnockback(bool value) { m_canKnockback = value; }
 
     bool isAllowedToLoot(Creature const* creature);
 
@@ -2463,7 +2490,11 @@ public:
     void SetLastUsedRune(RuneType type) { m_runes->lastUsedRune = type; }
     void SetBaseRune(uint8 index, RuneType baseRune) { m_runes->runes[index].BaseRune = baseRune; }
     void SetCurrentRune(uint8 index, RuneType currentRune) { m_runes->runes[index].CurrentRune = currentRune; }
-    void SetRuneCooldown(uint8 index, uint32 cooldown) { m_runes->runes[index].Cooldown = cooldown; m_runes->SetRuneState(index, (cooldown == 0)); }
+    void SetRuneCooldown(uint8 index, uint32 cooldown)
+    {
+        m_runes->runes[index].Cooldown = cooldown;
+        m_runes->SetRuneState(index, (cooldown == 0));
+    }
     void SetGracePeriod(uint8 index, uint32 period) { m_runes->runes[index].GracePeriod = period; }
     void SetRuneConvertAura(uint8 index, AuraEffect const* aura) { m_runes->runes[index].ConvertAura = aura; }
     void AddRuneByAuraEffect(uint8 index, RuneType newType, AuraEffect const* aura) { SetRuneConvertAura(index, aura); ConvertRune(index, newType); }
@@ -2483,7 +2514,6 @@ public:
     void StartTimedAchievement(AchievementCriteriaTimedTypes type, uint32 entry, uint32 timeLost = 0);
     void RemoveTimedAchievement(AchievementCriteriaTimedTypes type, uint32 entry);
     void CompletedAchievement(AchievementEntry const* entry);
-    [[nodiscard]] AchievementMgr* GetAchievementMgr() const { return m_achievementMgr; }
 
     [[nodiscard]] bool HasTitle(uint32 bitIndex) const;
     bool HasTitle(CharTitlesEntry const* title) const { return HasTitle(title->bit_index); }
@@ -2574,10 +2604,6 @@ public:
     // Settings
     [[nodiscard]] PlayerSetting GetPlayerSetting(std::string source, uint8 index);
     void UpdatePlayerSetting(std::string source, uint8 index, uint32 value);
-
-    void SendSystemMessage(std::string_view msg, bool escapeCharacters = false);
-
-    std::string GetDebugInfo() const override;
 
  protected:
     // Gamemaster whisper whitelist
@@ -2714,7 +2740,8 @@ public:
     uint16 m_additionalSaveTimer; // pussywizard
     uint8 m_additionalSaveMask; // pussywizard
     uint16 m_hostileReferenceCheckTimer; // pussywizard
-    std::array<ChatFloodThrottle, ChatFloodThrottle::MAX> m_chatFloodData;
+    time_t m_speakTime;
+    uint32 m_speakCount;
     Difficulty m_dungeonDifficulty;
     Difficulty m_raidDifficulty;
     Difficulty m_raidMapDifficulty;
@@ -2756,7 +2783,7 @@ public:
     ActionButtonList m_actionButtons;
 
     float m_auraBaseMod[BASEMOD_END][MOD_END];
-    int32 m_baseRatingValue[MAX_COMBAT_RATING];
+    int16 m_baseRatingValue[MAX_COMBAT_RATING];
     uint32 m_baseSpellPower;
     uint32 m_baseFeralAP;
     uint32 m_baseManaRegen;
@@ -2856,6 +2883,8 @@ public:
 
     bool m_needZoneUpdate;
 
+    [[nodiscard]] AchievementMgr* GetAchievementMgr() const { return m_achievementMgr; }
+
 private:
     // internal common parts for CanStore/StoreItem functions
     InventoryResult CanStoreItem_InSpecificSlot(uint8 bag, uint8 slot, ItemPosCountVec& dest, ItemTemplate const* pProto, uint32& count, bool swap, Item* pSrcItem) const;
@@ -2903,7 +2932,6 @@ private:
     bool m_bMustDelayTeleport;
     bool m_bHasDelayedTeleport;
     bool m_canTeleport;
-    bool m_canKnockback;
 
     std::unique_ptr<PetStable> m_petStable;
 
@@ -2915,6 +2943,8 @@ private:
     ReputationMgr*  m_reputationMgr;
 
     SpellCooldowns m_spellCooldowns;
+
+    SpellCharges m_spellCharges;
 
     uint32 m_ChampioningFaction;
 
@@ -2944,4 +2974,146 @@ private:
 void AddItemsSetItem(Player* player, Item* item);
 void RemoveItemsSetItem(Player* player, ItemTemplate const* proto);
 
+// "the bodies of template functions must be made available in a header file"
+template <class T> T Player::ApplySpellMod(uint32 spellId, SpellModOp op, T& basevalue, Spell* spell, bool temporaryPet, int32 exValue)
+{
+    SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+    return ApplySpellMod(spellInfo, op, basevalue, spell, temporaryPet, exValue);
+}
+
+template <class T> T Player::ApplySpellMod(SpellInfo const* spellInfo, SpellModOp op, T& basevalue, Spell* spell, bool temporaryPet, int32 exValue)
+{
+    if (!spellInfo)
+    {
+        return 0;
+    }
+
+    float totalmul = 1.0f;
+    int32 totalflat = 0;
+
+    auto calculateSpellMod = [&](SpellModifier* mod)
+    {
+        // xinef: temporary pets cannot use charged mods of owner, needed for mirror image QQ they should use their own auras
+        if (temporaryPet && mod->charges != 0)
+        {
+            return;
+        }
+
+        if (mod->type == SPELLMOD_FLAT)
+        {
+            // xinef: do not allow to consume more than one 100% crit increasing spell
+            if (mod->op == SPELLMOD_CRITICAL_CHANCE && totalflat >= 100)
+            {
+                return;
+            }
+            else if (mod->op == SPELLMOD_THORNS_DAMAGE_DONE && mod->exvalue != exValue && mod->exvalue != 0)
+            {
+                return;
+            }
+            else if (mod->op == SPELLMOD_THORNS_DAMAGE_DONE)
+                return;
+
+            int32 flatValue = mod->value;
+
+            // SPELL_MOD_THREAT - divide by 100 (in packets we send threat * 100)
+            if (mod->op == SPELLMOD_THREAT)
+            {
+                flatValue /= 100;
+            }
+
+            totalflat += flatValue;
+        }
+        else if (mod->type == SPELLMOD_PCT)
+        {
+            // skip percent mods for null basevalue (most important for spell mods with charges)
+            if (basevalue == T(0) || totalmul == 0.0f)
+            {
+                return;
+            }
+
+            // special case (skip > 10sec spell casts for instant cast setting)
+            if (mod->op == SPELLMOD_CASTING_TIME && basevalue >= T(10000) && mod->value <= -100)
+            {
+                return;
+            }
+            // xinef: special exception for surge of light, dont affect crit chance if previous mods were not applied
+            else if (mod->op == SPELLMOD_CRITICAL_CHANCE && spell && !HasSpellMod(mod, spell))
+            {
+                return;
+            }
+            // xinef: special case for backdraft gcd reduce with backlast time reduction, dont affect gcd if cast time was not applied
+            else if (mod->op == SPELLMOD_GLOBAL_COOLDOWN && spell && !HasSpellMod(mod, spell))
+            {
+                return;
+            }
+            else if (mod->op == SPELLMOD_THORNS_DAMAGE_DONE && mod->exvalue != exValue && mod->exvalue != 0)
+            {
+                return;
+            }
+
+            // xinef: those two mods should be multiplicative (Glyph of Renew)
+            if (mod->op == SPELLMOD_DAMAGE || mod->op == SPELLMOD_DOT || mod->op == SPELLMOD_THORNS_DAMAGE_DONE)
+            {
+                totalmul *= CalculatePct(1.0f, 100.0f + mod->value);
+            }
+            else
+            {
+                totalmul += CalculatePct(1.0f, mod->value);
+            }
+        }
+
+        DropModCharge(mod, spell);
+    };
+
+    // Drop charges for triggering spells instead of triggered ones
+    if (m_spellModTakingSpell)
+    {
+        spell = m_spellModTakingSpell;
+    }
+
+    SpellModifier* chargedMod = nullptr;
+    for (auto mod : m_spellMods[op])
+    {
+        // Charges can be set only for mods with auras
+        if (!mod->ownerAura)
+        {
+            ASSERT(!mod->charges);
+        }
+
+        if (!IsAffectedBySpellmod(spellInfo, mod, spell))
+        {
+            continue;
+        }
+
+        if (mod->ownerAura->IsUsingCharges())
+        {
+            if (!chargedMod || (chargedMod->ownerAura->GetSpellInfo()->SpellPriority < mod->ownerAura->GetSpellInfo()->SpellPriority))
+            {
+                chargedMod = mod;
+            }
+
+            continue;
+        }
+
+        calculateSpellMod(mod);
+    }
+
+    if (chargedMod)
+    {
+        calculateSpellMod(chargedMod);
+    }
+
+    float diff = 0.0f;
+    if (op == SPELLMOD_CASTING_TIME || op == SPELLMOD_DURATION)
+    {
+        diff = ((float)basevalue + totalflat) * (totalmul - 1.0f) + (float)totalflat;
+    }
+    else
+    {
+        diff = (float)basevalue * (totalmul - 1.0f) + (float)totalflat;
+    }
+
+    basevalue = T((float)basevalue + diff);
+    return T(diff);
+}
 #endif

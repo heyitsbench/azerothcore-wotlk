@@ -109,7 +109,7 @@ public:
 
         void Reset() override { }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
             Talk(SAY_AGGRO, who);
         }
@@ -213,7 +213,7 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
 
         void JustSummoned(Creature* summoned) override
         {

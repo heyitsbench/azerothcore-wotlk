@@ -158,9 +158,9 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
         }
 
         void DoAction(int32 param) override
@@ -247,7 +247,7 @@ public:
                     if (me->IsWithinMeleeRange(me->GetVictim()))
                     {
                         me->SetReactState(REACT_AGGRESSIVE);
-                        DoResetThreatList();
+                        DoResetThreat();
                         me->GetVictim()->InterruptNonMeleeSpells(false);
                         me->AddThreat(me->GetVictim(), 1000000.0f);
                         me->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
@@ -332,7 +332,7 @@ public:
                 shade->AI()->DoAction(ACTION_AKAMA_DIED);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             events.ScheduleEvent(EVENT_SPELL_CHAIN_LIGHTNING, 2000);
             events.ScheduleEvent(EVENT_SPELL_DESTRUCTIVE_POISON, 5000);

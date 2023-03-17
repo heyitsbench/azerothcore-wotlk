@@ -122,13 +122,13 @@ struct boss_mor_grayhoof : public BossAI
 
                         // Sleep can target tank, we need to drop threat temporarily on the target.
                         _sleepTargetGUID = target->GetGUID();
-                        _sleepTargetThreat = me->GetThreatMgr().GetThreat(target);
-                        me->GetThreatMgr().ModifyThreatByPercent(target, -100);
+                        _sleepTargetThreat = me->GetThreatMgr().getThreat(target);
+                        me->GetThreatMgr().modifyThreatPercent(target, -100);
                         _scheduler.Schedule(10s, [this](TaskContext /*context*/)
                             {
                                 if (Unit* sleepTarget = ObjectAccessor::GetUnit(*me, _sleepTargetGUID))
                                 {
-                                    me->GetThreatMgr().AddThreat(sleepTarget, _sleepTargetThreat);
+                                    me->GetThreatMgr().addThreat(sleepTarget, _sleepTargetThreat);
                                 }
                             });
                     }
@@ -189,9 +189,9 @@ struct boss_mor_grayhoof : public BossAI
         }
     }
 
-    void JustEngagedWith(Unit* /*who*/) override
+    void EnterCombat(Unit* /*who*/) override
     {
-        _JustEngagedWith();
+        _EnterCombat();
         Talk(SAY_AGGRO);
         _scheduler.Schedule(5s, 10s, PHASE_HUMAN, [this](TaskContext context)
             {

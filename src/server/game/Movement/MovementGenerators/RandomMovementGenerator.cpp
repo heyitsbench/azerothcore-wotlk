@@ -134,11 +134,6 @@ void RandomMovementGenerator<Creature>::_setRandomLocation(Creature* creature)
         }
         else // ground
         {
-            if (!_pathGenerator)
-                _pathGenerator = new PathGenerator(creature);
-            else
-                _pathGenerator->Clear();
-
             bool result = _pathGenerator->CalculatePath(x, y, levelZ, false);
             if (result && !(_pathGenerator->GetPathType() & PATHFIND_NOPATH))
             {
@@ -257,6 +252,8 @@ void RandomMovementGenerator<Creature>::DoInitialize(Creature* creature)
         }
     }
 
+    if (!_pathGenerator)
+        _pathGenerator = new PathGenerator(creature);
     creature->AddUnitState(UNIT_STATE_ROAMING | UNIT_STATE_ROAMING_MOVE);
 }
 

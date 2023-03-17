@@ -517,9 +517,9 @@ bool Item::LoadFromDB(ObjectGuid::LowType guid, ObjectGuid owner_guid, Field* fi
 }
 
 /*static*/
-void Item::DeleteFromDB(CharacterDatabaseTransaction trans, ObjectGuid::LowType itemGuid)
+void Item::DeleteFromDB(CharacterDatabaseTransaction trans, Player* player, ObjectGuid::LowType itemGuid)
 {
-    sScriptMgr->OnGlobalItemDelFromDB(trans, itemGuid);
+    sScriptMgr->OnGlobalItemDelFromDB(trans, player, itemGuid);
     CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_INSTANCE);
     stmt->SetData(0, itemGuid);
     trans->Append(stmt);
@@ -527,7 +527,7 @@ void Item::DeleteFromDB(CharacterDatabaseTransaction trans, ObjectGuid::LowType 
 
 void Item::DeleteFromDB(CharacterDatabaseTransaction trans)
 {
-    DeleteFromDB(trans, GetGUID().GetCounter());
+    DeleteFromDB(trans, GetOwner(), GetGUID().GetCounter());
 }
 
 /*static*/
@@ -1097,7 +1097,7 @@ Item* Item::CreateItem(uint32 item, uint32 count, Player const* player, bool clo
         if (count > pProto->GetMaxStackSize())
             count = pProto->GetMaxStackSize();
 
-        ASSERT_NODEBUGINFO(count != 0 && "pProto->Stackable == 0 but checked at loading already");
+        ASSERT(count != 0 && "pProto->Stackable == 0 but checked at loading already");
 
         Item* pItem = NewItemOrBag(pProto);
         if (pItem->Create(sObjectMgr->GetGenerator<HighGuid::Item>().Generate(), item, player))
@@ -1286,14 +1286,4 @@ bool Item::CheckSoulboundTradeExpire()
     }
 
     return false;
-}
-
-std::string Item::GetDebugInfo() const
-{
-    std::stringstream sstr;
-    sstr << Object::GetDebugInfo() << "\n"
-        << std::boolalpha
-        << "Owner: " << GetOwnerGUID().ToString() << " Count: " << GetCount()
-        << " BagSlot: " << std::to_string(GetBagSlot()) << " Slot: " << std::to_string(GetSlot()) << " Equipped: " << IsEquipped();
-    return sstr.str();
 }

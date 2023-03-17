@@ -55,7 +55,7 @@ public:
             Medics = false;
         }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
 
         void SummonAdds(Unit* victim)
         {

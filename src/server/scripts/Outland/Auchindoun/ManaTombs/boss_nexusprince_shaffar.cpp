@@ -88,7 +88,7 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit*) override
+        void EnterCombat(Unit*) override
         {
             Talk(SAY_AGGRO);
 
@@ -190,7 +190,7 @@ public:
 
         void Reset() override { }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             events.ScheduleEvent(EVENT_DOUBLE_BREATH, urand(6000, 9000));
         }

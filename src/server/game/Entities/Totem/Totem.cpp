@@ -34,13 +34,20 @@ Totem::Totem(SummonPropertiesEntry const* properties, ObjectGuid owner) : Minion
 void Totem::Update(uint32 time)
 {
     Unit* owner = GetOwner();
-    if (!owner || !owner->IsAlive() || !IsAlive() || m_duration <= time)
+    if (!owner || !owner->IsAlive() || !IsAlive())
     {
         UnSummon();                                         // remove self
         return;
     }
 
-    m_duration -= time;
+    if (m_duration <= time)
+    {
+        UnSummon();                                         // remove self
+        return;
+    }
+    else
+        m_duration -= time;
+
     Creature::Update(time);
 }
 
@@ -64,7 +71,7 @@ void Totem::InitStats(uint32 duration)
             SetDisplayId(owner->GetModelForTotem(PlayerTotemType(m_Properties->Id)));
         }
 
-        SetLevel(owner->GetLevel());
+        SetLevel(owner->getLevel());
     }
 
     Minion::InitStats(duration);
@@ -82,28 +89,14 @@ void Totem::InitSummon()
     Minion::InitSummon();
 
     if (m_type == TOTEM_PASSIVE && GetSpell())
-    {
-        if (TotemSpellIds(GetUInt32Value(UNIT_CREATED_BY_SPELL)) == TotemSpellIds::FireTotemSpell)
-        {
-            m_Events.AddEventAtOffset([this]()
-            {
-                CastSpell(this, GetSpell(), true);
-            }, 4s);
-        }
-        else
-        {
-            CastSpell(this, GetSpell(), true);
-        }
-    }
+        CastSpell(this, GetSpell(), true);
 
     // Some totems can have both instant effect and passive spell
-    if (GetSpell(1))
-    {
+    if(GetSpell(1))
         CastSpell(this, GetSpell(1), true);
-    }
 
     // xinef: this is better than the script, 100% sure to work
-    if (GetEntry() == SENTRY_TOTEM_ENTRY)
+    if(GetEntry() == SENTRY_TOTEM_ENTRY)
     {
         SetReactState(REACT_AGGRESSIVE);
         GetOwner()->CastSpell(this, 6277, true);
@@ -130,40 +123,38 @@ void Totem::UnSummon(uint32 msTime)
     CombatStop();
     RemoveAurasDueToSpell(GetSpell(), GetGUID());
 
-    if (Unit* owner = GetOwner())
+    Unit* owner = GetOwner();
+    // clear owner's totem slot
+    for (uint8 i = SUMMON_SLOT_TOTEM; i < MAX_TOTEM_SLOT; ++i)
     {
-        // clear owner's totem slot
-        for (uint8 i = SUMMON_SLOT_TOTEM; i < MAX_TOTEM_SLOT; ++i)
+        if (owner->m_SummonSlot[i] == GetGUID())
         {
-            if (owner->m_SummonSlot[i] == GetGUID())
-            {
-                owner->m_SummonSlot[i].Clear();
-                break;
-            }
+            owner->m_SummonSlot[i].Clear();
+            break;
         }
+    }
 
-        owner->RemoveAurasDueToSpell(GetSpell(), GetGUID());
+    owner->RemoveAurasDueToSpell(GetSpell(), GetGUID());
 
-        // Remove Sentry Totem Aura
-        if (GetEntry() == SENTRY_TOTEM_ENTRY)
-            owner->RemoveAurasDueToSpell(static_cast<uint32>(TotemSpellIds::SentryTotemSpell));
+    // Remove Sentry Totem Aura
+    if (GetEntry() == SENTRY_TOTEM_ENTRY)
+        owner->RemoveAurasDueToSpell(SENTRY_TOTEM_SPELLID);
 
-        //remove aura all party members too
-        if (Player* player = owner->ToPlayer())
+    //remove aura all party members too
+    if (Player* player = owner->ToPlayer())
+    {
+        player->SendAutoRepeatCancel(this);
+
+        if (SpellInfo const* spell = sSpellMgr->GetSpellInfo(GetUInt32Value(UNIT_CREATED_BY_SPELL)))
+            player->SendCooldownEvent(spell, 0, nullptr, false);
+
+        if (Group* group = player->GetGroup())
         {
-            player->SendAutoRepeatCancel(this);
-
-            if (SpellInfo const* spell = sSpellMgr->GetSpellInfo(GetUInt32Value(UNIT_CREATED_BY_SPELL)))
-                player->SendCooldownEvent(spell, 0, nullptr, false);
-
-            if (Group* group = player->GetGroup())
+            for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
             {
-                for (GroupReference* itr = group->GetFirstMember(); itr != nullptr; itr = itr->next())
-                {
-                    Player* target = itr->GetSource();
-                    if (target && target->IsInMap(player) && group->SameSubGroup(player, target))
-                        target->RemoveAurasDueToSpell(GetSpell(), GetGUID());
-                }
+                Player* target = itr->GetSource();
+                if (target && target->IsInMap(player) && group->SameSubGroup(player, target))
+                    target->RemoveAurasDueToSpell(GetSpell(), GetGUID());
             }
         }
     }

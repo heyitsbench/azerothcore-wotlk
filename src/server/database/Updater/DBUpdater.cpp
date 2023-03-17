@@ -170,13 +170,11 @@ BaseLocation DBUpdater<T>::GetBaseLocationType()
 template<class T>
 bool DBUpdater<T>::Create(DatabaseWorkerPool<T>& pool)
 {
-    LOG_WARN("sql.updates", "Database \"{}\" does not exist", pool.GetConnectionInfo()->database);
+    LOG_WARN("sql.updates", "Database \"{}\" does not exist, do you want to create it? [yes (default) / no]: ",
+             pool.GetConnectionInfo()->database);
 
-    const char* disableInteractive = std::getenv("AC_DISABLE_INTERACTIVE");
-
-    if (!sConfigMgr->isDryRun() && (disableInteractive == nullptr || std::strcmp(disableInteractive, "1") != 0))
+    if (!sConfigMgr->isDryRun())
     {
-        std::cout << "Do you want to create it? [yes (default) / no]:" << std::endl;
         std::string answer;
         std::getline(std::cin, answer);
         if (!answer.empty() && !(answer.substr(0, 1) == "y"))
@@ -442,28 +440,15 @@ template<class T>
 void DBUpdater<T>::ApplyFile(DatabaseWorkerPool<T>& pool, std::string const& host, std::string const& user,
                              std::string const& password, std::string const& port_or_socket, std::string const& database, std::string const& ssl, Path const& path)
 {
-    std::string configTempDir = sConfigMgr->GetOption<std::string>("TempDir", "");
-
-    auto tempDir = configTempDir.empty() ? std::filesystem::temp_directory_path().string() : configTempDir;
-
-    tempDir = Acore::String::AddSuffixIfNotExists(tempDir, std::filesystem::path::preferred_separator);
-
-    std::string confFileName = "mysql_ac.conf";
-
-    std::ofstream outfile (tempDir + confFileName);
-
-    outfile << "[client]\npassword = \"" << password << '"' << std::endl;
-
-    outfile.close();
-
     std::vector<std::string> args;
-    args.reserve(9);
-
-    args.emplace_back("--defaults-extra-file="+tempDir + confFileName+"");
+    args.reserve(7);
 
     // CLI Client connection info
     args.emplace_back("-h" + host);
     args.emplace_back("-u" + user);
+
+    if (!password.empty())
+        args.emplace_back("-p" + password);
 
     // Check if we want to connect through ip or socket (Unix only)
 #ifdef _WIN32
@@ -506,17 +491,13 @@ void DBUpdater<T>::ApplyFile(DatabaseWorkerPool<T>& pool, std::string const& hos
 
 #endif
 
-    // Execute sql file
-    args.emplace_back("-e");
-    args.emplace_back(Acore::StringFormat("BEGIN; SOURCE %s; COMMIT;", path.generic_string().c_str()));
-
     // Database
     if (!database.empty())
         args.emplace_back(database);
 
     // Invokes a mysql process which doesn't leak credentials to logs
     int const ret = Acore::StartProcess(DBUpdaterUtil::GetCorrectedMySQLExecutable(), args,
-        "sql.updates", "", true);
+        "sql.updates", path.generic_string(), true);
 
     if (ret != EXIT_SUCCESS)
     {

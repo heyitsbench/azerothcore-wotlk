@@ -15,6 +15,14 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* Script Data Start
+SDName: CrystalSongForest
+SDAuthor: Malcrom
+SD%Complete: 99%
+SDComment:
+SDCategory: CrystalsongForest
+Script Data End */
+
 #include "PassiveAI.h"
 #include "Player.h"
 #include "ScriptMgr.h"

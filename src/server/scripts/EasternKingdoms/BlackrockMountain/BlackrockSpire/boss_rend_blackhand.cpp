@@ -141,7 +141,7 @@ public:
         {
             if (!summons.IsAnyCreatureAlive())
             {
-                events.ScheduleEvent(EVENT_WAVES_TEXT_1 + _currentWave, 10s);
+                events.ScheduleEvent(EVENT_WAVES_TEXT_1 + _currentWave, 10 * IN_MILLISECONDS);
             }
         }
 
@@ -158,12 +158,12 @@ public:
             summon->AI()->DoZoneInCombat(nullptr, 100.0f);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
-            _JustEngagedWith();
-            events.ScheduleEvent(EVENT_WHIRLWIND, 13s, 15s);
-            events.ScheduleEvent(EVENT_CLEAVE, 15s, 17s);
-            events.ScheduleEvent(EVENT_MORTAL_STRIKE, 17s, 19s);
+            _EnterCombat();
+            events.ScheduleEvent(EVENT_WHIRLWIND,     urand(13000, 15000));
+            events.ScheduleEvent(EVENT_CLEAVE,        urand(15000, 17000));
+            events.ScheduleEvent(EVENT_MORTAL_STRIKE, urand(17000, 19000));
         }
 
         void EnterEvadeMode(EvadeReason why) override
@@ -174,7 +174,7 @@ public:
             me->DespawnOrUnsummon();
         }
 
-        void IsSummonedBy(WorldObject* /*summoner*/) override
+        void IsSummonedBy(Unit* /*summoner*/) override
         {
             Talk(EMOTE_BLACKHAND_DISMOUNT);
         }
@@ -223,7 +223,7 @@ public:
                         waveDoorGUID = portcullis->GetGUID();
 
                     events.ScheduleEvent(EVENT_TURN_TO_PLAYER, 0);
-                    events.ScheduleEvent(EVENT_START_1, 1s);
+                    events.ScheduleEvent(EVENT_START_1, 1000);
                 }
             }
         }
@@ -235,7 +235,7 @@ public:
                 switch (id)
                 {
                     case 5:
-                        events.ScheduleEvent(EVENT_TELEPORT_1, 2s);
+                        events.ScheduleEvent(EVENT_TELEPORT_1, 2000);
                         break;
                 }
             }
@@ -253,7 +253,6 @@ public:
                     {
                         case EVENT_START_1:
                             instance->SetBossState(DATA_WARCHIEF_REND_BLACKHAND, IN_PROGRESS);
-                            instance->SetData(DATA_VAELASTRASZ, NOT_STARTED);
 
                             if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
                                 victor->AI()->Talk(SAY_NEFARIUS_0);
@@ -261,19 +260,19 @@ public:
                             if (GameObject* door2 = me->GetMap()->GetGameObject(instance->GetGuidData(GO_GYTH_ENTRY_DOOR)))
                                 door2->SetGoState(GO_STATE_READY);
 
-                            events.ScheduleEvent(EVENT_START_2, 4s);
+                            events.ScheduleEvent(EVENT_START_2, 4000);
                             break;
                         case EVENT_START_2:
                             events.ScheduleEvent(EVENT_TURN_TO_PLAYER, 0);
                             if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
                                 victor->HandleEmoteCommand(EMOTE_ONESHOT_POINT);
-                            events.ScheduleEvent(EVENT_START_3, 4s);
+                            events.ScheduleEvent(EVENT_START_3, 4000);
                             break;
                         case EVENT_START_3:
                             if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
                                 victor->AI()->Talk(SAY_NEFARIUS_1);
-                            events.ScheduleEvent(EVENT_SPAWN_WAVE, 2s);
-                            events.ScheduleEvent(EVENT_TURN_TO_REND, 4s);
+                            events.ScheduleEvent(EVENT_SPAWN_WAVE, 2000);
+                            events.ScheduleEvent(EVENT_TURN_TO_REND, 4000);
                             break;
                         case EVENT_TURN_TO_REND:
                             if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
@@ -305,60 +304,60 @@ public:
                             me->HandleEmoteCommand(EMOTE_ONESHOT_ROAR);
                             break;
                         case EVENT_WAVES_TEXT_1:
-                            events.ScheduleEvent(EVENT_TURN_TO_PLAYER, 0ms);
+                            events.ScheduleEvent(EVENT_TURN_TO_PLAYER, 0);
                             if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
                                 victor->AI()->Talk(SAY_NEFARIUS_2);
                             me->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
-                            events.ScheduleEvent(EVENT_TURN_TO_FACING_1, 4s);
-                            events.ScheduleEvent(EVENT_WAVES_EMOTE_1, 5s);
-                            events.ScheduleEvent(EVENT_SPAWN_WAVE, 3s);
+                            events.ScheduleEvent(EVENT_TURN_TO_FACING_1, 4000);
+                            events.ScheduleEvent(EVENT_WAVES_EMOTE_1, 5000);
+                            events.ScheduleEvent(EVENT_SPAWN_WAVE, 3000);
                             break;
                         case EVENT_WAVES_TEXT_2:
                             events.ScheduleEvent(EVENT_TURN_TO_PLAYER, 0);
                             if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
                                 victor->AI()->Talk(SAY_NEFARIUS_3);
-                            events.ScheduleEvent(EVENT_TURN_TO_FACING_1, 4s);
-                            events.ScheduleEvent(EVENT_SPAWN_WAVE, 3s);
+                            events.ScheduleEvent(EVENT_TURN_TO_FACING_1, 4000);
+                            events.ScheduleEvent(EVENT_SPAWN_WAVE, 3000);
                             break;
                         case EVENT_WAVES_TEXT_3:
                             events.ScheduleEvent(EVENT_TURN_TO_PLAYER, 0);
                             if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
                                 victor->AI()->Talk(SAY_NEFARIUS_4);
-                            events.ScheduleEvent(EVENT_TURN_TO_FACING_1, 4s);
-                            events.ScheduleEvent(EVENT_SPAWN_WAVE, 3s);
+                            events.ScheduleEvent(EVENT_TURN_TO_FACING_1, 4000);
+                            events.ScheduleEvent(EVENT_SPAWN_WAVE, 3000);
                             break;
                         case EVENT_WAVES_TEXT_4:
                             Talk(SAY_BLACKHAND_1);
-                            events.ScheduleEvent(EVENT_WAVES_EMOTE_2, 4s);
-                            events.ScheduleEvent(EVENT_TURN_TO_FACING_3, 8s);
-                            events.ScheduleEvent(EVENT_SPAWN_WAVE, 3s);
+                            events.ScheduleEvent(EVENT_WAVES_EMOTE_2, 4000);
+                            events.ScheduleEvent(EVENT_TURN_TO_FACING_3, 8000);
+                            events.ScheduleEvent(EVENT_SPAWN_WAVE, 3000);
                             break;
                         case EVENT_WAVES_TEXT_5:
                             events.ScheduleEvent(EVENT_TURN_TO_PLAYER, 0);
                             if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
                                 victor->AI()->Talk(SAY_NEFARIUS_5);
-                            events.ScheduleEvent(EVENT_TURN_TO_FACING_1, 4s);
-                            events.ScheduleEvent(EVENT_SPAWN_WAVE, 3s);
+                            events.ScheduleEvent(EVENT_TURN_TO_FACING_1, 4000);
+                            events.ScheduleEvent(EVENT_SPAWN_WAVE, 3000);
                             break;
                         case EVENT_WAVES_COMPLETE_TEXT_1:
                             events.ScheduleEvent(EVENT_TURN_TO_PLAYER, 0);
                             if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
                                 victor->AI()->Talk(SAY_NEFARIUS_6);
-                            events.ScheduleEvent(EVENT_TURN_TO_FACING_1, 4s);
-                            events.ScheduleEvent(EVENT_WAVES_COMPLETE_TEXT_2, 13s);
+                            events.ScheduleEvent(EVENT_TURN_TO_FACING_1, 4000);
+                            events.ScheduleEvent(EVENT_WAVES_COMPLETE_TEXT_2, 13000);
                             break;
                         case EVENT_WAVES_COMPLETE_TEXT_2:
                             if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
                                 victor->AI()->Talk(SAY_NEFARIUS_7);
                             Talk(SAY_BLACKHAND_2);
-                            events.ScheduleEvent(EVENT_PATH_REND, 1s);
-                            events.ScheduleEvent(EVENT_WAVES_COMPLETE_TEXT_3, 4s);
+                            events.ScheduleEvent(EVENT_PATH_REND, 1000);
+                            events.ScheduleEvent(EVENT_WAVES_COMPLETE_TEXT_3, 4000);
                             break;
                         case EVENT_WAVES_COMPLETE_TEXT_3:
                             if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
                                 victor->AI()->Talk(SAY_NEFARIUS_8);
-                            events.ScheduleEvent(EVENT_PATH_NEFARIUS, 1s);
-                            events.ScheduleEvent(EVENT_PATH_REND, 1s);
+                            events.ScheduleEvent(EVENT_PATH_NEFARIUS, 1000);
+                            events.ScheduleEvent(EVENT_PATH_REND, 1000);
                             break;
                         case EVENT_PATH_NEFARIUS:
                             if (Creature* victor = ObjectAccessor::GetCreature(*me, victorGUID))
@@ -369,7 +368,7 @@ public:
                             break;
                         case EVENT_TELEPORT_1:
                             me->NearTeleportTo(194.2993f, -474.0814f, 121.4505f, -0.01225555f);
-                            events.ScheduleEvent(EVENT_TELEPORT_2, 13s);
+                            events.ScheduleEvent(EVENT_TELEPORT_2, 13000);
                             break;
                         case EVENT_TELEPORT_2:
                             me->NearTeleportTo(216.485f, -434.93f, 110.888f, -0.01225555f);
@@ -398,15 +397,15 @@ public:
                 {
                     case EVENT_WHIRLWIND:
                         DoCast(SPELL_WHIRLWIND);
-                        events.ScheduleEvent(EVENT_WHIRLWIND, 13s, 18s);
+                        events.ScheduleEvent(EVENT_WHIRLWIND, urand(13000, 18000));
                         break;
                     case EVENT_CLEAVE:
                         DoCastVictim(SPELL_CLEAVE);
-                        events.ScheduleEvent(EVENT_CLEAVE, 10s, 14s);
+                        events.ScheduleEvent(EVENT_CLEAVE, urand(10000, 14000));
                         break;
                     case EVENT_MORTAL_STRIKE:
                         DoCastVictim(SPELL_MORTAL_STRIKE);
-                        events.ScheduleEvent(EVENT_MORTAL_STRIKE, 14s, 18s);
+                        events.ScheduleEvent(EVENT_MORTAL_STRIKE, urand(14000, 16000));
                         break;
                 }
             }

@@ -21,6 +21,7 @@
 
 enum Enums
 {
+    SAY_ENTER                   = 0,
     SAY_AGGRO                   = 1,
     SAY_BANISH                  = 2,
     SAY_SLAY                    = 3,
@@ -33,77 +34,121 @@ enum Enums
     SPELL_BANISH_DRAGON_HELPER  = 31550
 };
 
-struct boss_temporus : public BossAI
+enum Events
 {
-    boss_temporus(Creature* creature) : BossAI(creature, DATA_TEMPORUS) { }
+    EVENT_HASTEN                = 1,
+    EVENT_MORTAL_WOUND          = 2,
+    EVENT_WING_BUFFET           = 3,
+    EVENT_SPELL_REFLECTION      = 4
+};
 
-    void OwnTalk(uint32 id)
+class boss_temporus : public CreatureScript
+{
+public:
+    boss_temporus() : CreatureScript("boss_temporus") { }
+
+    struct boss_temporusAI : public ScriptedAI
     {
-        if (me->GetEntry() == NPC_TEMPORUS)
-            Talk(id);
-    }
+        boss_temporusAI(Creature* creature) : ScriptedAI(creature) { }
 
-    void JustEngagedWith(Unit* /*who*/) override
-    {
-        _JustEngagedWith();
+        EventMap events;
 
-        scheduler.Schedule(12s, [this](TaskContext context)
+        void OwnTalk(uint32 id)
         {
-            DoCastSelf(SPELL_HASTEN);
-            context.Repeat(20s);
-        }).Schedule(5s, [this](TaskContext context)
-        {
-            DoCastVictim(SPELL_MORTAL_WOUND);
-            context.Repeat(10s);
-        }).Schedule(20s, [this](TaskContext context)
-        {
-            DoCastAOE(SPELL_WING_BUFFET);
-            context.Repeat(20s);
-        });
-
-        if (IsHeroic())
-        {
-            scheduler.Schedule(28s, [this](TaskContext context)
-            {
-                DoCastSelf(SPELL_REFLECT);
-                context.Repeat(30s);
-            });
+            if (me->GetEntry() == NPC_TEMPORUS)
+                Talk(id);
         }
 
-        OwnTalk(SAY_AGGRO);
-    }
-
-    void KilledUnit(Unit* victim) override
-    {
-        if (victim->IsPlayer())
+        void Reset() override
         {
-            OwnTalk(SAY_SLAY);
+            events.Reset();
         }
-    }
 
-    void JustDied(Unit* /*killer*/) override
-    {
-        OwnTalk(SAY_DEATH);
-        _JustDied();
-    }
-
-    void MoveInLineOfSight(Unit* who) override
-    {
-        if (who->GetTypeId() == TYPEID_UNIT && who->GetEntry() == NPC_TIME_KEEPER)
+        void InitializeAI() override
         {
-            if (me->IsWithinDistInMap(who, 20.0f))
+            OwnTalk(SAY_ENTER);
+            ScriptedAI::InitializeAI();
+        }
+
+        void EnterCombat(Unit* /*who*/) override
+        {
+            events.ScheduleEvent(EVENT_HASTEN, 12000);
+            events.ScheduleEvent(EVENT_MORTAL_WOUND, 5000);
+            events.ScheduleEvent(EVENT_WING_BUFFET, 20000);
+            if (IsHeroic())
+                events.ScheduleEvent(EVENT_SPELL_REFLECTION, 28000);
+
+            OwnTalk(SAY_AGGRO);
+        }
+
+        void KilledUnit(Unit* victim) override
+        {
+            if (victim->GetTypeId() == TYPEID_PLAYER)
+                OwnTalk(SAY_SLAY);
+        }
+
+        void JustDied(Unit* /*killer*/) override
+        {
+            OwnTalk(SAY_DEATH);
+            if (InstanceScript* instance = me->GetInstanceScript())
+                instance->SetData(TYPE_TEMPORUS, DONE);
+        }
+
+        void MoveInLineOfSight(Unit* who) override
+        {
+            if (who->GetTypeId() == TYPEID_UNIT && who->GetEntry() == NPC_TIME_KEEPER)
             {
-                OwnTalk(SAY_BANISH);
-                me->CastSpell(me, SPELL_BANISH_DRAGON_HELPER, true);
-                return;
+                if (me->IsWithinDistInMap(who, 20.0f))
+                {
+                    OwnTalk(SAY_BANISH);
+                    me->CastSpell(me, SPELL_BANISH_DRAGON_HELPER, true);
+                    return;
+                }
             }
+
+            ScriptedAI::MoveInLineOfSight(who);
         }
 
-        ScriptedAI::MoveInLineOfSight(who);
+        void UpdateAI(uint32 diff) override
+        {
+            if (!UpdateVictim())
+                return;
+
+            events.Update(diff);
+            if (me->HasUnitState(UNIT_STATE_CASTING))
+                return;
+
+            switch (events.ExecuteEvent())
+            {
+                case EVENT_HASTEN:
+                    me->CastSpell(me, SPELL_HASTEN, false);
+                    events.ScheduleEvent(EVENT_HASTEN, 20000);
+                    break;
+                case EVENT_MORTAL_WOUND:
+                    me->CastSpell(me->GetVictim(), SPELL_MORTAL_WOUND, false);
+                    events.ScheduleEvent(EVENT_MORTAL_WOUND, 10000);
+                    break;
+                case EVENT_WING_BUFFET:
+                    me->CastSpell(me, SPELL_WING_BUFFET, false);
+                    events.ScheduleEvent(EVENT_WING_BUFFET, 20000);
+                    break;
+                case EVENT_SPELL_REFLECTION:
+                    me->CastSpell(me, SPELL_REFLECT, false);
+                    events.ScheduleEvent(EVENT_SPELL_REFLECTION, 30000);
+                    break;
+            }
+
+            DoMeleeAttackIfReady();
+        }
+    };
+
+    CreatureAI* GetAI(Creature* creature) const override
+    {
+        return GetTheBlackMorassAI<boss_temporusAI>(creature);
     }
 };
 
 void AddSC_boss_temporus()
 {
-    RegisterTheBlackMorassCreatureAI(boss_temporus);
+    new boss_temporus();
 }

@@ -127,9 +127,9 @@ public:
                 gobject->SetGoState(GO_STATE_ACTIVE);
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
             Talk(SAY_AGGRO);
             me->CallForHelp(10.0f);
 

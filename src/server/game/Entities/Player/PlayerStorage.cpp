@@ -76,7 +76,7 @@
 #include "Tokenize.h"
 #include "StringConvert.h"
 
-/// @todo: this import is not necessary for compilation and marked as unused by the IDE
+// TODO: this import is not necessary for compilation and marked as unused by the IDE
 //  however, for some reasons removing it would cause a damn linking issue
 //  there is probably some underlying problem with imports which should properly addressed
 //  see: https://github.com/azerothcore/azerothcore-wotlk/issues/9766
@@ -1890,7 +1890,7 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16& dest, Item* pItem, bool
 
             ScalingStatDistributionEntry const* ssd = pProto->ScalingStatDistribution ? sScalingStatDistributionStore.LookupEntry(pProto->ScalingStatDistribution) : 0;
             // check allowed level (extend range to upper values if MaxLevel more or equal max player level, this let GM set high level with 1...max range items)
-            if (ssd && ssd->MaxLevel < DEFAULT_MAX_LEVEL && ssd->MaxLevel < GetLevel())
+            if (ssd && ssd->MaxLevel < DEFAULT_MAX_LEVEL && ssd->MaxLevel < getLevel())
                 return EQUIP_ERR_ITEM_CANT_BE_EQUIPPED;
 
             uint8 eslot = FindEquipSlot(pProto, slot, swap);
@@ -2271,7 +2271,7 @@ InventoryResult Player::CanUseItem(Item* pItem, bool not_loading) const
                 // Armor that is binded to account can "morph" from plate to mail, etc. if skill is not learned yet.
                 if (pProto->Quality == ITEM_QUALITY_HEIRLOOM && pProto->Class == ITEM_CLASS_ARMOR && !HasSkill(itemSkill))
                 {
-                    /// @todo: when you right-click already equipped item it throws EQUIP_ERR_NO_REQUIRED_PROFICIENCY.
+                    // TODO: when you right-click already equipped item it throws EQUIP_ERR_NO_REQUIRED_PROFICIENCY.
 
                     // In fact it's a visual bug, everything works properly... I need sniffs of operations with
                     // binded to account items from off server.
@@ -2342,7 +2342,7 @@ InventoryResult Player::CanUseItem(ItemTemplate const* proto) const
         return EQUIP_ERR_NO_REQUIRED_PROFICIENCY;
     }
 
-    if (GetLevel() < proto->RequiredLevel)
+    if (getLevel() < proto->RequiredLevel)
     {
         return EQUIP_ERR_CANT_EQUIP_LEVEL_I;
     }
@@ -2593,8 +2593,6 @@ Item* Player::StoreNewItem(ItemPosCountVec const& dest, uint32 item, bool update
             stmt->SetData(1, ss.str());
             CharacterDatabase.Execute(stmt);
         }
-
-        sScriptMgr->OnStoreNewItem(this, pItem, count);
     }
     return pItem;
 }
@@ -3961,7 +3959,7 @@ void Player::SwapItem(uint16 src, uint16 dst)
     AutoUnequipOffhandIfNeed();
 }
 
-void Player::AddItemToBuyBackSlot(Item* pItem, uint32 money)
+void Player::AddItemToBuyBackSlot(Item* pItem)
 {
     if (pItem)
     {
@@ -4003,7 +4001,10 @@ void Player::AddItemToBuyBackSlot(Item* pItem, uint32 money)
         uint32 eslot = slot - BUYBACK_SLOT_START;
 
         SetGuidValue(PLAYER_FIELD_VENDORBUYBACK_SLOT_1 + (eslot * 2), pItem->GetGUID());
-        SetUInt32Value(PLAYER_FIELD_BUYBACK_PRICE_1 + eslot, money);
+        if (ItemTemplate const* proto = pItem->GetTemplate())
+            SetUInt32Value(PLAYER_FIELD_BUYBACK_PRICE_1 + eslot, proto->SellPrice * pItem->GetCount());
+        else
+            SetUInt32Value(PLAYER_FIELD_BUYBACK_PRICE_1 + eslot, 0);
         SetUInt32Value(PLAYER_FIELD_BUYBACK_TIMESTAMP_1 + eslot, (uint32)etime);
 
         // move to next (for non filled list is move most optimized choice)
@@ -4348,7 +4349,7 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
     if (!ignore_condition && pEnchant->EnchantmentCondition && !EnchantmentFitsRequirements(pEnchant->EnchantmentCondition, -1))
         return;
 
-    if (pEnchant->requiredLevel > GetLevel())
+    if (pEnchant->requiredLevel > getLevel())
         return;
 
     if (pEnchant->requiredSkill > 0 && pEnchant->requiredSkillValue > GetSkillValue(pEnchant->requiredSkill))
@@ -4893,9 +4894,21 @@ void Player::_LoadEntryPointData(PreparedQueryResult result)
                                              fields[2].Get<float>(),   // Z
                                              fields[3].Get<float>());  // Orientation
 
-    m_entryPointData.taxiPath[0] = fields[5].Get<uint32>();
-    m_entryPointData.taxiPath[1] = fields[6].Get<uint32>();
-    m_entryPointData.mountSpell = fields[7].Get<uint32>();
+    std::string_view taxi = fields[5].Get<std::string_view>();
+    if (!taxi.empty())
+    {
+        for (auto const& itr : Acore::Tokenize(taxi, ' ', false))
+        {
+            uint32 node = Acore::StringTo<uint32>(itr).value_or(0);
+            m_entryPointData.taxiPath.emplace_back(node);
+        }
+
+        // Check integrity
+        if (m_entryPointData.taxiPath.size() < 3)
+            m_entryPointData.ClearTaxiPath();
+    }
+
+    m_entryPointData.mountSpell   = fields[6].Get<uint32>();
 }
 
 bool Player::LoadPositionFromDB(uint32& mapid, float& x, float& y, float& z, float& o, bool& in_flight, ObjectGuid::LowType guid)
@@ -4921,7 +4934,7 @@ bool Player::LoadPositionFromDB(uint32& mapid, float& x, float& y, float& z, flo
 
 void Player::SetHomebind(WorldLocation const& loc, uint32 areaId)
 {
-    loc.GetPosition(m_homebindX, m_homebindY, m_homebindZ, m_homebindO);
+    loc.GetPosition(m_homebindX, m_homebindY, m_homebindZ);
     m_homebindMapId = loc.GetMapId();
     m_homebindAreaId = areaId;
 
@@ -4929,17 +4942,23 @@ void Player::SetHomebind(WorldLocation const& loc, uint32 areaId)
     CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_PLAYER_HOMEBIND);
     stmt->SetData(0, m_homebindMapId);
     stmt->SetData(1, m_homebindAreaId);
-    stmt->SetData(2, m_homebindX);
-    stmt->SetData(3, m_homebindY);
-    stmt->SetData(4, m_homebindZ);
-    stmt->SetData(5, m_homebindO);
-    stmt->SetData(6, GetGUID().GetCounter());
+    stmt->SetData (2, m_homebindX);
+    stmt->SetData (3, m_homebindY);
+    stmt->SetData (4, m_homebindZ);
+    stmt->SetData(5, GetGUID().GetCounter());
     CharacterDatabase.Execute(stmt);
 }
 
 bool Player::isBeingLoaded() const
 {
     return GetSession()->PlayerLoading();
+}
+
+void Player::SendSupercededSpell(uint32 oldSpell, uint32 newSpell)
+{
+    WorldPacket data(SMSG_SUPERCEDED_SPELL, 8);
+    data << uint32(oldSpell) << uint32(newSpell);
+    GetSession()->SendPacket(&data);
 }
 
 bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder const& holder)
@@ -4990,7 +5009,7 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
 
     // check name limitations
     if (ObjectMgr::CheckPlayerName(m_name) != CHAR_NAME_SUCCESS ||
-        (AccountMgr::IsPlayerAccount(GetSession()->GetSecurity()) && (sObjectMgr->IsReservedName(m_name) || sObjectMgr->IsProfanityName(m_name))))
+        (AccountMgr::IsPlayerAccount(GetSession()->GetSecurity()) && sObjectMgr->IsReservedName(m_name)))
     {
         CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ADD_AT_LOGIN_FLAG);
         stmt->SetData(0, uint16(AT_LOGIN_RENAME));
@@ -5104,7 +5123,7 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
 
     std::string taxi_nodes = fields[42].Get<std::string>();
 
-    auto RelocateToHomebind = [this, &mapId, &instanceId]() { mapId = m_homebindMapId; instanceId = 0; Relocate(m_homebindX, m_homebindY, m_homebindZ, m_homebindO); };
+    auto RelocateToHomebind = [this, &mapId, &instanceId]() { mapId = m_homebindMapId; instanceId = 0; Relocate(m_homebindX, m_homebindY, m_homebindZ); };
 
     _LoadGroup();
 
@@ -5178,8 +5197,10 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
             // xinef: restore taxi flight from entry point data
             if (m_entryPointData.HasTaxiPath())
             {
-                m_taxi.AddTaxiDestination(m_entryPointData.taxiPath[0]);
-                m_taxi.AddTaxiDestination(m_entryPointData.taxiPath[1]);
+                for (size_t i = 0; i < m_entryPointData.taxiPath.size() - 1; ++i)
+                    m_taxi.AddTaxiDestination(m_entryPointData.taxiPath[i]);
+                m_taxi.SetTaxiSegment(m_entryPointData.taxiPath[m_entryPointData.taxiPath.size() - 1]);
+
                 m_entryPointData.ClearTaxiPath();
             }
         }
@@ -5426,8 +5447,7 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
                        ? bubble1 * sWorld->getRate(RATE_REST_OFFLINE_IN_TAVERN_OR_CITY)
                        : bubble0 * sWorld->getRate(RATE_REST_OFFLINE_IN_WILDERNESS);
 
-        // Client automatically doubles the value sent so we have to divide it by 2
-        SetRestBonus(GetRestBonus() + time_diff * ((float)GetUInt32Value(PLAYER_NEXT_LEVEL_XP) / 144000)*bubble);
+        SetRestBonus(GetRestBonus() + time_diff * ((float)GetUInt32Value(PLAYER_NEXT_LEVEL_XP) / 72000)*bubble);
     }
 
     uint32 innTriggerId = fields[72].Get<uint32>();
@@ -5503,6 +5523,7 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
     SetFallInformation(GameTime::GetGameTime().count(), GetPositionZ());
 
     _LoadSpellCooldowns(holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_SPELL_COOLDOWNS));
+    _LoadSpellCharges(holder.GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_SPELL_CHARGES));
 
     // Spell code allow apply any auras to dead character in load time in aura/spell/item loading
     // Do now before stats re-calculation cleanup for ghost state unexpected auras
@@ -5620,6 +5641,8 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
         SetFlag(UNIT_FIELD_AURASTATE, 1 << (AURA_STATE_HEALTHLESS_35_PERCENT - 1));
     if (HealthAbovePct(75))
         SetFlag(UNIT_FIELD_AURASTATE, 1 << (AURA_STATE_HEALTH_ABOVE_75_PERCENT - 1));
+    if (PowerBelowPct(50))
+        SetFlag(UNIT_FIELD_AURASTATE, 1 << (AURA_STATE_POWER_BELOW_50_PERCENT - 1));
 
     // unapply aura stats if dont meet requirements
     AuraApplicationMap const& Auras = GetAppliedAuras();
@@ -5630,7 +5653,8 @@ bool Player::LoadFromDB(ObjectGuid playerGuid, CharacterDatabaseQueryHolder cons
         SpellInfo const* m_spellInfo = aura->GetSpellInfo();
         if (m_spellInfo->CasterAuraState != AURA_STATE_HEALTHLESS_20_PERCENT &&
             m_spellInfo->CasterAuraState != AURA_STATE_HEALTHLESS_35_PERCENT &&
-            m_spellInfo->CasterAuraState != AURA_STATE_HEALTH_ABOVE_75_PERCENT)
+            m_spellInfo->CasterAuraState != AURA_STATE_HEALTH_ABOVE_75_PERCENT &&
+            m_spellInfo->CasterAuraState != AURA_STATE_POWER_BELOW_50_PERCENT)
             continue;
 
         if (!HasAuraState((AuraStateType)m_spellInfo->CasterAuraState))
@@ -5739,14 +5763,8 @@ void Player::_LoadAuras(PreparedQueryResult result, uint32 timediff)
             ObjectGuid itemGuid = ObjectGuid(fields[1].Get<uint64>());
             uint32 spellid = fields[2].Get<uint32>();
             uint8 effmask = fields[3].Get<uint8>();
-            uint8 recalculatemask = fields[4].Get<uint8>();
+            uint8 recalculatemask;
             uint8 stackcount = fields[5].Get<uint8>();
-            damage[0] = fields[6].Get<int32>();
-            damage[1] = fields[7].Get<int32>();
-            damage[2] = fields[8].Get<int32>();
-            baseDamage[0] = fields[9].Get<int32>();
-            baseDamage[1] = fields[10].Get<int32>();
-            baseDamage[2] = fields[11].Get<int32>();
             int32 maxduration = fields[12].Get<int32>();
             int32 remaintime = fields[13].Get<int32>();
             uint8 remaincharges = fields[14].Get<uint8>();
@@ -5785,6 +5803,18 @@ void Player::_LoadAuras(PreparedQueryResult result, uint32 timediff)
             else
                 remaincharges = 0;
 
+
+            for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+            {
+                if (AuraEffect const* effect = this->GetAuraEffect(spellInfo->Id, i))
+                {
+                    baseDamage[i] = effect->GetBaseAmount();
+                    damage[i] = effect->GetAmount();
+                    if (effect->CanBeRecalculated())
+                        recalculatemask |= 1 << i;
+                }
+            }
+          
             if (Aura* aura = Aura::TryCreate(spellInfo, effmask, this, nullptr, &baseDamage[0], nullptr, caster_guid, itemGuid))
             {
                 if (!aura->CanBeSaved())
@@ -6115,7 +6145,7 @@ Item* Player::_LoadItem(CharacterDatabaseTransaction trans, uint32 zoneId, uint3
         LOG_ERROR("entities.player", "Player::_LoadInventory: player ({}, name: '{}') has unknown item (entry: {}) in inventory. Deleting item.",
                   GetGUID().ToString(), GetName(), itemEntry);
         Item::DeleteFromInventoryDB(trans, itemGuid);
-        Item::DeleteFromDB(trans, itemGuid);
+        Item::DeleteFromDB(trans, this, itemGuid);
     }
     return item;
 }
@@ -6737,9 +6767,9 @@ bool Player::Satisfy(DungeonProgressionRequirements const* ar, uint32 target_map
 
         if (!sWorld->getBoolConfig(CONFIG_INSTANCE_IGNORE_LEVEL))
         {
-            if (ar->levelMin && GetLevel() < ar->levelMin)
+            if (ar->levelMin && getLevel() < ar->levelMin)
                 LevelMin = ar->levelMin;
-            if (ar->levelMax && GetLevel() > ar->levelMax)
+            if (ar->levelMax && getLevel() > ar->levelMax)
                 LevelMax = ar->levelMax;
         }
 
@@ -6793,7 +6823,7 @@ bool Player::Satisfy(DungeonProgressionRequirements const* ar, uint32 target_map
         {
             Player* checkPlayer = this;
             std::vector<const ProgressionRequirement*>* missingAchievements = &missingPlayerAchievements;
-            if (achievementRequirement->checkLeaderOnly)
+            if(achievementRequirement->checkLeaderOnly)
             {
                 checkPlayer = partyLeader;
                 missingAchievements = &missingLeaderAchievements;
@@ -6859,20 +6889,15 @@ bool Player::Satisfy(DungeonProgressionRequirements const* ar, uint32 target_map
                     //Just print out the requirements are not met
                     ChatHandler(GetSession()).SendSysMessage(LANG_ACCESS_REQUIREMENT_NOT_MET);
                 }
-                else if (requirementPrintMode == 1)
+                else if(requirementPrintMode == 1)
                 {
                     //Blizzlike method of printing out the requirements
-                    if (missingPlayerQuests.size() && !missingPlayerQuests[0]->note.empty())
-                    {
-                        ChatHandler(GetSession()).PSendSysMessage("%s", missingPlayerQuests[0]->note.c_str());
-                    }
-                    else if (missingLeaderQuests.size() && !missingLeaderQuests[0]->note.empty())
+                    if (missingLeaderQuests.size() && !missingLeaderQuests[0]->note.empty())
                     {
                         ChatHandler(GetSession()).PSendSysMessage("%s", missingLeaderQuests[0]->note.c_str());
                     }
                     else if (mapDiff->hasErrorMessage)
-                    {
-                        // if (missingAchievement) covered by this case
+                    { // if (missingAchievement) covered by this case
                         SendTransferAborted(target_map, TRANSFER_ABORT_DIFFICULTY, target_difficulty);
                     }
                     else if (missingPlayerItems.size())
@@ -7010,7 +7035,7 @@ bool Player::_LoadHomeBind(PreparedQueryResult result)
     }
 
     bool ok = false;
-    // SELECT mapId, zoneId, posX, posY, posZ, pozO FROM character_homebind WHERE guid = ?
+    // SELECT mapId, zoneId, posX, posY, posZ FROM character_homebind WHERE guid = ?
     if (result)
     {
         Field* fields = result->Fetch();
@@ -7020,12 +7045,11 @@ bool Player::_LoadHomeBind(PreparedQueryResult result)
         m_homebindX = fields[2].Get<float>();
         m_homebindY = fields[3].Get<float>();
         m_homebindZ = fields[4].Get<float>();
-        m_homebindO = fields[5].Get<float>();
 
         MapEntry const* bindMapEntry = sMapStore.LookupEntry(m_homebindMapId);
 
         // accept saved data only for valid position (and non instanceable), and accessable
-        if (MapMgr::IsValidMapCoord(m_homebindMapId, m_homebindX, m_homebindY, m_homebindZ, m_homebindO) &&
+        if (MapMgr::IsValidMapCoord(m_homebindMapId, m_homebindX, m_homebindY, m_homebindZ) &&
             !bindMapEntry->Instanceable() && GetSession()->Expansion() >= bindMapEntry->Expansion())
             ok = true;
         else
@@ -7043,20 +7067,19 @@ bool Player::_LoadHomeBind(PreparedQueryResult result)
         m_homebindX = info->positionX;
         m_homebindY = info->positionY;
         m_homebindZ = info->positionZ;
-        m_homebindO = info->orientation;
+
         CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_PLAYER_HOMEBIND);
         stmt->SetData(0, GetGUID().GetCounter());
         stmt->SetData(1, m_homebindMapId);
         stmt->SetData(2, m_homebindAreaId);
-        stmt->SetData(3, m_homebindX);
-        stmt->SetData(4, m_homebindY);
-        stmt->SetData(5, m_homebindZ);
-        stmt->SetData(6, m_homebindO);
+        stmt->SetData (3, m_homebindX);
+        stmt->SetData (4, m_homebindY);
+        stmt->SetData (5, m_homebindZ);
         CharacterDatabase.Execute(stmt);
     }
 
-    LOG_DEBUG("entities.player", "Setting player home position - mapid: {}, areaid: {}, X: {}, Y: {}, Z: {}, O: {}",
-              m_homebindMapId, m_homebindAreaId, m_homebindX, m_homebindY, m_homebindZ, m_homebindO);
+    LOG_DEBUG("entities.player", "Setting player home position - mapid: {}, areaid: {}, X: {}, Y: {}, Z: {}",
+              m_homebindMapId, m_homebindAreaId, m_homebindX, m_homebindY, m_homebindZ);
     return true;
 }
 
@@ -7113,6 +7136,7 @@ void Player::SaveToDB(CharacterDatabaseTransaction trans, bool create, bool logo
     _SaveTalents(trans);
     _SaveSpells(trans);
     _SaveSpellCooldowns(trans, logout);
+    _SaveSpellCharges(trans, logout);
     _SaveActions(trans);
     _SaveAuras(trans, logout);
     _SaveSkills(trans);
@@ -7758,7 +7782,7 @@ void Player::_SaveSpells(CharacterDatabaseTransaction trans)
 void Player::_SaveStats(CharacterDatabaseTransaction trans)
 {
     // check if stat saving is enabled and if char level is high enough
-    if (!sWorld->getIntConfig(CONFIG_MIN_LEVEL_STAT_SAVE) || GetLevel() < sWorld->getIntConfig(CONFIG_MIN_LEVEL_STAT_SAVE))
+    if (!sWorld->getIntConfig(CONFIG_MIN_LEVEL_STAT_SAVE) || getLevel() < sWorld->getIntConfig(CONFIG_MIN_LEVEL_STAT_SAVE))
         return;
 
     CharacterDatabasePreparedStatement* stmt = nullptr;

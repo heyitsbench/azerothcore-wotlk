@@ -172,9 +172,9 @@ public:
             BossAI::JustDied(killer);
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
             me->SetStandState(UNIT_STAND_STATE_KNEEL);
         }
 
@@ -203,7 +203,7 @@ public:
                     {
                         if (me->GetDisplayId() != me->GetNativeDisplayId())
                         {
-                            DoResetThreatList();
+                            DoResetThreat();
                             me->LoadEquipment();
                             me->RemoveAurasDueToSpell(SPELL_METAMORPHOSIS);
                             events.ScheduleEvent(EVENT_SPELL_WHIRLWIND, 10000);
@@ -223,7 +223,7 @@ public:
                     events.ScheduleEvent(EVENT_HEALTH_CHECK, 1000);
                     break;
                 case EVENT_SWITCH_TO_DEMON:
-                    DoResetThreatList();
+                    DoResetThreat();
                     Talk(SAY_SWITCH_TO_DEMON);
                     me->LoadEquipment(0, true);
                     me->GetMotionMaster()->MoveChase(me->GetVictim(), 25.0f);
@@ -234,7 +234,7 @@ public:
                     events.ScheduleEvent(EVENT_SWITCH_TO_ELF, 60000);
                     break;
                 case EVENT_SWITCH_TO_ELF:
-                    DoResetThreatList();
+                    DoResetThreat();
                     me->LoadEquipment();
                     me->GetMotionMaster()->MoveChase(me->GetVictim(), 0.0f);
                     me->RemoveAurasDueToSpell(SPELL_METAMORPHOSIS);
@@ -294,7 +294,7 @@ public:
             me->DespawnOrUnsummon(1);
         }
 
-        void IsSummonedBy(WorldObject* summoner) override
+        void IsSummonedBy(Unit* summoner) override
         {
             if (!summoner)
                 return;

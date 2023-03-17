@@ -240,9 +240,9 @@ public:
             summons.Summon(cr);
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
             me->SetInCombatWithZone();
             summons.DoZoneInCombat(NPC_FEUGEN);
             summons.DoZoneInCombat(NPC_STALAGG);
@@ -277,7 +277,7 @@ public:
                         }
                     }
                     reviveTimer = 0;
-                    events.ScheduleEvent(EVENT_THADDIUS_INIT, 750ms);
+                    events.ScheduleEvent(EVENT_THADDIUS_INIT, 750);
                 }
                 return;
             }
@@ -324,7 +324,7 @@ public:
                         go->SetGoState(GO_STATE_READY);
                     }
                     me->CastSpell(me, SPELL_THADDIUS_VISUAL_LIGHTNING, true);
-                    events.ScheduleEvent(EVENT_THADDIUS_ENTER_COMBAT, 1s);
+                    events.ScheduleEvent(EVENT_THADDIUS_ENTER_COMBAT, 1000);
                     break;
                 }
                 case EVENT_THADDIUS_ENTER_COMBAT:
@@ -332,21 +332,21 @@ public:
                     me->SetReactState(REACT_AGGRESSIVE);
                     me->SetControlled(false, UNIT_STATE_STUNNED);
                     me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
-                    events.ScheduleEvent(EVENT_THADDIUS_CHAIN_LIGHTNING, 14s);
-                    events.ScheduleEvent(EVENT_THADDIUS_BERSERK, 6min);
-                    events.ScheduleEvent(EVENT_THADDIUS_POLARITY_SHIFT, 30s);
-                    events.ScheduleEvent(EVENT_ALLOW_BALL_LIGHTNING, 5s);
+                    events.ScheduleEvent(EVENT_THADDIUS_CHAIN_LIGHTNING, 14000);
+                    events.ScheduleEvent(EVENT_THADDIUS_BERSERK, 360000);
+                    events.ScheduleEvent(EVENT_THADDIUS_POLARITY_SHIFT, 30000);
+                    events.ScheduleEvent(EVENT_ALLOW_BALL_LIGHTNING, 5000);
                     return;
                 case EVENT_THADDIUS_BERSERK:
                     me->CastSpell(me, SPELL_BERSERK, true);
                     break;
                 case EVENT_THADDIUS_CHAIN_LIGHTNING:
                     me->CastSpell(me->GetVictim(), RAID_MODE(SPELL_CHAIN_LIGHTNING_10, SPELL_CHAIN_LIGHTNING_25), false);
-                    events.Repeat(15s);
+                    events.RepeatEvent(15000);
                     break;
                 case EVENT_THADDIUS_POLARITY_SHIFT:
                     me->CastSpell(me, SPELL_POLARITY_SHIFT, false);
-                    events.Repeat(30s);
+                    events.RepeatEvent(30000);
                     break;
                 case EVENT_ALLOW_BALL_LIGHTNING:
                     ballLightningEnabled = true;
@@ -414,7 +414,7 @@ public:
             ScriptedAI::EnterEvadeMode(why);
         }
 
-        void JustEngagedWith(Unit* pWho) override
+        void EnterCombat(Unit* pWho) override
         {
             me->SetInCombatWithZone();
             if (Creature* cr = me->FindNearestCreature(NPC_TESLA_COIL, 150.f, true))
@@ -423,19 +423,19 @@ public:
             }
             if (me->GetEntry() == NPC_STALAGG)
             {
-                events.ScheduleEvent(EVENT_MINION_POWER_SURGE, 10s);
+                events.ScheduleEvent(EVENT_MINION_POWER_SURGE, 10000);
                 Talk(SAY_STAL_AGGRO);
             }
             else
             {
-                events.ScheduleEvent(EVENT_MINION_STATIC_FIELD, 5s);
+                events.ScheduleEvent(EVENT_MINION_STATIC_FIELD, 5000);
                 Talk(SAY_FEUG_AGGRO);
             }
-            events.ScheduleEvent(EVENT_MINION_CHECK_DISTANCE, 5s);
+            events.ScheduleEvent(EVENT_MINION_CHECK_DISTANCE, 5000);
 
             if (me->GetEntry() == NPC_STALAGG) // This event needs synchronisation, called for stalagg only
             {
-                events.ScheduleEvent(EVENT_MINION_MAGNETIC_PULL, 20s);
+                events.ScheduleEvent(EVENT_MINION_MAGNETIC_PULL, 20000);
             }
             if (pInstance)
             {
@@ -538,14 +538,14 @@ public:
             {
                 case EVENT_MINION_POWER_SURGE:
                     me->CastSpell(me, RAID_MODE(SPELL_POWER_SURGE_10, SPELL_POWER_SURGE_25), false);
-                    events.Repeat(19s);
+                    events.RepeatEvent(19000);
                     break;
                 case EVENT_MINION_STATIC_FIELD:
                     me->CastSpell(me, RAID_MODE(SPELL_STATIC_FIELD_10, SPELL_STATIC_FIELD_25), false);
-                    events.Repeat(3s);
+                    events.RepeatEvent(3000);
                     break;
                 case EVENT_MINION_MAGNETIC_PULL:
-                    events.Repeat(20s);
+                    events.RepeatEvent(20000);
                     if (pInstance)
                     {
                         if (Creature* feugen = ObjectAccessor::GetCreature(*me, pInstance->GetGuidData(DATA_FEUGEN_BOSS)))
@@ -553,17 +553,17 @@ public:
                             if (!feugen->IsAlive() || !feugen->GetVictim() || !me->GetVictim())
                                 return;
 
-                            float threatFeugen = feugen->GetThreatMgr().GetThreat(feugen->GetVictim());
-                            float threatStalagg = me->GetThreatMgr().GetThreat(me->GetVictim());
+                            float threatFeugen = feugen->GetThreatMgr().getThreat(feugen->GetVictim());
+                            float threatStalagg = me->GetThreatMgr().getThreat(me->GetVictim());
                             Unit* tankFeugen = feugen->GetVictim();
                             Unit* tankStalagg = me->GetVictim();
 
-                            feugen->GetThreatMgr().ModifyThreatByPercent(tankFeugen, -100);
+                            feugen->GetThreatMgr().modifyThreatPercent(tankFeugen, -100);
                             feugen->AddThreat(tankStalagg, threatFeugen);
                             feugen->CastSpell(tankStalagg, SPELL_MAGNETIC_PULL, true);
                             feugen->AI()->DoAction(ACTION_MAGNETIC_PULL);
 
-                            me->GetThreatMgr().ModifyThreatByPercent(tankStalagg, -100);
+                            me->GetThreatMgr().modifyThreatPercent(tankStalagg, -100);
                             me->AddThreat(tankFeugen, threatStalagg);
                             me->CastSpell(tankFeugen, SPELL_MAGNETIC_PULL, true);
                             DoAction(ACTION_MAGNETIC_PULL);
@@ -587,7 +587,7 @@ public:
                                 cr->CastStop(SPELL_TESLA_SHOCK);
                                 cr->CastSpell(target, SPELL_TESLA_SHOCK, true);
                             }
-                            events.Repeat(1500ms);
+                            events.RepeatEvent(1500);
                             break;
                         }
                         else
@@ -596,7 +596,7 @@ public:
                             cr->CastSpell(cr, me->GetEntry() == NPC_STALAGG ? SPELL_STALAGG_CHAIN : SPELL_FEUGEN_CHAIN, false);
                         }
                     }
-                    events.Repeat(5s);
+                    events.RepeatEvent(5000);
                     break;
             }
             DoMeleeAttackIfReady();
@@ -738,7 +738,7 @@ public:
         npc_teslaAI(Creature* creature) : ScriptedAI(creature) { }
         void EnterEvadeMode(EvadeReason /*why*/) override { } // never stop casting due to evade
         void UpdateAI(uint32 /*diff*/) override { } // never do anything unless told
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
         void DamageTaken(Unit* /*who*/, uint32& damage, DamageEffectType, SpellSchoolMask) override { damage = 0; } // no, you can't kill it
     };
 };

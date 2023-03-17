@@ -63,9 +63,9 @@ public:
     {
         boss_mechano_lord_capacitusAI(Creature* creature) : BossAI(creature, DATA_MECHANOLORD_CAPACITUS) { }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
-            _JustEngagedWith();
+            _EnterCombat();
             Talk(YELL_AGGRO);
             events.ScheduleEvent(EVENT_HEADCRACK, 6000);
             events.ScheduleEvent(EVENT_SUMMON_NETHER_CHARGE, 10000);

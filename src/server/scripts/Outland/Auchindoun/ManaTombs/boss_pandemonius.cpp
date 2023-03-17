@@ -62,7 +62,7 @@ public:
             VoidBlastCounter = 0;
         }
 
-        void JustEngagedWith(Unit*) override
+        void EnterCombat(Unit*) override
         {
             me->SetInCombatWithZone();
 

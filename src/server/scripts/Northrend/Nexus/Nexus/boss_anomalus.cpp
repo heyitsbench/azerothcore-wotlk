@@ -120,18 +120,18 @@ public:
             activeRifts++;
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
             Talk(SAY_AGGRO);
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
 
             activeRifts = 0;
             events.SetTimer(45000);
-            events.ScheduleEvent(EVENT_ANOMALUS_SPARK, 5s);
-            events.ScheduleEvent(EVENT_ANOMALUS_HEALTH, 1s);
-            events.ScheduleEvent(EVENT_ANOMALUS_SPAWN_RIFT, IsHeroic() ? 15s : 25s);
+            events.ScheduleEvent(EVENT_ANOMALUS_SPARK, 5000);
+            events.ScheduleEvent(EVENT_ANOMALUS_HEALTH, 1000);
+            events.ScheduleEvent(EVENT_ANOMALUS_SPAWN_RIFT, IsHeroic() ? 15000 : 25000);
             if (IsHeroic())
-                events.ScheduleEvent(EVENT_ANOMALUS_ARCANE_ATTRACTION, 8s);
+                events.ScheduleEvent(EVENT_ANOMALUS_ARCANE_ATTRACTION, 8000);
         }
 
         void JustDied(Unit* killer) override
@@ -154,22 +154,22 @@ public:
             {
                 case EVENT_ANOMALUS_SPARK:
                     me->CastSpell(me->GetVictim(), SPELL_SPARK, false);
-                    events.ScheduleEvent(EVENT_ANOMALUS_SPARK, 5s);
+                    events.ScheduleEvent(EVENT_ANOMALUS_SPARK, 5000);
                     break;
                 case EVENT_ANOMALUS_HEALTH:
                     if (me->HealthBelowPct(51))
                     {
                         //First time we reach 51%, the next rift going to be empowered following timings.
                         events.CancelEvent(EVENT_ANOMALUS_SPAWN_RIFT);
-                        events.ScheduleEvent(EVENT_ANOMALUS_SPAWN_RIFT_EMPOWERED, 1s);
+                        events.ScheduleEvent(EVENT_ANOMALUS_SPAWN_RIFT_EMPOWERED, 1000);
                         break;
                     }
-                    events.ScheduleEvent(EVENT_ANOMALUS_HEALTH, 1s);
+                    events.ScheduleEvent(EVENT_ANOMALUS_HEALTH, 1000);
                     break;
                 case EVENT_ANOMALUS_ARCANE_ATTRACTION:
                     if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0, 50.0f, true))
                         me->CastSpell(target, SPELL_ARCANE_ATTRACTION, false);
-                    events.ScheduleEvent(EVENT_ANOMALUS_ARCANE_ATTRACTION, 15s);
+                    events.ScheduleEvent(EVENT_ANOMALUS_ARCANE_ATTRACTION, 15000);
                     break;
                 case EVENT_ANOMALUS_SPAWN_RIFT:
                     Talk(SAY_RIFT);
@@ -185,9 +185,9 @@ public:
                     me->CastSpell(me, SPELL_CREATE_RIFT, false);
                     me->CastSpell(me, SPELL_RIFT_SHIELD, true);
                     me->m_Events.AddEvent(new ChargeRifts(me), me->m_Events.CalculateTime(1000));
-                    events.DelayEvents(46s);
+                    events.DelayEvents(46000);
                     //As we just spawned an empowered spawn a normal one
-                    events.ScheduleEvent(EVENT_ANOMALUS_SPAWN_RIFT, IsHeroic() ? 15s : 25s);
+                    events.ScheduleEvent(EVENT_ANOMALUS_SPAWN_RIFT, IsHeroic() ? 15000 : 25000);
                     break;
             }
 

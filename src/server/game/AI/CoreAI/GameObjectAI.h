@@ -25,7 +25,6 @@
 #include "QuestDef.h"
 #include <list>
 
-class Creature;
 class GameObject;
 class Unit;
 class SpellInfo;
@@ -50,7 +49,7 @@ public:
     virtual void SetGUID(ObjectGuid /*guid*/, int32 /*id = 0 */) {}
     virtual ObjectGuid GetGUID(int32 /*id = 0 */) const { return ObjectGuid::Empty; }
 
-    static int32 Permissible(GameObject const* go);
+    static int Permissible(GameObject const* go);
 
     virtual bool GossipHello(Player* /*player*/, bool /*reportUse*/) { return false; }
     virtual bool GossipSelect(Player* /*player*/, uint32 /*sender*/, uint32 /*action*/) { return false; }
@@ -67,10 +66,6 @@ public:
     virtual void SpellHit(Unit* /*unit*/, SpellInfo const* /*spellInfo*/) {}
     virtual bool CanBeSeen(Player const* /*seer*/) { return true; }
 
-    // Called when the gameobject summon successfully other creature
-    virtual void JustSummoned(Creature* /*summon*/) { }
-    virtual void SummonedCreatureDespawn(Creature* /*summon*/) { }
-
     virtual void SummonedCreatureDies(Creature* /*summon*/, Unit* /*killer*/) { }
 };
 
@@ -81,6 +76,6 @@ public:
 
     void UpdateAI(uint32 /*diff*/) override {}
 
-    static int32 Permissible(GameObject const* go);
+    static int Permissible(GameObject const* /*go*/) { return PERMIT_BASE_IDLE; }
 };
 #endif

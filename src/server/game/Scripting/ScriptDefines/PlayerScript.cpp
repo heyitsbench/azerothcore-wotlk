@@ -146,14 +146,6 @@ void ScriptMgr::OnPlayerMoneyChanged(Player* player, int32& amount)
     });
 }
 
-void ScriptMgr::OnBeforeLootMoney(Player* player, Loot* loot)
-{
-    ExecuteScript<PlayerScript>([&](PlayerScript* script)
-    {
-        script->OnBeforeLootMoney(player, loot);
-    });
-}
-
 void ScriptMgr::OnGivePlayerXP(Player* player, uint32& amount, Unit* victim)
 {
     ExecuteScript<PlayerScript>([&](PlayerScript* script)
@@ -526,6 +518,14 @@ void ScriptMgr::OnAfterPlayerMoveItemFromInventory(Player* player, Item* it, uin
     });
 }
 
+void ScriptMgr::OnAfterPlayerDestroyItem(Player* player, Item* it, uint8 bag, uint8 slot)
+{
+    ExecuteScript<PlayerScript>([&](PlayerScript* script)
+        {
+            script->OnAfterPlayerDestroyItem(player, it, bag, slot);
+        });
+}
+
 void ScriptMgr::OnEquip(Player* player, Item* it, uint8 bag, uint8 slot, bool update)
 {
     ExecuteScript<PlayerScript>([&](PlayerScript* script)
@@ -574,19 +574,19 @@ void ScriptMgr::OnGetMaxPersonalArenaRatingRequirement(Player const* player, uin
     });
 }
 
+void ScriptMgr::OnAddItem(Player* player, uint32 item, uint32 count)
+{
+    ExecuteScript<PlayerScript>([&](PlayerScript* script)
+        {
+            script->OnAddItem(player, item, count);
+        });
+}
+
 void ScriptMgr::OnLootItem(Player* player, Item* item, uint32 count, ObjectGuid lootguid)
 {
     ExecuteScript<PlayerScript>([&](PlayerScript* script)
     {
         script->OnLootItem(player, item, count, lootguid);
-    });
-}
-
-void ScriptMgr::OnStoreNewItem(Player* player, Item* item, uint32 count)
-{
-    ExecuteScript<PlayerScript>([&](PlayerScript* script)
-    {
-        script->OnStoreNewItem(player, item, count);
     });
 }
 
@@ -606,20 +606,12 @@ void ScriptMgr::OnQuestRewardItem(Player* player, Item* item, uint32 count)
     });
 }
 
-void ScriptMgr::OnGroupRollRewardItem(Player* player, Item* item, uint32 count, RollVote voteType, Roll* roll)
-{
-    ExecuteScript<PlayerScript>([&](PlayerScript* script)
-    {
-        script->OnGroupRollRewardItem(player, item, count, voteType, roll);
-    });
-}
-
-bool ScriptMgr::OnBeforeOpenItem(Player* player, Item* item)
+bool ScriptMgr::CanAddQuest(Player* player)
 {
     auto ret = IsValidBoolScript<PlayerScript>([&](PlayerScript* script)
-        {
-            return !script->OnBeforeOpenItem(player, item);
-        });
+    {
+        return script->CanAddQuest(player);
+    });
 
     if (ret && *ret)
     {
@@ -629,19 +621,12 @@ bool ScriptMgr::OnBeforeOpenItem(Player* player, Item* item)
     return true;
 }
 
+
 void ScriptMgr::OnFirstLogin(Player* player)
 {
     ExecuteScript<PlayerScript>([&](PlayerScript* script)
     {
         script->OnFirstLogin(player);
-    });
-}
-
-void ScriptMgr::OnSetMaxLevel(Player* player, uint32& maxPlayerLevel)
-{
-    ExecuteScript<PlayerScript>([&](PlayerScript* script)
-    {
-        script->OnSetMaxLevel(player, maxPlayerLevel);
     });
 }
 
@@ -882,6 +867,14 @@ bool ScriptMgr::CanSendMail(Player* player, ObjectGuid receiverGuid, ObjectGuid 
     return true;
 }
 
+void ScriptMgr::OnReceiveItemFromMail(Player* player, Player* sender, Item* item)
+{
+    ExecuteScript<PlayerScript>([&](PlayerScript* script)
+    {
+        script->OnReceiveItemFromMail(player, sender, item);
+    });
+}
+
 void ScriptMgr::PetitionBuy(Player* player, Creature* creature, uint32& charterid, uint32& cost, uint32& type)
 {
     ExecuteScript<PlayerScript>([&](PlayerScript* script)
@@ -950,21 +943,6 @@ void ScriptMgr::OnGetMaxSkillValue(Player* player, uint32 skill, int32& result, 
     {
         script->OnGetMaxSkillValue(player, skill, result, IsPure);
     });
-}
-
-bool ScriptMgr::OnUpdateFishingSkill(Player* player, int32 skill, int32 zone_skill, int32 chance, int32 roll)
-{
-    auto ret = IsValidBoolScript<PlayerScript>([&](PlayerScript* script)
-    {
-        return !script->OnUpdateFishingSkill(player, skill, zone_skill, chance, roll);
-    });
-
-    if (ret && *ret)
-    {
-        return false;
-    }
-
-    return true;
 }
 
 bool ScriptMgr::CanAreaExploreAndOutdoor(Player* player)
@@ -1279,21 +1257,12 @@ void ScriptMgr::OnGetArenaTeamId(Player* player, uint8 slot, uint32& result)
     });
 }
 
-//Signifies that IsFfaPvp has been called.
 void ScriptMgr::OnIsFFAPvP(Player* player, bool& result)
 {
     ExecuteScript<PlayerScript>([&](PlayerScript* script)
     {
         script->OnIsFFAPvP(player, result);
     });
-}
-//Fires whenever the UNIT_BYTE2_FLAG_FFA_PVP bit is Changed
-void ScriptMgr::OnFfaPvpStateUpdate(Player* player, bool result)
-{
-    ExecuteScript<PlayerScript>([&](PlayerScript* script)
-        {
-            script->OnFfaPvpStateUpdate(player, result);
-        });
 }
 
 void ScriptMgr::OnIsPvP(Player* player, bool& result)
@@ -1412,14 +1381,6 @@ void ScriptMgr::OnPlayerResurrect(Player* player, float restore_percent, bool ap
     });
 }
 
-void ScriptMgr::OnBeforeChooseGraveyard(Player* player, TeamId teamId, bool nearCorpse, uint32& graveyardOverride)
-{
-    ExecuteScript<PlayerScript>([&](PlayerScript* script)
-    {
-        script->OnBeforeChooseGraveyard(player, teamId, nearCorpse, graveyardOverride);
-    });
-}
-
 bool ScriptMgr::CanPlayerUseChat(Player* player, uint32 type, uint32 language, std::string& msg)
 {
     auto ret = IsValidBoolScript<PlayerScript>([&](PlayerScript* script)
@@ -1526,6 +1487,23 @@ void ScriptMgr::OnQuestAbandon(Player* player, uint32 questId)
         script->OnQuestAbandon(player, questId);
     });
 }
+
+void ScriptMgr::OnNewTaxiNode(Player* player, uint32 nodeId)
+{
+    ExecuteScript<PlayerScript>([&](PlayerScript* script)
+        {
+            script->OnNewTaxiNode(player, nodeId);
+        });
+}
+
+void ScriptMgr::OnNewTitle(Player* player, uint32 title, bool lost)
+{
+    ExecuteScript<PlayerScript>([&](PlayerScript* script)
+        {
+            script->OnNewTitle(player, title, lost);
+        });
+}
+
 
 // Player anti cheat
 void ScriptMgr::AnticheatSetSkipOnePacketForASH(Player* player, bool apply)

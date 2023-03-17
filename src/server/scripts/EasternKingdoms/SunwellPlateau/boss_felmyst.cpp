@@ -160,9 +160,9 @@ public:
             instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_FOG_OF_CORRUPTION_CHARM);
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
             me->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
             if (events.Empty() && events2.Empty())
                 events2.ScheduleEvent(EVENT_INTRO_2, 3000);

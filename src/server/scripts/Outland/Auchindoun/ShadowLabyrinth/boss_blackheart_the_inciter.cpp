@@ -82,7 +82,7 @@ public:
                 instance->SetData(DATA_BLACKHEARTTHEINCITEREVENT, DONE);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(SAY_AGGRO);
             events.ScheduleEvent(EVENT_SPELL_INCITE, 20000);
@@ -116,7 +116,7 @@ public:
                     {
                         me->CastSpell(me, SPELL_INCITE_CHAOS, false);
 
-                        std::list<HostileReference*> t_list = me->GetThreatMgr().GetThreatList();
+                        std::list<HostileReference*> t_list = me->GetThreatMgr().getThreatList();
                         for (std::list<HostileReference*>::const_iterator itr = t_list.begin(); itr != t_list.end(); ++itr)
                         {
                             Unit* target = ObjectAccessor::GetUnit(*me, (*itr)->getUnitGuid());
@@ -124,7 +124,7 @@ public:
                                 me->CastSpell(target, SPELL_INCITE_CHAOS_B, true);
                         }
 
-                        DoResetThreatList();
+                        DoResetThreat();
                         InciteChaos = true;
                         events.DelayEvents(15000);
                         events.RepeatEvent(40000);

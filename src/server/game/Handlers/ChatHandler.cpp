@@ -194,8 +194,10 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 return;
         }
     }
+    // LANG_ADDON should not be changed nor be affected by flood control
     else
     {
+        uint32 specialMessageLimit = 0;
         // send in universal language if player in .gmon mode (ignore spell effects)
         if (sender->IsGameMaster())
             lang = LANG_UNIVERSAL;
@@ -216,12 +218,20 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                         // allow two side chat at group channel if two side group allowed
                         if (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GROUP))
                             lang = LANG_UNIVERSAL;
+
+                        specialMessageLimit = 35;
                         break;
                     case CHAT_MSG_GUILD:
                     case CHAT_MSG_OFFICER:
                         // allow two side chat at guild channel if two side guild allowed
                         if (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_GUILD))
                             lang = LANG_UNIVERSAL;
+
+                        specialMessageLimit = 15;
+                        break;
+                    case CHAT_MSG_WHISPER:
+                        if (sender->getLevel() >= 80)
+                            specialMessageLimit = 15;
                         break;
                 }
             }
@@ -232,7 +242,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
         }
 
         if (type != CHAT_MSG_AFK && type != CHAT_MSG_DND)
-            sender->UpdateSpeakTime(lang == LANG_ADDON ? Player::ChatFloodThrottle::ADDON : Player::ChatFloodThrottle::REGULAR);
+            sender->UpdateSpeakTime(specialMessageLimit);
     }
 
     std::string to, channel, msg;
@@ -267,6 +277,8 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
             ignoreChecks = true;
             break;
     }
+
+    sScriptMgr->OnBeforeSendChatMessage(_player, type, lang, msg);
 
     // Our Warden module also uses SendAddonMessage as a way to communicate Lua check results to the server, see if this is that
     if (type == CHAT_MSG_GUILD && lang == LANG_ADDON && _warden && _warden->ProcessLuaCheckResponse(msg))
@@ -334,12 +346,6 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
         }
     }
 
-    else
-    {
-        ++_addonMessageReceiveCount;
-    }
-
-    sScriptMgr->OnBeforeSendChatMessage(_player, type, lang, msg);
 
     switch (type)
     {
@@ -351,7 +357,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 if (!sender->IsAlive())
                     return;
 
-                if (sender->GetLevel() < sWorld->getIntConfig(CONFIG_CHAT_SAY_LEVEL_REQ))
+                if (sender->getLevel() < sWorld->getIntConfig(CONFIG_CHAT_SAY_LEVEL_REQ))
                 {
                     SendNotification(GetAcoreString(LANG_SAY_REQ), sWorld->getIntConfig(CONFIG_CHAT_SAY_LEVEL_REQ));
                     return;
@@ -367,7 +373,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
             break;
         case CHAT_MSG_WHISPER:
             {
-                if (sender->GetLevel() < sWorld->getIntConfig(CONFIG_CHAT_WHISPER_LEVEL_REQ))
+                if (sender->getLevel() < sWorld->getIntConfig(CONFIG_CHAT_WHISPER_LEVEL_REQ))
                 {
                     SendNotification(GetAcoreString(LANG_WHISPER_REQ), sWorld->getIntConfig(CONFIG_CHAT_WHISPER_LEVEL_REQ));
                     return;
@@ -579,7 +585,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
             {
                 if (AccountMgr::IsPlayerAccount(GetSecurity()))
                 {
-                    if (sender->GetLevel() < sWorld->getIntConfig(CONFIG_CHAT_CHANNEL_LEVEL_REQ))
+                    if (sender->getLevel() < sWorld->getIntConfig(CONFIG_CHAT_CHANNEL_LEVEL_REQ))
                     {
                         SendNotification(GetAcoreString(LANG_CHANNEL_REQ), sWorld->getIntConfig(CONFIG_CHAT_CHANNEL_LEVEL_REQ));
                         return;
@@ -721,7 +727,7 @@ void WorldSession::HandleTextEmoteOpcode(WorldPacket& recvData)
     if (!GetPlayer()->IsAlive())
         return;
 
-    GetPlayer()->UpdateSpeakTime(Player::ChatFloodThrottle::REGULAR);
+    GetPlayer()->UpdateSpeakTime();
 
     if (!GetPlayer()->CanSpeak())
     {
@@ -754,9 +760,6 @@ void WorldSession::HandleTextEmoteOpcode(WorldPacket& recvData)
         case EMOTE_STATE_SIT:
         case EMOTE_STATE_KNEEL:
         case EMOTE_ONESHOT_NONE:
-            break;
-        case EMOTE_STATE_DANCE:
-            GetPlayer()->SetUInt32Value(UNIT_NPC_EMOTESTATE, emote_anim);
             break;
         default:
             // Only allow text-emotes for "dead" entities (feign death included)

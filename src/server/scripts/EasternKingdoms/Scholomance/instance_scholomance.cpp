@@ -131,10 +131,7 @@ public:
                             // summon kirtonos and close door
                             if (_kirtonosState == NOT_STARTED)
                             {
-                                if (Creature* kirtonos = instance->SummonCreature(NPC_KIRTONOS, KirtonosSpawn))
-                                {
-                                    kirtonos->AI()->DoAction(IN_PROGRESS);
-                                }
+                                instance->SummonCreature(NPC_KIRTONOS, KirtonosSpawn);
                                 if (GameObject* gate = instance->GetGameObject(GetGuidData(GO_GATE_KIRTONOS)))
                                 {
                                     gate->SetGoState(GO_STATE_READY);
@@ -214,15 +211,30 @@ public:
             return 0;
         }
 
-        void ReadSaveDataMore(std::istringstream& data) override
+        std::string GetSaveData() override
         {
-            data >> _kirtonosState;
-            data >> _miniBosses;
+            std::ostringstream saveStream;
+            saveStream << "S O " << _kirtonosState << ' ' << _miniBosses;
+            return saveStream.str();
         }
 
-        void WriteSaveDataMore(std::ostringstream& data) override
+        void Load(const char* str) override
         {
-            data << _kirtonosState << ' ' << _miniBosses;
+            if (!str)
+                return;
+
+            char dataHead1, dataHead2;
+            std::istringstream loadStream(str);
+            loadStream >> dataHead1 >> dataHead2;
+
+            if (dataHead1 == 'S' && dataHead2 == 'O')
+            {
+                loadStream >> _kirtonosState;
+                loadStream >> _miniBosses;
+
+                if (_kirtonosState == IN_PROGRESS)
+                    _kirtonosState = NOT_STARTED;
+            }
         }
 
     protected:
@@ -359,7 +371,7 @@ public:
 
         Unit* SelectUnitCasting()
         {
-          ThreatContainer::StorageType threatlist = me->GetThreatMgr().GetThreatList();
+          ThreatContainer::StorageType threatlist = me->GetThreatMgr().getThreatList();
           for (ThreatContainer::StorageType::const_iterator itr = threatlist.begin(); itr != threatlist.end(); ++itr)
           {
               if (Unit* unit = ObjectAccessor::GetUnit(*me, (*itr)->getUnitGuid()))
@@ -383,14 +395,14 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             originalDisplayId = me->GetDisplayId();
 
             events.Reset();
-            events.RescheduleEvent(1, 1s, 7s);
-            events.RescheduleEvent(2, 400ms);
-            events.RescheduleEvent(3, 6s, 15s);
+            events.RescheduleEvent(1, urand(1000, 7000));
+            events.RescheduleEvent(2, 400);
+            events.RescheduleEvent(3, urand(6000, 15000));
         }
 
         void UpdateAI(uint32 diff) override
@@ -407,7 +419,7 @@ public:
                 events.Reset();
                 me->InterruptNonMeleeSpells(false);
                 me->UpdateEntry(DARK_SHADE_ENTRY, nullptr, false);
-                events.RescheduleEvent(4, 2s, 10s);
+                events.RescheduleEvent(4, urand(2000, 10000));
             }
 
             if (me->HasUnitState(UNIT_STATE_CASTING))

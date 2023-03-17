@@ -306,7 +306,7 @@ public:
             {
                 summons.DespawnEntry(_nefarianLeftTunnel);
                 summons.DespawnEntry(_nefarianRightTunnel);
-                me->KillSelf();
+                Unit::Kill(me, me);
             }
         }
 
@@ -352,7 +352,7 @@ public:
 
         void BeginEvent()
         {
-            _JustEngagedWith();
+            _EnterCombat();
 
             Talk(SAY_GAMESBEGIN_2);
 
@@ -360,13 +360,13 @@ public:
             SetCombatMovement(false);
             me->SetImmuneToPC(false);
             AttackStart(SelectTarget(SelectTargetMethod::Random, 0, 200.f, true));
-            events.ScheduleEvent(EVENT_SHADOWBLINK, 500ms);
-            events.ScheduleEvent(EVENT_SHADOW_BOLT, 3s);
-            events.ScheduleEvent(EVENT_SHADOW_BOLT_VOLLEY, 13s, 15s);
-            events.ScheduleEvent(EVENT_FEAR, 10s, 20s);
-            events.ScheduleEvent(EVENT_SILENCE, 20s, 25s);
-            events.ScheduleEvent(EVENT_MIND_CONTROL, 30s, 35s);
-            events.ScheduleEvent(EVENT_SPAWN_ADDS, 10s);
+            events.ScheduleEvent(EVENT_SHADOWBLINK, 500);
+            events.ScheduleEvent(EVENT_SHADOW_BOLT, 3000);
+            events.ScheduleEvent(EVENT_SHADOW_BOLT_VOLLEY, urand(13000, 15000));
+            events.ScheduleEvent(EVENT_FEAR, urand(10000, 20000));
+            events.ScheduleEvent(EVENT_SILENCE, urand(20000, 25000));
+            events.ScheduleEvent(EVENT_MIND_CONTROL, urand(30000, 35000));
+            events.ScheduleEvent(EVENT_SPAWN_ADDS, 10000);
         }
 
         void SetData(uint32 type, uint32 data) override
@@ -374,11 +374,11 @@ public:
             if (type == 1 && data == 1)
             {
                 me->StopMoving();
-                events.ScheduleEvent(EVENT_PATH_2, 9s);
+                events.ScheduleEvent(EVENT_PATH_2, 9000);
             }
 
             if (type == 1 && data == 2)
-                events.ScheduleEvent(EVENT_SUCCESS_1, 5s);
+                events.ScheduleEvent(EVENT_SUCCESS_1, 5000);
         }
 
         void UpdateAI(uint32 diff) override
@@ -393,7 +393,7 @@ public:
                     {
                         case EVENT_PATH_2:
                             me->GetMotionMaster()->MovePath(NEFARIUS_PATH_2, false);
-                            events.ScheduleEvent(EVENT_CHAOS_1, 7s);
+                            events.ScheduleEvent(EVENT_CHAOS_1, 7000);
                             break;
                         case EVENT_CHAOS_1:
                             if (Creature* gyth = me->FindNearestCreature(NPC_GYTH, 75.0f, true))
@@ -401,7 +401,7 @@ public:
                                 me->SetFacingToObject(gyth);
                                 Talk(SAY_CHAOS_SPELL);
                             }
-                            events.ScheduleEvent(EVENT_CHAOS_2, 2s);
+                            events.ScheduleEvent(EVENT_CHAOS_2, 2000);
                             break;
                         case EVENT_CHAOS_2:
                             DoCast(SPELL_CHROMATIC_CHAOS);
@@ -417,7 +417,7 @@ public:
                                 if (GameObject* portcullis2 = me->FindNearestGameObject(GO_PORTCULLIS_TOBOSSROOMS, 80.0f))
                                     portcullis2->SetGoState(GO_STATE_ACTIVE);
                             }
-                            events.ScheduleEvent(EVENT_SUCCESS_2, 4s);
+                            events.ScheduleEvent(EVENT_SUCCESS_2, 4000);
                             break;
                         case EVENT_SUCCESS_2:
                             DoCast(me, SPELL_VAELASTRASZZ_SPAWN);
@@ -450,27 +450,27 @@ public:
                     {
                         case EVENT_SHADOW_BOLT:
                             DoCastRandomTarget(SPELL_SHADOWBOLT, 0, 150.f);
-                            events.ScheduleEvent(EVENT_SHADOW_BOLT, 2s, 4s);
+                            events.ScheduleEvent(EVENT_SHADOW_BOLT, urand(2000, 4000));
                             break;
                         case EVENT_SHADOW_BOLT_VOLLEY:
                             DoCastAOE(SPELL_SHADOWBOLT_VOLLEY);
-                            events.ScheduleEvent(EVENT_SHADOW_BOLT_VOLLEY, 19s, 25s);
+                            events.ScheduleEvent(EVENT_SHADOW_BOLT_VOLLEY, 19000, 25000);
                             break;
                         case EVENT_FEAR:
                             DoCastRandomTarget(SPELL_FEAR, 0, 40.0f);
-                            events.ScheduleEvent(EVENT_FEAR, 10s, 20s);
+                            events.ScheduleEvent(EVENT_FEAR, urand(10000, 20000));
                             break;
                         case EVENT_SILENCE:
                             DoCastRandomTarget(SPELL_SILENCE, 0, 150.f);
-                            events.ScheduleEvent(EVENT_SILENCE, 14s,23s);
+                            events.ScheduleEvent(EVENT_SILENCE, urand(14000, 23000));
                             break;
                         case EVENT_MIND_CONTROL:
                             DoCastRandomTarget(SPELL_SHADOW_COMMAND, 0, 40.0f);
-                            events.ScheduleEvent(EVENT_MIND_CONTROL, 24s, 30s);
+                            events.ScheduleEvent(EVENT_MIND_CONTROL, urand(24000, 30000));
                             break;
                         case EVENT_SHADOWBLINK:
                             DoCastSelf(SPELL_SHADOWBLINK);
-                            events.ScheduleEvent(EVENT_SHADOWBLINK, 30s, 40s);
+                            events.ScheduleEvent(EVENT_SHADOWBLINK, urand(30000, 40000));
                             break;
                         case EVENT_SPAWN_ADDS:
                             // Spawn the spawners.
@@ -496,7 +496,7 @@ public:
 
                 CloseGossipMenuFor(player);
                 Talk(SAY_GAMESBEGIN_1);
-                events.ScheduleEvent(EVENT_START_EVENT, 4s);
+                events.ScheduleEvent(EVENT_START_EVENT, 4000);
                 me->SetFaction(FACTION_DRAGONFLIGHT_BLACK);
                 me->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
                 me->SetStandState(UNIT_STAND_STATE_STAND);
@@ -552,7 +552,7 @@ struct boss_nefarian : public BossAI
         classesPresent.clear();
     }
 
-    void JustEngagedWith(Unit* /*who*/) override {}
+    void EnterCombat(Unit* /*who*/) override {}
 
     void JustDied(Unit* /*killer*/) override
     {
@@ -605,12 +605,12 @@ struct boss_nefarian : public BossAI
             AttackStart(me->GetVictim());
         }
 
-        events.ScheduleEvent(EVENT_SHADOWFLAME, 12s);
-        events.ScheduleEvent(EVENT_FEAR, 25s, 35s);
-        events.ScheduleEvent(EVENT_VEILOFSHADOW, 25s, 35s);
-        events.ScheduleEvent(EVENT_CLEAVE, 7s);
-        events.ScheduleEvent(EVENT_TAILLASH, 10s);
-        events.ScheduleEvent(EVENT_CLASSCALL, 30s, 35s);
+        events.ScheduleEvent(EVENT_SHADOWFLAME, 12000);
+        events.ScheduleEvent(EVENT_FEAR, urand(25000, 35000));
+        events.ScheduleEvent(EVENT_VEILOFSHADOW, urand(25000, 35000));
+        events.ScheduleEvent(EVENT_CLEAVE, 7000);
+        events.ScheduleEvent(EVENT_TAILLASH, 10000);
+        events.ScheduleEvent(EVENT_CLASSCALL, urand(30000, 35000));
         _introDone = true;
     }
 
@@ -657,29 +657,29 @@ struct boss_nefarian : public BossAI
             {
                 case EVENT_SHADOWFLAME:
                     DoCastVictim(SPELL_SHADOWFLAME);
-                    events.ScheduleEvent(EVENT_SHADOWFLAME, 12s);
+                    events.ScheduleEvent(EVENT_SHADOWFLAME, 12000);
                     break;
                 case EVENT_FEAR:
                     DoCastVictim(SPELL_BELLOWINGROAR);
-                    events.ScheduleEvent(EVENT_FEAR, 25s, 35s);
+                    events.ScheduleEvent(EVENT_FEAR, urand(25000, 35000));
                     break;
                 case EVENT_VEILOFSHADOW:
                     DoCastVictim(SPELL_VEILOFSHADOW);
-                    events.ScheduleEvent(EVENT_VEILOFSHADOW, 25s, 35s);
+                    events.ScheduleEvent(EVENT_VEILOFSHADOW, urand(25000, 35000));
                     break;
                 case EVENT_CLEAVE:
                     DoCastVictim(SPELL_CLEAVE);
-                    events.ScheduleEvent(EVENT_CLEAVE, 7s);
+                    events.ScheduleEvent(EVENT_CLEAVE, 7000);
                     break;
                 case EVENT_TAILLASH:
                     // Cast NYI since we need a better check for behind target
                     DoCastAOE(SPELL_TAILLASH);
-                    events.ScheduleEvent(EVENT_TAILLASH, 10s);
+                    events.ScheduleEvent(EVENT_TAILLASH, 10000);
                     break;
                 case EVENT_CLASSCALL:
                     if (classesPresent.empty())
                     {
-                        for (auto& ref : me->GetThreatMgr().GetThreatList())
+                        for (auto& ref : me->GetThreatMgr().getThreatList())
                         {
                             if (ref->getTarget() && ref->getTarget()->GetTypeId() == TYPEID_PLAYER)
                             {
@@ -746,7 +746,7 @@ struct boss_nefarian : public BossAI
                                 break;
                         }
                     }
-                    events.ScheduleEvent(EVENT_CLASSCALL, 30s, 35s);
+                    events.ScheduleEvent(EVENT_CLASSCALL, urand(30000, 35000));
                     break;
             }
 
@@ -871,7 +871,7 @@ struct npc_corrupted_totem : public ScriptedAI
         }
     }
 
-    void IsSummonedBy(WorldObject* /*summoner*/) override
+    void IsSummonedBy(Unit* /*summoner*/) override
     {
         me->SetInCombatWithZone();
 
@@ -942,7 +942,7 @@ struct npc_drakonid_spawner : public ScriptedAI
         }
     }
 
-    void IsSummonedBy(WorldObject* summoner) override
+    void IsSummonedBy(Unit* summoner) override
     {
         DoCastSelf(SPELL_SPAWN_DRAKONID_GEN);
         _scheduler.Schedule(10s, 60s, [this](TaskContext /*context*/)

@@ -69,12 +69,12 @@ public:
             massEruptionTimer = 600000;
         }
 
-        void JustEngagedWith(Unit* /*attacker*/) override
+        void EnterCombat(Unit* /*attacker*/) override
         {
-            _JustEngagedWith();
+            _EnterCombat();
             DoCastSelf(SPELL_SEPARATION_ANXIETY, true);
-            events.ScheduleEvent(EVENT_ANTIMAGIC_PULSE, 15s);
-            events.ScheduleEvent(EVENT_MAGMA_SHACKLES, 10s);
+            events.ScheduleEvent(EVENT_ANTIMAGIC_PULSE, 15000);
+            events.ScheduleEvent(EVENT_MAGMA_SHACKLES, 10000);
             massEruptionTimer = 600000; // 10 mins
         }
 

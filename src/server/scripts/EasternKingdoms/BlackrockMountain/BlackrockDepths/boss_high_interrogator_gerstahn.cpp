@@ -54,7 +54,7 @@ public:
             ShadowShield_Timer = 8000;
         }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
 
         void UpdateAI(uint32 diff) override
         {

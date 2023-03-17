@@ -30,7 +30,7 @@
 #include "SpellAuraEffects.h"
 #include "SpellScript.h"
 
-/// @todo: this import is not necessary for compilation and marked as unused by the IDE
+// TODO: this import is not necessary for compilation and marked as unused by the IDE
 //  however, for some reasons removing it would cause a damn linking issue
 //  there is probably some underlying problem with imports which should properly addressed
 //  see: https://github.com/azerothcore/azerothcore-wotlk/issues/9766
@@ -316,9 +316,9 @@ class spell_pet_dk_gargoyle_strike : public SpellScript
         int32 damage = 60;
         if (Unit* caster = GetCaster())
         {
-            if (caster->GetLevel() >= 60)
+            if (caster->getLevel() >= 60)
             {
-                damage += (caster->GetLevel() - 60) * 4;
+                damage += (caster->getLevel() - 60) * 4;
             }
         }
 

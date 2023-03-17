@@ -276,7 +276,7 @@ enum ClintarSpirit
 {
     ASPECT_RAVEN                        = 22915,
 
-    // Texts for JustEngagedWith, the event and the end of the event are missing
+    // Texts for EnterCombat, the event and the end of the event are missing
     CLINTAR_SPIRIT_SAY_START            = 0,
 };
 
@@ -320,7 +320,7 @@ public:
             }
         }
 
-        void IsSummonedBy(WorldObject* /*summoner*/) override
+        void IsSummonedBy(Unit* /*summoner*/) override
         {
             std::list<Player*> playerOnQuestList;
             Acore::AnyPlayerInObjectRangeCheck checker(me, 5.0f);
@@ -604,11 +604,11 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* /*attacker*/) override
+        void EnterCombat(Unit* /*attacker*/) override
         {
             events.Reset();
-            events.ScheduleEvent(EVENT_CAST_CLEAVE, 3s,  5s);
-            events.ScheduleEvent(EVENT_CAST_STARFALL, 8s, 10s);
+            events.ScheduleEvent(EVENT_CAST_CLEAVE, urand(3000, 5000));
+            events.ScheduleEvent(EVENT_CAST_STARFALL, urand(8000, 10000));
         }
 
         void JustDied(Unit* /*killer*/) override
@@ -623,7 +623,7 @@ public:
                 if (me->HasAura(SPELL_OMEN_STARFALL))
                     me->RemoveAurasDueToSpell(SPELL_OMEN_STARFALL);
 
-                events.RescheduleEvent(EVENT_CAST_STARFALL, 14s, 16s);
+                events.RescheduleEvent(EVENT_CAST_STARFALL, urand(14000, 16000));
             }
         }
 
@@ -638,12 +638,12 @@ public:
             {
                 case EVENT_CAST_CLEAVE:
                     DoCastVictim(SPELL_OMEN_CLEAVE);
-                    events.ScheduleEvent(EVENT_CAST_CLEAVE, 8s, 10s);
+                    events.ScheduleEvent(EVENT_CAST_CLEAVE, urand(8000, 10000));
                     break;
                 case EVENT_CAST_STARFALL:
                     if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0))
                         DoCast(target, SPELL_OMEN_STARFALL);
-                    events.ScheduleEvent(EVENT_CAST_STARFALL, 14s, 16s);
+                    events.ScheduleEvent(EVENT_CAST_STARFALL, urand(14000, 16000));
                     break;
             }
 
@@ -671,7 +671,7 @@ public:
         void Reset() override
         {
             events.Reset();
-            events.ScheduleEvent(EVENT_DESPAWN, 5min);
+            events.ScheduleEvent(EVENT_DESPAWN, 5 * MINUTE * IN_MILLISECONDS);
             me->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
         }
 

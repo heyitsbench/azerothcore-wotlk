@@ -107,9 +107,9 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
             events.ScheduleEvent(EVENT_SPELL_INCINERATE, 24000);
             events.ScheduleEvent(EVENT_SPELL_DOOM_BLOSSOM, 10000);
             events.ScheduleEvent(EVENT_SPELL_CRUSHING_SHADOWS, 17000);
@@ -240,8 +240,9 @@ public:
 
         void CalculateAmount(AuraEffect const* /*aurEff*/, int32& amount, bool& /*canBeRecalculated*/)
         {
+            float f;
             if (AuraEffect* effect = GetAura()->GetEffect(EFFECT_2))
-                amount -= (amount / effect->GetTotalTicks()) * effect->GetTickNumber();
+                amount -= (amount / effect->GetTotalTicks(f)) * effect->GetTickNumber();
         }
 
         void Update(AuraEffect const*  /*effect*/)

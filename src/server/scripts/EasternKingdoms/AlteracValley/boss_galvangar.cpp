@@ -59,7 +59,7 @@ public:
             ResetTimer                      = 5 * IN_MILLISECONDS;
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(YELL_AGGRO);
         }

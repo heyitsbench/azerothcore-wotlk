@@ -76,7 +76,7 @@ public:
                 instance->SetData(DATA_MURMUREVENT, NOT_STARTED);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             events.ScheduleEvent(EVENT_SPELL_SONIC_BOOM, 30000);
             events.ScheduleEvent(EVENT_SPELL_MURMURS_TOUCH, urand(8000, 20000));
@@ -150,7 +150,7 @@ public:
 
             if (!me->IsWithinMeleeRange(me->GetVictim()))
             {
-                ThreatContainer::StorageType threatlist = me->GetThreatMgr().GetThreatList();
+                ThreatContainer::StorageType threatlist = me->GetThreatMgr().getThreatList();
                 for (ThreatContainer::StorageType::const_iterator i = threatlist.begin(); i != threatlist.end(); ++i)
                     if (Unit* target = ObjectAccessor::GetUnit(*me, (*i)->getUnitGuid()))
                         if (target->IsAlive() && me->IsWithinMeleeRange(target))

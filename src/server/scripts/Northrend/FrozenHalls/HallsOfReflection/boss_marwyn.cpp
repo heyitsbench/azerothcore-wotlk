@@ -19,11 +19,12 @@
 
 enum Yells
 {
-    SAY_AGGRO                                     = 0,
-    SAY_SLAY                                      = 1,
-    SAY_DEATH                                     = 2,
-    SAY_CORRUPTED_FLESH                           = 3,
-    SAY_CORRUPTED_WELL                            = 4,
+    SAY_AGGRO                                     = 60,
+    SAY_SLAY_1                                    = 61,
+    SAY_SLAY_2                                    = 62,
+    SAY_DEATH                                     = 63,
+    SAY_CORRUPTED_FLESH_1                         = 64,
+    SAY_CORRUPTED_FLESH_2                         = 65,
 };
 
 enum Spells
@@ -68,14 +69,14 @@ public:
                 pInstance->SetData(DATA_MARWYN, NOT_STARTED);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             me->SetImmuneToAll(false);
 
-            events.ScheduleEvent(EVENT_OBLITERATE, 15s);
-            events.ScheduleEvent(EVENT_WELL_OF_CORRUPTION, 13s);
-            events.ScheduleEvent(EVENT_CORRUPTED_FLESH, 20s);
-            events.ScheduleEvent(EVENT_SHARED_SUFFERING, 5s);
+            events.ScheduleEvent(EVENT_OBLITERATE, 15000);
+            events.ScheduleEvent(EVENT_WELL_OF_CORRUPTION, 13000);
+            events.ScheduleEvent(EVENT_CORRUPTED_FLESH, 20000);
+            events.ScheduleEvent(EVENT_SHARED_SUFFERING, 5000);
         }
 
         void DoAction(int32 a) override
@@ -114,26 +115,25 @@ public:
                     if (me->IsWithinMeleeRange(me->GetVictim()))
                     {
                         me->CastSpell(me->GetVictim(), SPELL_OBLITERATE, false);
-                        events.ScheduleEvent(EVENT_OBLITERATE, 15s);
+                        events.ScheduleEvent(EVENT_OBLITERATE, 15000);
                     }
                     else
-                        events.ScheduleEvent(EVENT_OBLITERATE, 3s);
+                        events.ScheduleEvent(EVENT_OBLITERATE, 3000);
                     break;
                 case EVENT_WELL_OF_CORRUPTION:
-                    Talk(SAY_CORRUPTED_WELL);
                     if (Unit* target = SelectTargetFromPlayerList(40.0f, 0, true))
                         me->CastSpell(target, SPELL_WELL_OF_CORRUPTION, false);
-                    events.ScheduleEvent(EVENT_WELL_OF_CORRUPTION, 13s);
+                    events.ScheduleEvent(EVENT_WELL_OF_CORRUPTION, 13000);
                     break;
                 case EVENT_CORRUPTED_FLESH:
-                    Talk(SAY_CORRUPTED_FLESH);
+                    Talk(RAND(SAY_CORRUPTED_FLESH_1, SAY_CORRUPTED_FLESH_2));
                     me->CastSpell((Unit*)nullptr, SPELL_CORRUPTED_FLESH, false);
-                    events.ScheduleEvent(EVENT_CORRUPTED_FLESH, 20s);
+                    events.ScheduleEvent(EVENT_CORRUPTED_FLESH, 20000);
                     break;
                 case EVENT_SHARED_SUFFERING:
                     if (Unit* target = SelectTargetFromPlayerList(200.0f, 0, true))
                         me->CastSpell(target, SPELL_SHARED_SUFFERING, true);
-                    events.ScheduleEvent(EVENT_SHARED_SUFFERING, 15s);
+                    events.ScheduleEvent(EVENT_SHARED_SUFFERING, 15000);
                     break;
             }
 
@@ -150,7 +150,7 @@ public:
         void KilledUnit(Unit* who) override
         {
             if (who->GetTypeId() == TYPEID_PLAYER)
-                Talk(SAY_SLAY);
+                Talk(RAND(SAY_SLAY_1, SAY_SLAY_2));
         }
 
         void EnterEvadeMode(EvadeReason why) override

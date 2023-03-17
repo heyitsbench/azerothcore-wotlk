@@ -131,7 +131,8 @@ public:
     int32 CalcMaxDuration() const { return CalcMaxDuration(GetCaster()); }
     int32 CalcMaxDuration(Unit* caster) const;
     int32 GetDuration() const { return m_duration; }
-    void SetDuration(int32 duration, bool withMods = false);    /// @todo - Look to convert to std::chrono
+    void SetDuration(int32 duration, bool withMods = false);
+    void AddDuration(int32 duration, bool capMax = true, bool withMods = false);
     void RefreshDuration(bool withMods = false);
     void RefreshTimers(bool periodicReset = false);
     void RefreshTimersWithMods();
@@ -190,13 +191,14 @@ public:
     bool CheckAreaTarget(Unit* target);
     bool CanStackWith(Aura const* checkAura, bool remove) const;
     bool IsAuraStronger(Aura const* newAura) const;
+    void ProcessTriggerSpellOnStacks(Aura* aurApp, int32 stackCount, int32 triggerSpell, Targets triggerSpellTarget, uint32 amplitude, Unit* caster, AuraEffect* const triggeringEffect);
 
     // Proc system
     // this subsystem is not yet in use - the core of it is functional, but still some research has to be done
     // and some dependant problems fixed before it can replace old proc system (for example cooldown handling)
     // currently proc system functionality is implemented in Unit::ProcDamageAndSpell
     bool IsProcOnCooldown() const;
-    void AddProcCooldown(Milliseconds msec);
+    void AddProcCooldown(uint32 msec);
     bool IsUsingCharges() const { return m_isUsingCharges; }
     void SetUsingCharges(bool val) { m_isUsingCharges = val; }
     void PrepareProcToTrigger(AuraApplication* aurApp, ProcEventInfo& eventInfo);
@@ -211,6 +213,8 @@ public:
     void CallScriptAfterDispel(DispelInfo* dispelInfo);
     bool CallScriptEffectApplyHandlers(AuraEffect const* aurEff, AuraApplication const* aurApp, AuraEffectHandleModes mode);
     bool CallScriptEffectRemoveHandlers(AuraEffect const* aurEff, AuraApplication const* aurApp, AuraEffectHandleModes mode);
+    bool CallScriptAuraApplyHandlers(AuraApplication const* aurApp);
+    bool CallScriptAuraRemoveHandlers(AuraApplication const* aurApp);
     void CallScriptAfterEffectApplyHandlers(AuraEffect const* aurEff, AuraApplication const* aurApp, AuraEffectHandleModes mode);
     void CallScriptAfterEffectRemoveHandlers(AuraEffect const* aurEff, AuraApplication const* aurApp, AuraEffectHandleModes mode);
     bool CallScriptEffectPeriodicHandlers(AuraEffect const* aurEff, AuraApplication const* aurApp);
@@ -226,7 +230,6 @@ public:
 
     // Spell Proc Hooks
     bool CallScriptCheckProcHandlers(AuraApplication const* aurApp, ProcEventInfo& eventInfo);
-    bool CallScriptAfterCheckProcHandlers(AuraApplication const* aurApp, ProcEventInfo& eventInfo, bool isTriggeredAtSpellProcEvent);
     bool CallScriptPrepareProcHandlers(AuraApplication const* aurApp, ProcEventInfo& eventInfo);
     bool CallScriptProcHandlers(AuraApplication const* aurApp, ProcEventInfo& eventInfo);
     void CallScriptAfterProcHandlers(AuraApplication const* aurApp, ProcEventInfo& eventInfo);
@@ -236,8 +239,6 @@ public:
     AuraScript* GetScriptByName(std::string const& scriptName) const;
 
     std::list<AuraScript*> m_loadedScripts;
-
-    virtual std::string GetDebugInfo() const;
 
     void SetTriggeredByAuraSpellInfo(SpellInfo const* triggeredByAuraSpellInfo);
     SpellInfo const* GetTriggeredByAuraSpellInfo() const;
@@ -261,7 +262,7 @@ protected:
     uint8 const m_casterLevel;                          // Aura level (store caster level for correct show level dep amount)
     uint8 m_procCharges;                                // Aura charges (0 for infinite)
     uint8 m_stackAmount;                                // Aura stack amount
-
+  
     AuraEffect* m_effects[3];
     ApplicationMap m_applications;
 

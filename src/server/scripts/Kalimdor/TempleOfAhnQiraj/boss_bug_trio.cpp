@@ -50,7 +50,6 @@ enum Spells
 enum Misc
 {
     ACTION_CONSUME       = 0,
-    ACTION_EXPLODE       = 1,
 
     EMOTE_DEVOURED       = 0,
 
@@ -79,34 +78,20 @@ public:
 
     void EnterCombatWithTrio(Unit* who)
     {
-        BossAI::JustEngagedWith(who);
-
-        if (Creature* vem = instance->GetCreature(DATA_VEM))
-        {
+        if (Creature* vem = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_VEM)))
             if (vem->GetGUID() != me->GetGUID())
-            {
                 vem->GetAI()->AttackStart(who);
-            }
-        }
-        if (Creature* kri = instance->GetCreature(DATA_KRI))
-        {
+        if (Creature* kri = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_KRI)))
             if (kri->GetGUID() != me->GetGUID())
-            {
                 kri->GetAI()->AttackStart(who);
-            }
-        }
-        if (Creature* yauj = instance->GetCreature(DATA_YAUJ))
-        {
+        if (Creature* yauj = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_YAUJ)))
             if (yauj->GetGUID() != me->GetGUID())
-            {
                 yauj->GetAI()->AttackStart(who);
-            }
-        }
     }
 
     void EvadeAllBosses(EvadeReason why)
     {
-        if (Creature* vem = instance->GetCreature(DATA_VEM))
+        if (Creature* vem = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_VEM)))
         {
             if (vem->GetGUID() != me->GetGUID())
             {
@@ -117,7 +102,7 @@ public:
             }
         }
 
-        if (Creature* kri = instance->GetCreature(DATA_KRI))
+        if (Creature* kri = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_KRI)))
         {
             if (kri->GetGUID() != me->GetGUID())
             {
@@ -128,7 +113,7 @@ public:
             }
         }
 
-        if (Creature* yauj = instance->GetCreature(DATA_YAUJ))
+        if (Creature* yauj = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_YAUJ)))
         {
             if (yauj->GetGUID() != me->GetGUID())
             {
@@ -142,44 +127,32 @@ public:
 
     void DoAction(int32 action) override
     {
-        if (action == ACTION_CONSUME && !_dying)
+        if (action != ACTION_CONSUME || dying)
         {
-            _isEating = true;
-            me->SetSpeed(MOVE_RUN, 45.f / 7.f); // From sniffs
-            me->SetReactState(REACT_PASSIVE);
-            _scheduler.DelayAll(6s);
+            return;
         }
 
-        if (action == ACTION_EXPLODE && _dying)
-        {
-            DoCastSelf(SPELL_BLOODY_DEATH);
-            _dying = false;
-        }
+        isEating = true;
+        me->SetSpeed(MOVE_RUN, 45.f/7.f); // From sniffs
+        me->SetReactState(REACT_PASSIVE);
     }
 
-    void MovementInform(uint32 type, uint32 id) override
+    void MovementInform(uint32 type, uint32 /*id*/) override
     {
-        if (type != POINT_MOTION_TYPE || id != POINT_CONSUME)
+        if (type != POINT_MOTION_TYPE)
             return;
 
         me->GetMotionMaster()->MoveIdle();
         me->SetSpeed(MOVE_RUN, 15.f/7.f); // From sniffs
         DoCastSelf(SPELL_FULL_HEAL, true);
-        if (me->GetThreatMgr().GetThreatListSize())
-            DoResetThreatList();
-        if (Creature* dying = instance->GetCreature(_creatureDying))
-        {
-            dying->AI()->DoAction(ACTION_EXPLODE);
-            me->SetTarget(dying->GetGUID());
-        }
+        DoResetThreat();
+        isEating = false;
 
-        _scheduler.Schedule(2s, [this](TaskContext /*context*/)
+        _scheduler.Schedule(4s, [this](TaskContext /*context*/)
         {
             me->SetReactState(REACT_AGGRESSIVE);
-            _isEating = false;
             if (Unit* target = me->GetVictim())
             {
-                me->GetMotionMaster()->Clear();
                 me->GetMotionMaster()->MoveChase(target);
                 AttackStart(target);
             }
@@ -196,11 +169,12 @@ public:
     {
         BossAI::Reset();
         _scheduler.CancelAll();
-        _dying = false;
-        _isEating = false;
-        _creatureDying = 0;
+        dying = false;
+        isEating = false;
         instance->SetData(DATA_BUG_TRIO_DEATH, 0);
         me->SetSpeed(MOVE_RUN, 15.f / 7.f); // From sniffs
+        me->SetStandState(UNIT_STAND_STATE_STAND);
+        me->SetControlled(false, UNIT_STATE_ROOT);
 
         if (me->GetEntry() == NPC_VEM)
         {
@@ -210,71 +184,65 @@ public:
 
     void UpdateAI(uint32 diff) override
     {
-        if (!UpdateVictim() || !CheckInRoom())
+        if (!UpdateVictim() || isEating || !CheckInRoom())
             return;
 
         _scheduler.Update(diff, [this]
         {
-            if (!_dying && !_isEating)
-                DoMeleeAttackIfReady();
+            DoMeleeAttackIfReady();
         });
     }
 
     void DamageTaken(Unit* who, uint32& damage, DamageEffectType, SpellSchoolMask) override
     {
-        if (_dying && who->GetGUID() != me->GetGUID())
-            damage = 0;
-
-        if (me->HealthBelowPctDamaged(0, damage) && instance->GetData(DATA_BUG_TRIO_DEATH) < 2 && !_dying)
+        if (me->HealthBelowPctDamaged(1, damage) && instance->GetData(DATA_BUG_TRIO_DEATH) < 2 && who->GetGUID() != me->GetGUID())
         {
             damage = 0;
-            if (_isEating)
+            if (isEating)
                 return;
 
             _scheduler.CancelAll();
+            me->SetStandState(UNIT_STAND_STATE_DEAD);
             me->SetReactState(REACT_PASSIVE);
-            _dying = true;
-            float x, y, z;
+            me->SetControlled(true, UNIT_STATE_ROOT);
+
+            DoFinalSpell();
+
             // Move the other bugs to this bug position
-            if (Creature* vem = instance->GetCreature(DATA_VEM))
+            if (Creature* vem = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_VEM)))
             {
                 if (vem->GetGUID() != me->GetGUID())
                 {
-                    if (vem->IsAlive())
-                    {
-                        vem->AI()->DoAction(ACTION_CONSUME);
-                        me->GetRandomContactPoint(vem, x, y, z);
-                        vem->GetMotionMaster()->MovePoint(POINT_CONSUME, x, y, z);
-                    }
+                    vem->AI()->DoAction(ACTION_CONSUME);
+                    vem->GetMotionMaster()->MovePoint(POINT_CONSUME, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ());
                 }
-                else _creatureDying = DATA_VEM;
             }
-            if (Creature* kri = instance->GetCreature(DATA_KRI))
+            if (Creature* kri = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_KRI)))
             {
                 if (kri->GetGUID() != me->GetGUID())
                 {
-                    if (kri->IsAlive())
-                    {
-                        kri->AI()->DoAction(ACTION_CONSUME);
-                        me->GetRandomContactPoint(kri, x, y, z);
-                        kri->GetMotionMaster()->MovePoint(POINT_CONSUME, x, y, z);
-                    }
+                    kri->AI()->DoAction(ACTION_CONSUME);
+                    kri->GetMotionMaster()->MovePoint(POINT_CONSUME, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ());
                 }
-                else _creatureDying = DATA_KRI;
             }
-            if (Creature* yauj = instance->GetCreature(DATA_YAUJ))
+            if (Creature* yauj = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_YAUJ)))
             {
                 if (yauj->GetGUID() != me->GetGUID())
                 {
-                    if (yauj->IsAlive())
-                    {
-                        yauj->AI()->DoAction(ACTION_CONSUME);
-                        me->GetRandomContactPoint(yauj, x, y, z);
-                        yauj->GetMotionMaster()->MovePoint(POINT_CONSUME, x, y, z);
-                    }
+                    yauj->AI()->DoAction(ACTION_CONSUME);
+                    yauj->GetMotionMaster()->MovePoint(POINT_CONSUME, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ());
                 }
-                else _creatureDying = DATA_YAUJ;
             }
+
+            _scheduler.Schedule(4s, [this](TaskContext /*context*/)
+            {
+                if (!me->IsInEvadeMode())
+                {
+                    DoCastSelf(SPELL_BLOODY_DEATH, true);
+                    Talk(EMOTE_DEVOURED);
+                    me->DespawnOrUnsummon(1000);
+                }
+            });
         }
     }
 
@@ -304,13 +272,10 @@ public:
 
     void JustDied(Unit* killer) override
     {
-        instance->SetData(DATA_BUG_TRIO_DEATH, 1);
-        if (instance->GetData(DATA_BUG_TRIO_DEATH) < 3)
+        if (killer->GetGUID() == me->GetGUID())
         {
+            instance->SetData(DATA_BUG_TRIO_DEATH, 1);
             me->RemoveDynamicFlag(UNIT_DYNFLAG_LOOTABLE);
-            DoFinalSpell();
-            Talk(EMOTE_DEVOURED);
-            me->DespawnOrUnsummon(3000);
             return;
         }
 
@@ -318,12 +283,9 @@ public:
     }
 
     TaskScheduler _scheduler;
-    bool _dying;
-    bool _isEating;
-    static uint32 _creatureDying;
+    bool dying;
+    bool isEating;
 };
-
-uint32 boss_bug_trio::_creatureDying = 0;
 
 struct boss_kri : public boss_bug_trio
 {
@@ -331,24 +293,24 @@ struct boss_kri : public boss_bug_trio
     {
     }
 
-    void JustEngagedWith(Unit* who) override
+    void EnterCombat(Unit* who) override
     {
         EnterCombatWithTrio(who);
 
-        _scheduler.Schedule(7s, 18s, [this](TaskContext context)
+        _scheduler.Schedule(4s, 8s, [this](TaskContext context)
         {
             DoCastVictim(SPELL_CLEAVE);
-            context.Repeat();
+            context.Repeat(5s, 12s);
         })
-        .Schedule(8s, 17s, [this](TaskContext context)
+        .Schedule(6s, 30s, [this](TaskContext context)
         {
             DoCastVictim(SPELL_TOXIC_VOLLEY);
-            context.Repeat();
+            context.Repeat(10s, 25s);
         })
-        .Schedule(7s, 16s, [this](TaskContext context)
+        .Schedule(6s, [this](TaskContext context)
         {
             DoCastVictim(SPELL_THRASH);
-            context.Repeat();
+            context.Repeat(2s, 6s);
         });
     }
 };
@@ -359,7 +321,7 @@ struct boss_vem : public boss_bug_trio
     {
     }
 
-    void JustEngagedWith(Unit* who) override
+    void EnterCombat(Unit* who) override
     {
         EnterCombatWithTrio(who);
 
@@ -379,17 +341,25 @@ struct boss_vem : public boss_bug_trio
             {
                 DoCast(target, SPELL_CHARGE);
             }
-            context.Repeat();
+            context.Repeat(8s, 16s);
         })
-        .Schedule(10s, 24s, [this](TaskContext context)
+        .Schedule(10s, 20s, [this](TaskContext context)
         {
             DoCastVictim(SPELL_KNOCKBACK);
-            context.Repeat();
+            context.Repeat(10s, 20s);
         })
-        .Schedule(10s, 23s, [this](TaskContext context)
+        .Schedule(5s, 8s, [this](TaskContext context)
         {
             DoCastVictim(SPELL_KNOCKDOWN);
-            context.Repeat();
+            context.Repeat(15s, 20s);
+        })
+        .Schedule(1s, [this](TaskContext context)
+        {
+            if (instance->GetData(DATA_BUG_TRIO_DEATH) == 2 && !me->HasAura(SPELL_VENGEANCE)) // Vem is the only one left.
+            {
+                DoCastSelf(SPELL_VENGEANCE, true);
+            }
+            context.Repeat(1s);
         });
     }
 };
@@ -400,11 +370,11 @@ struct boss_yauj : public boss_bug_trio
     {
     }
 
-    void JustEngagedWith(Unit* who) override
+    void EnterCombat(Unit* who) override
     {
         EnterCombatWithTrio(who);
 
-        _scheduler.Schedule(12100ms, [this](TaskContext context)
+        _scheduler.Schedule(20s, 30s, [this](TaskContext context)
         {
             if (me->GetHealthPct() <= 93.f)
             {
@@ -414,20 +384,18 @@ struct boss_yauj : public boss_bug_trio
             {
                 DoCast(friendly, SPELL_HEAL);
             }
-            context.Repeat();
+            context.Repeat(10s, 30s);
+        })
+        .Schedule(12s, 24s, [this](TaskContext context)
+        {
+            DoCastAOE(SPELL_FEAR);
+            DoResetThreat();
+            context.Repeat(20s);
         })
         .Schedule(12s, [this](TaskContext context)
         {
-            DoCastAOE(SPELL_FEAR);
-            DoResetThreatList();
-            context.Repeat(20600ms);
-        })
-        .Schedule(11s, 14500ms, [this](TaskContext context)
-        {
-            if (DoCastVictim(SPELL_RAVAGE) == SPELL_CAST_OK)
-                context.Repeat(10s, 15s);
-            else
-                context.Repeat(1200ms);
+            DoCastVictim(SPELL_RAVAGE);
+            context.Repeat(10s, 15s);
         })
         .Schedule(10s, 30s, [this](TaskContext context)
         {
@@ -453,7 +421,7 @@ class spell_vem_knockback : public SpellScript
         {
             if (Creature* cCaster = GetCaster()->ToCreature())
             {
-                cCaster->GetThreatMgr().ModifyThreatByPercent(target, -80);
+                cCaster->GetThreatMgr().modifyThreatPercent(target, -80);
             }
         }
     }
@@ -484,9 +452,9 @@ class spell_vem_vengeance : public SpellScript
 
 void AddSC_bug_trio()
 {
-    RegisterTempleOfAhnQirajCreatureAI(boss_kri);
-    RegisterTempleOfAhnQirajCreatureAI(boss_vem);
-    RegisterTempleOfAhnQirajCreatureAI(boss_yauj);
+    RegisterCreatureAI(boss_kri);
+    RegisterCreatureAI(boss_vem);
+    RegisterCreatureAI(boss_yauj);
     RegisterSpellScript(spell_vem_knockback);
     RegisterSpellScript(spell_vem_vengeance);
 }

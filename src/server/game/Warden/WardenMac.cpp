@@ -25,12 +25,15 @@
 #include "WardenModuleMac.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include <openssl/md5.h>
 
 WardenMac::WardenMac() : Warden()
 {
 }
 
-WardenMac::~WardenMac() = default;
+WardenMac::~WardenMac()
+{
+}
 
 void WardenMac::Init(WorldSession* pClient, SessionKey const& K)
 {
@@ -61,21 +64,29 @@ void WardenMac::Init(WorldSession* pClient, SessionKey const& K)
 
     _module = GetModuleForClient();
 
-    LOG_DEBUG("warden", "Module Key: {}", ByteArrayToHexStr(_module->Key));
-    LOG_DEBUG("warden", "Module ID: {}", ByteArrayToHexStr(_module->Id));
+    LOG_DEBUG("warden", "Module Key: {}", Acore::Impl::ByteArrayToHexStr(_module->Key, 16));
+    LOG_DEBUG("warden", "Module ID: {}", Acore::Impl::ByteArrayToHexStr(_module->Id, 16));
     RequestModule();
 }
 
 ClientWardenModule* WardenMac::GetModuleForClient()
 {
-    auto mod = new ClientWardenModule;
+    ClientWardenModule* mod = new ClientWardenModule;
+
+    uint32 len = sizeof(Module_0DBBF209A27B1E279A9FEC5C168A15F7_Data);
 
     // data assign
-    mod->CompressedSize = Module_0DBBF209A27B1E279A9FEC5C168A15F7_Data.size();
-    mod->CompressedData = Module_0DBBF209A27B1E279A9FEC5C168A15F7_Data.data();
+    mod->CompressedSize = len;
+    mod->CompressedData = new uint8[len];
+    memcpy(mod->CompressedData, Module_0DBBF209A27B1E279A9FEC5C168A15F7_Data, len);
+    memcpy(mod->Key, Module_0DBBF209A27B1E279A9FEC5C168A15F7_Key, 16);
 
     // md5 hash
-    mod->Id = Acore::Crypto::MD5::GetDigestOf(mod->CompressedData, mod->CompressedSize);
+    MD5_CTX ctx;
+    MD5_Init(&ctx);
+    MD5_Update(&ctx, mod->CompressedData, len);
+    MD5_Final((uint8*)&mod->Id, &ctx);
+
     return mod;
 }
 
@@ -89,7 +100,7 @@ void WardenMac::RequestHash()
     LOG_DEBUG("warden", "Request hash");
 
     // Create packet structure
-    WardenHashRequest Request{};
+    WardenHashRequest Request;
     Request.Command = WARDEN_SMSG_HASH_REQUEST;
     memcpy(Request.Seed, _seed, 16);
 
@@ -231,7 +242,7 @@ void WardenMac::HandleData(ByteBuffer& buff)
     sha1.UpdateData((uint8*)&magic, 4);
     sha1.Finalize();
 
-    Acore::Crypto::SHA1::Digest sha1Hash{};
+    std::array<uint8, Acore::Crypto::SHA1::DIGEST_LENGTH> sha1Hash;
     buff.read(sha1Hash.data(), sha1Hash.size());
 
     if (sha1Hash != sha1.GetDigest())
@@ -240,15 +251,20 @@ void WardenMac::HandleData(ByteBuffer& buff)
         //found = true;
     }
 
-    auto ourMD5Hash = Acore::Crypto::MD5::GetDigestOf(str);
-    Acore::Crypto::MD5::Digest theirsMD5Hash{};
-    buff.read(theirsMD5Hash);
+    MD5_CTX ctx;
+    MD5_Init(&ctx);
+    MD5_Update(&ctx, str.c_str(), str.size());
+    uint8 ourMD5Hash[16];
+    MD5_Final(ourMD5Hash, &ctx);
 
-    if (ourMD5Hash != theirsMD5Hash)
+    uint8 theirsMD5Hash[16];
+    buff.read(theirsMD5Hash, 16);
+
+    if (memcmp(ourMD5Hash, theirsMD5Hash, 16))
     {
         LOG_DEBUG("warden", "Handle data failed: MD5 hash is wrong!");
         //found = true;
     }
 
-    _session->KickPlayer("WardenMac::HandleData");
+    _session->KickPlayer("WardenMac");
 }

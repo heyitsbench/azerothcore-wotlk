@@ -121,13 +121,13 @@ public:
     };
 };
 
-struct WaveCreature
+struct Wave
 {
     uint32 entry;
     uint32 amount;
 };
 
-static WaveCreature RingMobs[] = // different amounts based on the type
+static Wave RingMobs[] = // different amounts based on the type
 {
     {NPC_DREDGE_WORM, 3},
     {NPC_DEEP_STINGER, 3},

@@ -105,9 +105,9 @@ public:
             BossAI::JustDied(killer);
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
             Talk(SAY_AGGRO);
 
             events.ScheduleEvent(EVENT_SPELL_TIDAL_WAVE, 10000);
@@ -221,7 +221,7 @@ public:
 
             // Xinef: if we have target we currently follow, return
             if (Unit* target = GetCaster()->GetVictim())
-                if (GetCaster()->GetThreatMgr().GetThreat(target) >= 100000.0f)
+                if (GetCaster()->GetThreatMgr().getThreat(target) >= 100000.0f)
                     return;
 
             // Xinef: acquire new target

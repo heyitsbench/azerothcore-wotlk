@@ -53,7 +53,7 @@ public:
 
         void Reset() override { }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
 
         void JustDied(Unit* killer) override
         {
