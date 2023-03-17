@@ -108,16 +108,16 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
             me->SetInCombatWithZone();
-            events.ScheduleEvent(EVENT_WEB_WRAP, 20s);
-            events.ScheduleEvent(EVENT_WEB_SPRAY, 40s);
-            events.ScheduleEvent(EVENT_POISON_SHOCK, 10s);
-            events.ScheduleEvent(EVENT_NECROTIC_POISON, 5s);
-            events.ScheduleEvent(EVENT_HEALTH_CHECK, 1s);
-            events.ScheduleEvent(EVENT_SUMMON_SPIDERLINGS, 30s);
+            events.ScheduleEvent(EVENT_WEB_WRAP, 20000);
+            events.ScheduleEvent(EVENT_WEB_SPRAY, 40000);
+            events.ScheduleEvent(EVENT_POISON_SHOCK, 10000);
+            events.ScheduleEvent(EVENT_NECROTIC_POISON, 5000);
+            events.ScheduleEvent(EVENT_HEALTH_CHECK, 1000);
+            events.ScheduleEvent(EVENT_SUMMON_SPIDERLINGS, 30000);
             if (pInstance)
             {
                 if (GameObject* go = me->GetMap()->GetGameObject(pInstance->GetGuidData(DATA_MAEXXNA_GATE)))
@@ -171,15 +171,15 @@ public:
                 case EVENT_WEB_SPRAY:
                     Talk(EMOTE_WEB_SPRAY);
                     me->CastSpell(me, RAID_MODE(SPELL_WEB_SPRAY_10, SPELL_WEB_SPRAY_25), true);
-                    events.Repeat(40s);
+                    events.RepeatEvent(40000);
                     break;
                 case EVENT_POISON_SHOCK:
                     me->CastSpell(me->GetVictim(), RAID_MODE(SPELL_POISON_SHOCK_10, SPELL_POISON_SHOCK_25), false);
-                    events.Repeat(10s);
+                    events.RepeatEvent(10000);
                     break;
                 case EVENT_NECROTIC_POISON:
                     me->CastSpell(me->GetVictim(), RAID_MODE(SPELL_NECROTIC_POISON_10, SPELL_NECROTIC_POISON_25), false);
-                    events.Repeat(30s);
+                    events.RepeatEvent(30000);
                     break;
                 case EVENT_SUMMON_SPIDERLINGS:
                     Talk(EMOTE_SPIDERS);
@@ -187,7 +187,7 @@ public:
                     {
                         me->SummonCreature(NPC_MAEXXNA_SPIDERLING, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation());
                     }
-                    events.Repeat(40s);
+                    events.RepeatEvent(40000);
                     break;
                 case EVENT_HEALTH_CHECK:
                     if (me->GetHealthPct() < 30)
@@ -195,13 +195,13 @@ public:
                         me->CastSpell(me, RAID_MODE(SPELL_FRENZY_10, SPELL_FRENZY_25), true);
                         break;
                     }
-                    events.Repeat(1s);
+                    events.RepeatEvent(1000);
                     break;
                 case EVENT_WEB_WRAP:
                     Talk(EMOTE_WEB_WRAP);
                     for (uint8 i = 0; i < RAID_MODE(1, 2); ++i)
                     {
-                        if (Unit* target = SelectTarget(SelectTargetMethod::Random, 1, 0, true, true, -SPELL_WEB_WRAP))
+                        if (Unit* target = SelectTarget(SelectTargetMethod::Random, 1, 0, true, -SPELL_WEB_WRAP))
                         {
                             target->RemoveAura(RAID_MODE(SPELL_WEB_SPRAY_10, SPELL_WEB_SPRAY_25));
                             uint8 pos = urand(0, 2);
@@ -212,7 +212,7 @@ public:
                             }
                         }
                     }
-                    events.Repeat(40s);
+                    events.RepeatEvent(40000);
                     break;
             }
             DoMeleeAttackIfReady();

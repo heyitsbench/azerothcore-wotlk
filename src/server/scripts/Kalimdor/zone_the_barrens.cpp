@@ -118,7 +118,7 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
             //not always use
             if (rand() % 4)
@@ -199,7 +199,7 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
 
         void UpdateAI(uint32 diff) override
         {
@@ -304,7 +304,7 @@ public:
             BigWill.Clear();
         }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
 
         void EnterEvadeMode(EvadeReason why) override
         {

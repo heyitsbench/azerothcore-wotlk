@@ -104,8 +104,7 @@ public:
     virtual void ChangeTeam(TeamId /*oldTeam*/) {}
     virtual void SendChangePhase();
 
-    //Added team to reset capturepoints on sliders after warTime
-    bool SetCapturePointData(GameObject* capturePoint, TeamId team);
+    bool SetCapturePointData(GameObject* capturePoint);
     GameObject* GetCapturePointGo();
     GameObject* GetCapturePointGo(WorldObject* obj);
 

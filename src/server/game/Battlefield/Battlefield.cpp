@@ -87,7 +87,7 @@ void Battlefield::HandlePlayerEnterZone(Player* player, uint32 /*zone*/)
                 InvitePlayerToWar(player);
             else // No more vacant places
             {
-                /// @todo: Send a packet to announce it to player
+                // TODO: Send a packet to announce it to player
                 m_PlayersWillBeKick[player->GetTeamId()][player->GetGUID()] = GameTime::GetGameTime().count() + (player->IsGameMaster() ? 30 * MINUTE : 10);
                 InvitePlayerToQueue(player);
             }
@@ -273,7 +273,7 @@ void Battlefield::InvitePlayerToWar(Player* player)
     if (!player)
         return;
 
-    /// @todo : needed ?
+    // TODO : needed ?
     if (player->IsInFlight())
         return;
 
@@ -284,7 +284,7 @@ void Battlefield::InvitePlayerToWar(Player* player)
     }
 
     // If the player does not match minimal level requirements for the battlefield, kick him
-    if (player->GetLevel() < m_MinLevel)
+    if (player->getLevel() < m_MinLevel)
     {
         if (m_PlayersWillBeKick[player->GetTeamId()].count(player->GetGUID()) == 0)
             m_PlayersWillBeKick[player->GetTeamId()][player->GetGUID()] = GameTime::GetGameTime().count() + 10;
@@ -917,13 +917,10 @@ void BfCapturePoint::SendChangePhase()
             }
 }
 
-bool BfCapturePoint::SetCapturePointData(GameObject* capturePoint, TeamId team)
+bool BfCapturePoint::SetCapturePointData(GameObject* capturePoint)
 {
     ASSERT(capturePoint);
 
-    //At first call using TEAM_NEUTRAL as a checker but never using it, after first call we reset the capturepoints to the new winner of the last WG war
-    if (team == TEAM_NEUTRAL)
-        team = m_team;
     LOG_DEBUG("bg.battlefield", "Creating capture point {}", capturePoint->GetEntry());
 
     m_capturePoint = capturePoint->GetGUID();
@@ -942,7 +939,7 @@ bool BfCapturePoint::SetCapturePointData(GameObject* capturePoint, TeamId team)
     m_neutralValuePct = goinfo->capturePoint.neutralPercent;
     m_minValue = m_maxValue * goinfo->capturePoint.neutralPercent / 100;
     m_capturePointEntry = capturePoint->GetEntry();
-    if (team == TEAM_ALLIANCE)
+    if (m_team == TEAM_ALLIANCE)
     {
         m_value = m_maxValue;
         m_State = BF_CAPTUREPOINT_OBJECTIVESTATE_ALLIANCE;

@@ -132,7 +132,12 @@ class spell_sha_t10_restoration_4p_bonus : public AuraScript
             return;
         }
 
-        int32 amount = CalculatePct(healInfo->GetHeal(), aurEff->GetAmount()) / triggeredSpell->GetMaxTicks();
+        float dmgRatio;
+        int32 amount = CalculatePct(healInfo->GetHeal(), aurEff->GetAmount()) / triggeredSpell->GetMaxTicks(eventInfo.GetActor(), dmgRatio);
+
+        if (dmgRatio != 0)
+            amount = amount * dmgRatio;
+
         eventInfo.GetProcTarget()->CastDelayedSpellWithPeriodicAmount(GetTarget(), triggered_spell_id, SPELL_AURA_PERIODIC_HEAL, amount, EFFECT_0);
     }
 
@@ -525,12 +530,12 @@ class spell_sha_earth_shield : public AuraScript
         return ValidateSpellInfo({ SPELL_SHAMAN_EARTH_SHIELD_HEAL, SPELL_SHAMAN_GLYPH_OF_EARTH_SHIELD });
     }
 
-    void CalculateAmount(AuraEffect const* aurEff, int32& amount, bool& /*canBeRecalculated*/)
+    void CalculateAmount(AuraEffect const* /*aurEff*/, int32& amount, bool& /*canBeRecalculated*/)
     {
         if (Unit* caster = GetCaster())
         {
             int32 baseAmount = amount;
-            amount = caster->SpellHealingBonusDone(GetUnitOwner(), GetSpellInfo(), amount, HEAL, aurEff->GetEffIndex());
+            amount = caster->SpellHealingBonusDone(GetUnitOwner(), GetSpellInfo(), amount, HEAL);
             // xinef: taken should be calculated at every heal
             //amount = GetUnitOwner()->SpellHealingBonusTaken(caster, GetSpellInfo(), amount, HEAL);
 
@@ -782,7 +787,7 @@ class spell_sha_healing_stream_totem : public SpellScript
         return ValidateSpellInfo({ SPELL_SHAMAN_GLYPH_OF_HEALING_STREAM_TOTEM, SPELL_SHAMAN_TOTEM_HEALING_STREAM_HEAL });
     }
 
-    void HandleDummy(SpellEffIndex effIndex)
+    void HandleDummy(SpellEffIndex /*effIndex*/)
     {
         int32 damage = GetEffectValue();
         SpellInfo const* triggeringSpell = GetTriggeringSpell();
@@ -792,7 +797,7 @@ class spell_sha_healing_stream_totem : public SpellScript
                 if (Unit* owner = caster->GetOwner())
                 {
                     if (triggeringSpell)
-                        damage = int32(owner->SpellHealingBonusDone(target, triggeringSpell, damage, HEAL, effIndex));
+                        damage = int32(owner->SpellHealingBonusDone(target, triggeringSpell, damage, HEAL));
 
                     // Restorative Totems
                     if (AuraEffect* dummy = owner->GetAuraEffect(SPELL_AURA_DUMMY, SPELLFAMILY_SHAMAN, SHAMAN_ICON_ID_RESTORATIVE_TOTEMS, 1))

@@ -128,7 +128,7 @@ public:
             instance->SetData(DATA_KAELTHAS_EVENT, DONE);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             instance->SetData(DATA_KAELTHAS_EVENT, IN_PROGRESS);
             me->SetInCombatWithZone();
@@ -206,7 +206,7 @@ public:
                         AttackStart(target);
                     return;
                 case EVENT_FINISH_TALK:
-                    me->KillSelf();
+                    Unit::Kill(me, me);
                     return;
             }
 

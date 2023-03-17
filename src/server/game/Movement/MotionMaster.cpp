@@ -32,11 +32,6 @@
 #include "TargetedMovementGenerator.h"
 #include "WaypointMovementGenerator.h"
 
-inline MovementGenerator* GetIdleMovementGenerator()
-{
-    return sMovementGeneratorRegistry->GetRegistryItem(IDLE_MOTION_TYPE)->Create();
-}
-
  // ---- ChaseRange ---- //
 
 ChaseRange::ChaseRange(float range) : MinRange(range > CONTACT_DISTANCE ? 0 : range - CONTACT_DISTANCE), MinTolerance(range), MaxRange(range + CONTACT_DISTANCE), MaxTolerance(range) { }
@@ -64,9 +59,9 @@ bool ChaseAngle::IsAngleOkay(float relativeAngle) const
     return (std::min(diff, float(2 * M_PI) - diff) <= Tolerance);
 }
 
-inline bool isStatic(MovementGenerator* movement)
+inline bool isStatic(MovementGenerator* mv)
 {
-    return (movement == GetIdleMovementGenerator());
+    return (mv == &si_idleMovement);
 }
 
 void MotionMaster::Initialize()
@@ -85,7 +80,16 @@ void MotionMaster::Initialize()
 // set new default movement generator
 void MotionMaster::InitDefault()
 {
-    Mutate(FactorySelector::SelectMovementGenerator(_owner), MOTION_SLOT_IDLE);
+    // Xinef: Do not allow to initialize any motion generator for dead creatures
+    if (_owner->GetTypeId() == TYPEID_UNIT && _owner->IsAlive())
+    {
+        MovementGenerator* movement = FactorySelector::selectMovementGenerator(_owner->ToCreature());
+        Mutate(!movement ? &si_idleMovement : movement, MOTION_SLOT_IDLE);
+    }
+    else
+    {
+        Mutate(&si_idleMovement, MOTION_SLOT_IDLE);
+    }
 }
 
 MotionMaster::~MotionMaster()
@@ -232,7 +236,7 @@ void MotionMaster::MoveIdle()
 {
     //! Should be preceded by MovementExpired or Clear if there's an overlying movementgenerator active
     if (empty() || !isStatic(top()))
-        Mutate(GetIdleMovementGenerator(), MOTION_SLOT_IDLE);
+        Mutate(&si_idleMovement, MOTION_SLOT_IDLE);
 }
 
 void MotionMaster::MoveRandom(float wanderDistance)
@@ -248,14 +252,14 @@ void MotionMaster::MoveRandom(float wanderDistance)
     }
 }
 
-void MotionMaster::MoveTargetedHome(bool walk /*= false*/)
+void MotionMaster::MoveTargetedHome()
 {
     Clear(false);
 
     if (_owner->GetTypeId() == TYPEID_UNIT && !_owner->ToCreature()->GetCharmerOrOwnerGUID())
     {
         LOG_DEBUG("movement.motionmaster", "Creature ({}) targeted home", _owner->GetGUID().ToString());
-        Mutate(new HomeMovementGenerator<Creature>(walk), MOTION_SLOT_ACTIVE);
+        Mutate(new HomeMovementGenerator<Creature>(), MOTION_SLOT_ACTIVE);
     }
     else if (_owner->GetTypeId() == TYPEID_UNIT && _owner->ToCreature()->GetCharmerOrOwnerGUID())
     {

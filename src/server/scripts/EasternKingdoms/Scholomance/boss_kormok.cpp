@@ -72,7 +72,7 @@ struct boss_kormok : public ScriptedAI
         _summons.DespawnAll();
     }
 
-    void IsSummonedBy(WorldObject* /*summoner*/) override
+    void IsSummonedBy(Unit* /*summoner*/) override
     {
         Talk(TALK_SUMMON);
 
@@ -83,7 +83,7 @@ struct boss_kormok : public ScriptedAI
         });
     }
 
-    void JustEngagedWith(Unit* /*who*/) override
+    void EnterCombat(Unit* /*who*/) override
     {
         Talk(TALK_AGGRO);
 

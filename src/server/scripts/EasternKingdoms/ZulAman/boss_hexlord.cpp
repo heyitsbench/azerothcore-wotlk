@@ -228,7 +228,7 @@ struct boss_hexlord_addAI : public ScriptedAI
 
     void Reset() override { }
 
-    void JustEngagedWith(Unit* /*who*/) override
+    void EnterCombat(Unit* /*who*/) override
     {
         DoZoneInCombat();
     }
@@ -294,7 +294,7 @@ public:
             me->SetByteValue(UNIT_FIELD_BYTES_2, 0, SHEATH_STATE_MELEE);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             instance->SetData(DATA_HEXLORDEVENT, IN_PROGRESS);
 
@@ -624,12 +624,7 @@ public:
                         DoCast(target, SPELL_FLASH_HEAL, false);
                     else
                     {
-                        /**
-                         * @bug
-                         * Bugged
-                         * //me->GetMotionMaster()->Clear();
-                         * //me->GetMotionMaster()->MoveChase(target, 20);
-                         */
+                        // bugged
                         //me->GetMotionMaster()->Clear();
                         //me->GetMotionMaster()->MoveChase(target, 20);
                     }

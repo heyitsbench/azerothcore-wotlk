@@ -64,10 +64,10 @@ public:
             BossAI::Reset();
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
             Talk(SAY_AGGRO);
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
             events.ScheduleEvent(EVENT_MORTAL_WOUND, 5000);
             events.ScheduleEvent(EVENT_SURGE, 3000);
             events.ScheduleEvent(EVENT_CHECK_HEALTH, 1000);

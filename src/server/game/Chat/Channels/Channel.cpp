@@ -546,6 +546,9 @@ void Channel::Password(Player const* player, std::string const& pass)
 {
     ObjectGuid guid = player->GetGUID();
 
+    if (_name == "World")
+        return;
+
     ChatHandler chat(player->GetSession());
     if (!IsOn(guid))
     {

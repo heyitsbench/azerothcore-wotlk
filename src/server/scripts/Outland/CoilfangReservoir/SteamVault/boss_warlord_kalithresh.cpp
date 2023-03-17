@@ -41,106 +41,146 @@ enum NagaDistiller
     EVENT_SPELL_RAGE            = 3
 };
 
-struct boss_warlord_kalithresh : public BossAI
+class boss_warlord_kalithresh : public CreatureScript
 {
-    boss_warlord_kalithresh(Creature* creature) : BossAI(creature, DATA_WARLORD_KALITHRESH) { }
+public:
+    boss_warlord_kalithresh() : CreatureScript("boss_warlord_kalithresh") { }
 
-    void JustEngagedWith(Unit* /*who*/) override
+    CreatureAI* GetAI(Creature* creature) const override
     {
-        Talk(SAY_AGGRO);
-        _JustEngagedWith();
-        events.ScheduleEvent(EVENT_SPELL_REFLECTION, 10000);
-        events.ScheduleEvent(EVENT_SPELL_IMPALE, urand(7000, 14000));
-        events.ScheduleEvent(EVENT_SPELL_RAGE, 20000);
+        return GetSteamVaultAI<boss_warlord_kalithreshAI>(creature);
     }
 
-    void KilledUnit(Unit* victim) override
+    struct boss_warlord_kalithreshAI : public ScriptedAI
     {
-        if (victim->IsPlayer())
+        boss_warlord_kalithreshAI(Creature* creature) : ScriptedAI(creature)
         {
-            Talk(SAY_SLAY);
+            instance = creature->GetInstanceScript();
         }
-    }
 
-    void JustDied(Unit* /*killer*/) override
-    {
-        Talk(SAY_DEATH);
-        _JustDied();
-    }
+        InstanceScript* instance;
+        EventMap events;
 
-    void UpdateAI(uint32 diff) override
-    {
-        if (!UpdateVictim())
-            return;
-
-        events.Update(diff);
-        switch (events.ExecuteEvent())
+        void Reset() override
         {
-        case EVENT_SPELL_REFLECTION:
-            me->CastSpell(me, SPELL_SPELL_REFLECTION, false);
-            events.RepeatEvent(urand(15000, 20000));
-            break;
-        case EVENT_SPELL_IMPALE:
-            if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0, 10.0f, true))
-                me->CastSpell(target, SPELL_IMPALE, false);
-            events.RepeatEvent(urand(7500, 12500));
-            break;
-        case EVENT_SPELL_RAGE:
-            if (Creature* distiller = me->FindNearestCreature(NPC_NAGA_DISTILLER, 100.0f))
+            events.Reset();
+            if (instance)
+                instance->SetData(TYPE_WARLORD_KALITHRESH, NOT_STARTED);
+        }
+
+        void EnterCombat(Unit* /*who*/) override
+        {
+            Talk(SAY_AGGRO);
+            events.ScheduleEvent(EVENT_SPELL_REFLECTION, 10000);
+            events.ScheduleEvent(EVENT_SPELL_IMPALE, urand(7000, 14000));
+            events.ScheduleEvent(EVENT_SPELL_RAGE, 20000);
+
+            if (instance)
+                instance->SetData(TYPE_WARLORD_KALITHRESH, IN_PROGRESS);
+        }
+
+        void KilledUnit(Unit* victim) override
+        {
+            if (victim->GetTypeId() == TYPEID_PLAYER)
+                Talk(SAY_SLAY);
+        }
+
+        void JustDied(Unit* /*killer*/) override
+        {
+            Talk(SAY_DEATH);
+            if (instance)
+                instance->SetData(TYPE_WARLORD_KALITHRESH, DONE);
+        }
+
+        void UpdateAI(uint32 diff) override
+        {
+            if (!UpdateVictim())
+                return;
+
+            events.Update(diff);
+            switch (events.ExecuteEvent())
             {
-                Talk(SAY_REGEN);
-                //me->CastSpell(me, SPELL_WARLORDS_RAGE, false);
-                distiller->AI()->DoAction(1);
+                case EVENT_SPELL_REFLECTION:
+                    me->CastSpell(me, SPELL_SPELL_REFLECTION, false);
+                    events.RepeatEvent(urand(15000, 20000));
+                    break;
+                case EVENT_SPELL_IMPALE:
+                    if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0, 10.0f, true))
+                        me->CastSpell(target, SPELL_IMPALE, false);
+                    events.RepeatEvent(urand(7500, 12500));
+                    break;
+                case EVENT_SPELL_RAGE:
+                    if (Creature* distiller = me->FindNearestCreature(NPC_NAGA_DISTILLER, 100.0f))
+                    {
+                        Talk(SAY_REGEN);
+                        //me->CastSpell(me, SPELL_WARLORDS_RAGE, false);
+                        distiller->AI()->DoAction(1);
+                    }
+                    events.RepeatEvent(45000);
+                    break;
             }
-            events.RepeatEvent(45000);
-            break;
-        }
 
-        DoMeleeAttackIfReady();
-    }
+            DoMeleeAttackIfReady();
+        }
+    };
 };
 
-struct npc_naga_distiller : public NullCreatureAI
+class npc_naga_distiller : public CreatureScript
 {
-    npc_naga_distiller(Creature* creature) : NullCreatureAI(creature) { }
+public:
+    npc_naga_distiller() : CreatureScript("npc_naga_distiller") { }
 
-    uint32 spellTimer;
-
-    void Reset() override
+    CreatureAI* GetAI(Creature* creature) const override
     {
-        spellTimer = 0;
-        me->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
-        me->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+        return GetSteamVaultAI<npc_naga_distillerAI>(creature);
     }
 
-    void DoAction(int32 param) override
+    struct npc_naga_distillerAI : public NullCreatureAI
     {
-        if (param != 1)
-            return;
-
-        me->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
-        me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
-        me->CastSpell(me, SPELL_WARLORDS_RAGE_NAGA, true);
-        spellTimer = 1;
-    }
-
-    void UpdateAI(uint32 diff) override
-    {
-        if (spellTimer)
+        npc_naga_distillerAI(Creature* creature) : NullCreatureAI(creature)
         {
-            spellTimer += diff;
-            if (spellTimer >= 12000)
+            instance = creature->GetInstanceScript();
+        }
+
+        InstanceScript* instance;
+        uint32 spellTimer;
+
+        void Reset() override
+        {
+            spellTimer = 0;
+            me->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
+            me->SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+        }
+
+        void DoAction(int32 param) override
+        {
+            if (param != 1)
+                return;
+
+            me->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
+            me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
+            me->CastSpell(me, SPELL_WARLORDS_RAGE_NAGA, true);
+            spellTimer = 1;
+        }
+
+        void UpdateAI(uint32 diff) override
+        {
+            if (spellTimer)
             {
-                if (Creature* kali = me->FindNearestCreature(NPC_WARLORD_KALITHRESH, 100.0f))
-                    kali->CastSpell(kali, SPELL_WARLORDS_RAGE_PROC, true);
-                me->KillSelf();
+                spellTimer += diff;
+                if (spellTimer >= 12000)
+                {
+                    if (Creature* kali = me->FindNearestCreature(NPC_WARLORD_KALITHRESH, 100.0f))
+                        kali->CastSpell(kali, SPELL_WARLORDS_RAGE_PROC, true);
+                    Unit::Kill(me, me);
+                }
             }
         }
-    }
+    };
 };
 
 void AddSC_boss_warlord_kalithresh()
 {
-    RegisterSteamvaultCreatureAI(boss_warlord_kalithresh);
-    RegisterSteamvaultCreatureAI(npc_naga_distiller);
+    new boss_warlord_kalithresh();
+    new npc_naga_distiller();
 }

@@ -57,7 +57,7 @@ public:
     {
         boss_gahzrankaAI(Creature* creature) : BossAI(creature, DATA_GAHZRANKA) { }
 
-        void IsSummonedBy(WorldObject* /*summoner*/) override
+        void IsSummonedBy(Unit* /*summoner*/) override
         {
             me->GetMotionMaster()->MovePath(me->GetEntry() * 10, false);
         }
@@ -72,13 +72,13 @@ public:
             _JustDied();
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
-            _JustEngagedWith();
+            _EnterCombat();
             me->AddAura(SPELL_THRASH, me);
-            events.ScheduleEvent(EVENT_FROSTBREATH, 8s);
-            events.ScheduleEvent(EVENT_MASSIVEGEYSER, 25s);
-            events.ScheduleEvent(EVENT_SLAM, 15s);
+            events.ScheduleEvent(EVENT_FROSTBREATH, 8000);
+            events.ScheduleEvent(EVENT_MASSIVEGEYSER, 25000);
+            events.ScheduleEvent(EVENT_SLAM, 15000);
         }
 
         void UpdateAI(uint32 diff) override
@@ -97,15 +97,15 @@ public:
                 {
                     case EVENT_FROSTBREATH:
                         DoCastVictim(SPELL_FROSTBREATH);
-                        events.ScheduleEvent(EVENT_FROSTBREATH, 8s, 20s);
+                        events.ScheduleEvent(EVENT_FROSTBREATH, urand(8000, 20000));
                         break;
                     case EVENT_MASSIVEGEYSER:
                         DoCastVictim(SPELL_MASSIVEGEYSER);
-                        events.ScheduleEvent(EVENT_MASSIVEGEYSER, 22s, 32s);
+                        events.ScheduleEvent(EVENT_MASSIVEGEYSER, urand(22000, 32000));
                         break;
                     case EVENT_SLAM:
                         DoCastVictim(SPELL_SLAM, true);
-                        events.ScheduleEvent(EVENT_SLAM, 12s, 20s);
+                        events.ScheduleEvent(EVENT_SLAM, urand(12000, 20000));
                         break;
                     default:
                         break;
@@ -130,7 +130,7 @@ class spell_gahzranka_slam : public SpellScript
     {
         if (Unit* caster = GetCaster())
         {
-            _wipeThreat = targets.size() < caster->GetThreatMgr().GetThreatListSize();
+            _wipeThreat = targets.size() < caster->GetThreatMgr().getThreatList().size();
         }
     }
 
@@ -142,7 +142,7 @@ class spell_gahzranka_slam : public SpellScript
             {
                 if (Unit* target = GetHitUnit())
                 {
-                    caster->GetThreatMgr().ModifyThreatByPercent(target, -100);
+                    caster->GetThreatMgr().modifyThreatPercent(target, -100);
                 }
             }
         }
@@ -168,20 +168,18 @@ class spell_pagles_point_cast : public SpellScript
         {
             if (InstanceScript* instanceScript = caster->GetInstanceScript())
             {
-                if (!instanceScript->GetData(DATA_GAHZRANKA) && !caster->FindNearestCreature(NPC_GAHZRANKA, 50.0f))
+                if (!instanceScript->GetData(DATA_GAHZRANKA))
                 {
                     caster->m_Events.AddEventAtOffset([caster]()
                     {
                         if (GameObject* lure = caster->SummonGameObject(GAMEOBJECT_MUDSKUNK_LURE, -11688.5f, -1737.74f, 10.409842f, 1.f, 0.f, 0.f, 0.f, 0.f, 30 * IN_MILLISECONDS))
                         {
-                            lure->DespawnOrUnsummon(5s);
-                            caster->m_Events.AddEventAtOffset([caster]()
+                            caster->m_Events.AddEventAtOffset([caster, lure]()
                             {
-                                if (!caster->FindNearestCreature(NPC_GAHZRANKA, 50.0f))
-                                {
-                                    caster->CastSpell(caster, SPELL_SPLASH, true);
-                                    caster->SummonCreature(NPC_GAHZRANKA, -11688.5f, -1723.74f, -5.78f, 0.f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 5 * DAY * IN_MILLISECONDS);
-                                }
+                                if (lure)
+                                    lure->DespawnOrUnsummon();
+                                caster->CastSpell(caster, SPELL_SPLASH, true);
+                                caster->SummonCreature(NPC_GAHZRANKA, -11688.5f, -1723.74f, -5.78f, 0.f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 5 * DAY * IN_MILLISECONDS);
                             }, 5s);
                         }
                     }, 2s);

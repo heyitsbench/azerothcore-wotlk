@@ -70,10 +70,10 @@ public:
             BossAI::JustDied(killer);
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
             Talk(SAY_AGGRO);
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
 
             events.ScheduleEvent(EVENT_SPELL_POUNDING, 15000);
             events.ScheduleEvent(EVENT_SPELL_ARCANEORB, 3000);

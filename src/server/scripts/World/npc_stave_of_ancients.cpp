@@ -111,7 +111,7 @@ bool NPCStaveQuestAI::IsFairFight()
     {
         Unit* unit = ObjectAccessor::GetUnit(*me, (*itr)->getUnitGuid());
 
-        if (!(*itr)->GetThreat())
+        if (!(*itr)->getThreat())
         {
             // if target threat is 0 its fair, this prevents despawn in the case when
             // there is a bystander since UpdateVictim adds nearby enemies to the threatlist
@@ -291,7 +291,7 @@ public:
             events.Reset();
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* victim) override
         {
             RevealForm();
             me->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
@@ -301,9 +301,9 @@ public:
                 return;
             }
 
-            if (who && (UnitIsUnfair(who) || !QuestIncomplete(who, ARTORIUS_HEAD)))
+            if (victim && (UnitIsUnfair(victim) || !QuestIncomplete(victim, ARTORIUS_HEAD)))
             {
-                me->CastSpell(who, SPELL_FOOLS_PLIGHT, true);
+                me->CastSpell(victim, SPELL_FOOLS_PLIGHT, true);
             }
 
             events.ScheduleEvent(EVENT_FOOLS_PLIGHT, urand(2000, 3000));
@@ -394,14 +394,6 @@ public:
             DoMeleeAttackIfReady();
         }
 
-        void DamageTaken(Unit* attacker, uint32& damage, DamageEffectType, SpellSchoolMask) override
-        {
-            if (attacker == me)
-            {
-                me->LowerPlayerDamageReq(damage);
-            }
-        }
-
         void SpellHit(Unit* /*Caster*/, SpellInfo const* Spell) override
         {
             uint32 serpentStings[12] = { 1978, 13549, 13550, 13551, 13552, 13553, 13554, 13555, 25295, 27016, 49000, 49001 };
@@ -486,7 +478,7 @@ public:
             ResetState();
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*victim*/) override
         {
             RevealForm();
             me->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
@@ -652,16 +644,16 @@ public:
             events.ScheduleEvent(SIMONE_EVENT_CHECK_PET_STATE, 2000);
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* victim) override
         {
             RevealForm();
             me->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
 
             if (!InNormalForm())
             {
-                if (who && (UnitIsUnfair(who) || !QuestIncomplete(who, SIMONE_HEAD)))
+                if (victim && (UnitIsUnfair(victim) || !QuestIncomplete(victim, SIMONE_HEAD)))
                 {
-                    me->CastSpell(who, SPELL_FOOLS_PLIGHT, true);
+                    me->CastSpell(victim, SPELL_FOOLS_PLIGHT, true);
                 }
 
                 events.ScheduleEvent(EVENT_RANGE_CHECK, 1000);
@@ -886,7 +878,7 @@ public:
             me->RemoveAllMinionsByEntry(CREEPING_DOOM_ENTRY);
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* victim) override
         {
             RevealForm();
             me->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
@@ -901,9 +893,9 @@ public:
                 me->CastSpell(me, NELSON_SPELL_SOUL_FLAME, true);
             }
 
-            if (who && (UnitIsUnfair(who) || !QuestIncomplete(who, NELSON_HEAD)))
+            if (victim && (UnitIsUnfair(victim) || !QuestIncomplete(victim, NELSON_HEAD)))
             {
-                me->CastSpell(who, SPELL_FOOLS_PLIGHT, true);
+                me->CastSpell(victim, SPELL_FOOLS_PLIGHT, true);
             }
 
             events.ScheduleEvent(EVENT_FOOLS_PLIGHT, urand(2000, 3000));
@@ -1069,16 +1061,16 @@ public:
             events.Reset();
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* victim) override
         {
             RevealForm();
             me->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
 
             if (!InNormalForm())
             {
-                if (who && (UnitIsUnfair(who) || !QuestIncomplete(who, FRANKLIN_HEAD)))
+                if (victim && (UnitIsUnfair(victim) || !QuestIncomplete(victim, FRANKLIN_HEAD)))
                 {
-                    me->CastSpell(who, SPELL_FOOLS_PLIGHT, true);
+                    me->CastSpell(victim, SPELL_FOOLS_PLIGHT, true);
                 }
 
                 events.ScheduleEvent(FRANKLIN_EVENT_DEMONIC_ENRAGE, urand(9000, 13000));
@@ -1178,14 +1170,6 @@ public:
             if (Spell->Id == FRANKLIN_WEAKNESS_SCORPID_STING)
             {
                 me->CastSpell(me, FRANKLIN_SPELL_ENTROPIC_STING, false);
-            }
-        }
-
-        void DamageTaken(Unit* attacker, uint32& damage, DamageEffectType, SpellSchoolMask) override
-        {
-            if (attacker == me)
-            {
-                me->LowerPlayerDamageReq(damage);
             }
         }
 

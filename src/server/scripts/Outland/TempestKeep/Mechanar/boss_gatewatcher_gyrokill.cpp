@@ -56,9 +56,9 @@ public:
             Talk(SAY_DEATH);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
-            _JustEngagedWith();
+            _EnterCombat();
             events.ScheduleEvent(EVENT_STREAM_OF_MACHINE_FLUID, 10000);
             events.ScheduleEvent(EVENT_SAW_BLADE, 20000);
             events.ScheduleEvent(EVENT_SHADOW_POWER, 30000);

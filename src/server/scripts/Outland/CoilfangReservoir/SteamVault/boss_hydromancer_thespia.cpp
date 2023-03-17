@@ -35,63 +35,90 @@ enum HydromancerThespia
     EVENT_SPELL_ENVELOPING      = 3
 };
 
-struct boss_hydromancer_thespia : public BossAI
+class boss_hydromancer_thespia : public CreatureScript
 {
-    boss_hydromancer_thespia(Creature* creature) : BossAI(creature, DATA_HYDROMANCER_THESPIA) { }
+public:
+    boss_hydromancer_thespia() : CreatureScript("boss_hydromancer_thespia") { }
 
-    void JustDied(Unit* /*killer*/) override
+    CreatureAI* GetAI(Creature* creature) const override
     {
-        _JustDied();
-        Talk(SAY_DEAD);
+        return GetSteamVaultAI<boss_thespiaAI>(creature);
     }
 
-    void KilledUnit(Unit* victim) override
+    struct boss_thespiaAI : public ScriptedAI
     {
-        if (victim->IsPlayer())
-            Talk(SAY_SLAY);
-    }
-
-    void JustEngagedWith(Unit* /*who*/) override
-    {
-        Talk(SAY_AGGRO);
-        _JustEngagedWith();
-        events.ScheduleEvent(EVENT_SPELL_LIGHTNING, 15000);
-        events.ScheduleEvent(EVENT_SPELL_LUNG, 7000);
-        events.ScheduleEvent(EVENT_SPELL_ENVELOPING, 9000);
-    }
-
-    void UpdateAI(uint32 diff) override
-    {
-        if (!UpdateVictim())
-            return;
-
-        events.Update(diff);
-        switch (events.ExecuteEvent())
+        boss_thespiaAI(Creature* creature) : ScriptedAI(creature)
         {
-        case EVENT_SPELL_LIGHTNING:
-            for (uint8 i = 0; i < DUNGEON_MODE(1, 2); ++i)
-                if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0))
-                    me->CastSpell(target, SPELL_LIGHTNING_CLOUD, false);
-            events.RepeatEvent(urand(15000, 25000));
-            break;
-        case EVENT_SPELL_LUNG:
-            if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0))
-                DoCast(target, SPELL_LUNG_BURST);
-            events.RepeatEvent(urand(7000, 12000));
-            break;
-        case EVENT_SPELL_ENVELOPING:
-            for (uint8 i = 0; i < DUNGEON_MODE(1, 2); ++i)
-                if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0))
-                    me->CastSpell(target, SPELL_ENVELOPING_WINDS, false);
-            events.RepeatEvent(urand(10000, 15000));
-            break;
+            instance = creature->GetInstanceScript();
         }
 
-        DoMeleeAttackIfReady();
-    }
+        InstanceScript* instance;
+        EventMap events;
+
+        void Reset() override
+        {
+            events.Reset();
+            if (instance)
+                instance->SetData(TYPE_HYDROMANCER_THESPIA, NOT_STARTED);
+        }
+
+        void JustDied(Unit* /*killer*/) override
+        {
+            Talk(SAY_DEAD);
+            if (instance)
+                instance->SetData(TYPE_HYDROMANCER_THESPIA, DONE);
+        }
+
+        void KilledUnit(Unit* victim) override
+        {
+            if (victim->GetTypeId() == TYPEID_PLAYER)
+                Talk(SAY_SLAY);
+        }
+
+        void EnterCombat(Unit* /*who*/) override
+        {
+            Talk(SAY_AGGRO);
+            events.ScheduleEvent(EVENT_SPELL_LIGHTNING, 15000);
+            events.ScheduleEvent(EVENT_SPELL_LUNG, 7000);
+            events.ScheduleEvent(EVENT_SPELL_ENVELOPING, 9000);
+
+            if (instance)
+                instance->SetData(TYPE_HYDROMANCER_THESPIA, IN_PROGRESS);
+        }
+
+        void UpdateAI(uint32 diff) override
+        {
+            if (!UpdateVictim())
+                return;
+
+            events.Update(diff);
+            switch (events.ExecuteEvent())
+            {
+                case EVENT_SPELL_LIGHTNING:
+                    for (uint8 i = 0; i < DUNGEON_MODE(1, 2); ++i)
+                        if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0))
+                            me->CastSpell(target, SPELL_LIGHTNING_CLOUD, false);
+                    events.RepeatEvent(urand(15000, 25000));
+                    break;
+                case EVENT_SPELL_LUNG:
+                    if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0))
+                        DoCast(target, SPELL_LUNG_BURST);
+                    events.RepeatEvent(urand(7000, 12000));
+                    break;
+                case EVENT_SPELL_ENVELOPING:
+                    for (uint8 i = 0; i < DUNGEON_MODE(1, 2); ++i)
+                        if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0))
+                            me->CastSpell(target, SPELL_ENVELOPING_WINDS, false);
+                    events.RepeatEvent(urand(10000, 15000));
+                    break;
+            }
+
+            DoMeleeAttackIfReady();
+        }
+    };
 };
 
 void AddSC_boss_hydromancer_thespia()
 {
-    RegisterSteamvaultCreatureAI(boss_hydromancer_thespia);
+    new boss_hydromancer_thespia();
 }

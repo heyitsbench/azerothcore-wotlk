@@ -191,13 +191,13 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
-            _events.ScheduleEvent(EVENT_SPELL_SHADOWBOLTVOLLEY, 10s);
-            _events.ScheduleEvent(EVENT_SPELL_IMMOLATE, 18s);
-            _events.ScheduleEvent(EVENT_SPELL_CURSEOFWEAKNESS, 5s);
-            _events.ScheduleEvent(EVENT_SPELL_DEMONARMOR, 16s);
-            _events.ScheduleEvent(EVENT_SPELL_SUMMON_VOIDWALKERS, 1s);
+            _events.ScheduleEvent(EVENT_SPELL_SHADOWBOLTVOLLEY, 10000);
+            _events.ScheduleEvent(EVENT_SPELL_IMMOLATE, 18000);
+            _events.ScheduleEvent(EVENT_SPELL_CURSEOFWEAKNESS, 5000);
+            _events.ScheduleEvent(EVENT_SPELL_DEMONARMOR, 16000);
+            _events.ScheduleEvent(EVENT_SPELL_SUMMON_VOIDWALKERS, 1000);
         }
 
         void EnterEvadeMode(EvadeReason /*why*/) override
@@ -222,24 +222,24 @@ public:
             {
                 case EVENT_SPELL_SHADOWBOLTVOLLEY:
                     DoCastVictim(SPELL_SHADOWBOLTVOLLEY);
-                    _events.ScheduleEvent(EVENT_SPELL_SHADOWBOLTVOLLEY, 12s);
+                    _events.ScheduleEvent(EVENT_SPELL_SHADOWBOLTVOLLEY, 12000);
                     break;
                 case EVENT_SPELL_IMMOLATE:
                     if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0, 100, true))
                     {
                         DoCast(target, SPELL_IMMOLATE);
-                        _events.ScheduleEvent(EVENT_SPELL_IMMOLATE, 25s);
+                        _events.ScheduleEvent(EVENT_SPELL_IMMOLATE, 25000);
                     }
                     // Didn't get a target, try again in 1s
-                    _events.ScheduleEvent(EVENT_SPELL_IMMOLATE, 1s);
+                    _events.ScheduleEvent(EVENT_SPELL_IMMOLATE, 1000);
                     break;
                 case EVENT_SPELL_CURSEOFWEAKNESS:
                     DoCastVictim(SPELL_CURSEOFWEAKNESS);
-                    _events.ScheduleEvent(EVENT_SPELL_CURSEOFWEAKNESS, 45s);
+                    _events.ScheduleEvent(EVENT_SPELL_CURSEOFWEAKNESS, 45000);
                     break;
                 case EVENT_SPELL_DEMONARMOR:
                     DoCast(me, SPELL_DEMONARMOR);
-                    _events.ScheduleEvent(EVENT_SPELL_DEMONARMOR, 300s);
+                    _events.ScheduleEvent(EVENT_SPELL_DEMONARMOR, 300000);
                     break;
                 case EVENT_SPELL_SUMMON_VOIDWALKERS:
                     if (!Voidwalkers && HealthBelowPct(51))
@@ -248,7 +248,7 @@ public:
                         Voidwalkers = true;
                     }
                     // Not ready yet, try again in 1s
-                    _events.ScheduleEvent(EVENT_SPELL_SUMMON_VOIDWALKERS, 1s);
+                    _events.ScheduleEvent(EVENT_SPELL_SUMMON_VOIDWALKERS, 1000);
                     break;
             }
 

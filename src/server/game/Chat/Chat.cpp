@@ -269,6 +269,26 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
     return receiverGUIDPos;
 }
 
+std::vector<std::string> ChatHandler::SplitString(const std::string& str, int splitLength)
+{
+    int NumSubstrings = str.length() / splitLength;
+    std::vector<std::string> ret;
+
+    for (auto i = 0; i < NumSubstrings; i++)
+    {
+        ret.push_back(str.substr(i * splitLength, splitLength));
+    }
+
+    // If there are leftover characters, create a shorter item at the end.
+    if (str.length() % splitLength != 0)
+    {
+        ret.push_back(str.substr(splitLength * NumSubstrings));
+    }
+
+
+    return ret;
+}
+
 size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Language language, WorldObject const* sender, WorldObject const* receiver, std::string_view message,
                                     uint32 achievementId /*= 0*/, std::string const& channelName /*= ""*/, LocaleConstant locale /*= DEFAULT_LOCALE*/)
 {
@@ -650,7 +670,7 @@ ObjectGuid::LowType ChatHandler::extractLowGuidFromLink(char* text, HighGuid& gu
 
                 ObjectGuid::LowType lowguid = (uint32)atol(idS);
 
-                if (sObjectMgr->GetGameObjectData(lowguid))
+                if (sObjectMgr->GetGOData(lowguid))
                     return lowguid;
                 else
                     return 0;

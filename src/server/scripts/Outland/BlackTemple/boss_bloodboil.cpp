@@ -92,9 +92,9 @@ public:
             BossAI::Reset();
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
             Talk(SAY_AGGRO);
 
             me->CastSpell(me, SPELL_ACIDIC_WOUND, true);
@@ -245,7 +245,7 @@ public:
         {
             PreventHitEffect(effIndex);
             if (Unit* target = GetHitUnit())
-                GetCaster()->GetThreatMgr().ModifyThreatByPercent(target, -20);
+                GetCaster()->GetThreatMgr().modifyThreatPercent(target, -20);
         }
 
         void Register() override

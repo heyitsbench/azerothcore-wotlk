@@ -435,7 +435,7 @@ public:
                     SetEscortPaused(true);
                     DoSummonPriestess();
                     Talk(SAY_RANSHALLA_ALTAR_2);
-                    events.ScheduleEvent(EVENT_RESUME, 2s);
+                    events.ScheduleEvent(EVENT_RESUME, 2000);
                     break;
                 case 44:
                     // Stop the escort and turn towards the altar

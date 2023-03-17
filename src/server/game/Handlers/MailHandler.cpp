@@ -115,7 +115,7 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
 
     Player* player = _player;
 
-    if (player->GetLevel() < sWorld->getIntConfig(CONFIG_MAIL_LEVEL_REQ))
+    if (player->getLevel() < sWorld->getIntConfig(CONFIG_MAIL_LEVEL_REQ))
     {
         SendNotification(GetAcoreString(LANG_MAIL_SENDER_REQ), sWorld->getIntConfig(CONFIG_MAIL_LEVEL_REQ));
         return;
@@ -237,13 +237,6 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
             return;
         }
 
-        // handle empty bag before CanBeTraded, since that func already has that check
-        if (item->IsNotEmptyBag())
-        {
-            player->SendMailResult(0, MAIL_SEND, MAIL_ERR_EQUIP_ERROR, EQUIP_ERR_CAN_ONLY_DO_WITH_EMPTY_BAGS);
-            return;
-        }
-
         if (!item->CanBeTraded(true))
         {
             player->SendMailResult(0, MAIL_SEND, MAIL_ERR_EQUIP_ERROR, EQUIP_ERR_MAIL_BOUND_ITEM);
@@ -268,19 +261,18 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
             return;
         }
 
+        if (item->IsNotEmptyBag())
+        {
+            player->SendMailResult(0, MAIL_SEND, MAIL_ERR_EQUIP_ERROR, EQUIP_ERR_CAN_ONLY_DO_WITH_EMPTY_BAGS);
+            return;
+        }
+
         if (!sScriptMgr->CanSendMail(player, receiverGuid, mailbox, subject, body, money, COD, item))
         {
-            player->SendMailResult(0, MAIL_SEND, MAIL_ERR_INTERNAL_ERROR);
             return;
         }
 
         items[i] = item;
-    }
-
-    if (!items_count && !sScriptMgr->CanSendMail(player, receiverGuid, mailbox, subject, body, money, COD, nullptr))
-    {
-        player->SendMailResult(0, MAIL_SEND, MAIL_ERR_INTERNAL_ERROR);
-        return;
     }
 
     player->SendMailResult(0, MAIL_SEND, MAIL_OK);
@@ -546,8 +538,10 @@ void WorldSession::HandleMailTakeItem(WorldPacket& recvData)
             }
 
             player->ModifyMoney(-int32(m->COD));
-        }
 
+            sScriptMgr->OnReceiveItemFromMail(_player, sender, it);
+        }
+       
         m->COD = 0;
         m->state = MAIL_STATE_CHANGED;
         player->m_mailsUpdated = true;

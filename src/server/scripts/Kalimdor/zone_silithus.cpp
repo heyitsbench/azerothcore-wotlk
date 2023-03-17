@@ -656,7 +656,7 @@ public:
             hasTarget = false;
         }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
         void JustDied(Unit* /*slayer*/) override;
 
         void UpdateAI(uint32 diff) override
@@ -1078,7 +1078,7 @@ public:
 
         bool GossipSelect(Player* player, uint32 sender, uint32 action) override
         {
-            Seconds respawnTimer{};
+            Seconds respawnTimer = 0s;
             player->PlayerTalkClass->SendCloseGossip();
 
             Creature* lastSpawn = ObjectAccessor::GetCreature(*me, _creatureGuid);

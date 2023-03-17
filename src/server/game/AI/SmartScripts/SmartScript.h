@@ -39,19 +39,19 @@ public:
     void ProcessEventsFor(SMART_EVENT e, Unit* unit = nullptr, uint32 var0 = 0, uint32 var1 = 0, bool bvar = false, SpellInfo const* spell = nullptr, GameObject* gob = nullptr);
     void ProcessEvent(SmartScriptHolder& e, Unit* unit = nullptr, uint32 var0 = 0, uint32 var1 = 0, bool bvar = false, SpellInfo const* spell = nullptr, GameObject* gob = nullptr);
     bool CheckTimer(SmartScriptHolder const& e) const;
-    static void RecalcTimer(SmartScriptHolder& e, uint32 min, uint32 max);
+    void RecalcTimer(SmartScriptHolder& e, uint32 min, uint32 max);
     void UpdateTimer(SmartScriptHolder& e, uint32 const diff);
-    static void InitTimer(SmartScriptHolder& e);
+    void InitTimer(SmartScriptHolder& e);
     void ProcessAction(SmartScriptHolder& e, Unit* unit = nullptr, uint32 var0 = 0, uint32 var1 = 0, bool bvar = false, SpellInfo const* spell = nullptr, GameObject* gob = nullptr);
     void ProcessTimedAction(SmartScriptHolder& e, uint32 const& min, uint32 const& max, Unit* unit = nullptr, uint32 var0 = 0, uint32 var1 = 0, bool bvar = false, SpellInfo const* spell = nullptr, GameObject* gob = nullptr);
-    void GetTargets(ObjectVector& targets, SmartScriptHolder const& e, Unit* invoker = nullptr) const;
-    void GetWorldObjectsInDist(ObjectVector& objects, float dist) const;
+    ObjectList* GetTargets(SmartScriptHolder const& e, Unit* invoker = nullptr);
+    ObjectList* GetWorldObjectsInDist(float dist);
     void InstallTemplate(SmartScriptHolder const& e);
-    static SmartScriptHolder CreateSmartEvent(SMART_EVENT e, uint32 event_flags, uint32 event_param1, uint32 event_param2, uint32 event_param3, uint32 event_param4, uint32 event_param5, SMART_ACTION action, uint32 action_param1, uint32 action_param2, uint32 action_param3, uint32 action_param4, uint32 action_param5, uint32 action_param6, SMARTAI_TARGETS t, uint32 target_param1, uint32 target_param2, uint32 target_param3, uint32 target_param4, uint32 phaseMask);
+    SmartScriptHolder CreateSmartEvent(SMART_EVENT e, uint32 event_flags, uint32 event_param1, uint32 event_param2, uint32 event_param3, uint32 event_param4, uint32 event_param5, SMART_ACTION action, uint32 action_param1, uint32 action_param2, uint32 action_param3, uint32 action_param4, uint32 action_param5, uint32 action_param6, SMARTAI_TARGETS t, uint32 target_param1, uint32 target_param2, uint32 target_param3, uint32 target_param4, uint32 phaseMask);
     void AddEvent(SMART_EVENT e, uint32 event_flags, uint32 event_param1, uint32 event_param2, uint32 event_param3, uint32 event_param4, uint32 event_param5, SMART_ACTION action, uint32 action_param1, uint32 action_param2, uint32 action_param3, uint32 action_param4, uint32 action_param5, uint32 action_param6, SMARTAI_TARGETS t, uint32 target_param1, uint32 target_param2, uint32 target_param3, uint32 target_param4, uint32 phaseMask);
     void SetPathId(uint32 id) { mPathId = id; }
     uint32 GetPathId() const { return mPathId; }
-    WorldObject* GetBaseObject() const
+    WorldObject* GetBaseObject()
     {
         WorldObject* obj = nullptr;
         if (me)
@@ -70,17 +70,27 @@ public:
     void OnUpdate(const uint32 diff);
     void OnMoveInLineOfSight(Unit* who);
 
-    Unit* DoSelectLowestHpFriendly(float range, uint32 MinHPDiff) const;
+    Unit* DoSelectLowestHpFriendly(float range, uint32 MinHPDiff);
     Unit* DoSelectLowestHpPercentFriendly(float range, uint32 minHpPct, uint32 maxHpPct) const;
-    void DoFindFriendlyCC(std::vector<Creature*>& creatures, float range) const;
-    void DoFindFriendlyMissingBuff(std::vector<Creature*>& creatures, float range, uint32 spellid) const;
-    Unit* DoFindClosestFriendlyInRange(float range, bool playerOnly) const;
+    void DoFindFriendlyCC(std::list<Creature*>& _list, float range);
+    void DoFindFriendlyMissingBuff(std::list<Creature*>& list, float range, uint32 spellid);
+    Unit* DoFindClosestFriendlyInRange(float range, bool playerOnly);
 
-    void StoreTargetList(ObjectVector const& targets, uint32 id)
+    void StoreTargetList(ObjectList* targets, uint32 id)
     {
-        // insert or replace
-        _storedTargets.erase(id);
-        _storedTargets.emplace(id, ObjectGuidVector(targets));
+        if (!targets)
+            return;
+
+        if (mTargetStorage->find(id) != mTargetStorage->end())
+        {
+            // check if already stored
+            if ((*mTargetStorage)[id]->Equals(targets))
+                return;
+
+            delete (*mTargetStorage)[id];
+        }
+
+        (*mTargetStorage)[id] = new ObjectGuidList(targets, GetBaseObject());
     }
 
     bool IsSmart(Creature* c = nullptr)
@@ -112,11 +122,11 @@ public:
         return smart;
     }
 
-    ObjectVector const* GetStoredTargetVector(uint32 id, WorldObject const& ref) const
+    ObjectList* GetTargetList(uint32 id)
     {
-        auto itr = _storedTargets.find(id);
-        if (itr != _storedTargets.end())
-            return itr->second.GetObjectVector(ref);
+        ObjectListMap::iterator itr = mTargetStorage->find(id);
+        if (itr != mTargetStorage->end())
+            return (*itr).second->GetObjectList();
         return nullptr;
     }
 
@@ -177,6 +187,8 @@ public:
         return creatureItr != bounds.second ? creatureItr->second : bounds.first->second;
     }
 
+    ObjectListMap* mTargetStorage;
+
     void OnReset();
     void ResetBaseObject()
     {
@@ -211,7 +223,7 @@ public:
 
     //TIMED_ACTIONLIST (script type 9 aka script9)
     void SetScript9(SmartScriptHolder& e, uint32 entry);
-    Unit* GetLastInvoker(Unit* invoker = nullptr) const;
+    Unit* GetLastInvoker(Unit* invoker = nullptr);
     ObjectGuid mLastInvoker;
     typedef std::unordered_map<uint32, uint32> CounterMap;
     CounterMap mCounterList;
@@ -231,9 +243,6 @@ public:
 
     bool AllowPhaseReset() const { return _allowPhaseReset; }
     void SetPhaseReset(bool allow) { _allowPhaseReset = allow; }
-
-    void AddCreatureSummon(ObjectGuid const& guid);
-    void RemoveCreatureSummon(ObjectGuid const& guid);
 
 private:
     void IncPhase(uint32 p);
@@ -275,8 +284,6 @@ private:
     // Xinef: misc
     bool _allowPhaseReset;
 
-    ObjectVectorMap _storedTargets;
-
     SMARTAI_TEMPLATE mTemplate;
     void InstallEvents();
 
@@ -309,8 +316,6 @@ private:
         SmartScriptHolder s;
         return s;
     }
-
-    GuidUnorderedSet _summonList;
 };
 
 #endif

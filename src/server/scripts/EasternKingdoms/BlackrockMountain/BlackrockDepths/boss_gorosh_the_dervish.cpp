@@ -49,9 +49,9 @@ public:
 
         uint32 nextWhirlwindTime;
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
-            _JustEngagedWith();
+            _EnterCombat();
             events.ScheduleEvent(SPELL_WHIRLWIND, 0.2 * (int) TIMER_WHIRLWIND);
             events.ScheduleEvent(SPELL_MORTALSTRIKE, 0.2 * (int) TIMER_MORTAL);
             events.ScheduleEvent(SPELL_BLOODLUST, 0.2 * (int) TIMER_BLOODLUST);

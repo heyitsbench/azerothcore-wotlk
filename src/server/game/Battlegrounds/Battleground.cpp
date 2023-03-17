@@ -32,7 +32,7 @@
 #include "Formulas.h"
 #include "GameGraveyard.h"
 #include "GridNotifiersImpl.h"
-#include "GroupMgr.h"
+#include "Group.h"
 #include "MapMgr.h"
 #include "MiscPackets.h"
 #include "Object.h"
@@ -862,7 +862,7 @@ void Battleground::EndBattleground(PvPTeamId winnerTeamId)
                 UpdatePlayerScore(player, SCORE_BONUS_HONOR, GetBonusHonorFromKill(winner_kills));
 
                 // Xinef: check player level and not bracket level if (CanAwardArenaPoints())
-                if (player->GetLevel() >= BG_AWARD_ARENA_POINTS_MIN_LEVEL)
+                if (player->getLevel() >= BG_AWARD_ARENA_POINTS_MIN_LEVEL)
                     player->ModifyArenaPoints(winner_arena);
 
                 if (!player->GetRandomWinner())
@@ -1151,7 +1151,6 @@ void Battleground::AddOrSetPlayerToCorrectBgGroup(Player* player, TeamId teamId)
         group = new Group;
         SetBgRaid(teamId, group);
         group->Create(player);
-        sGroupMgr->AddGroup(group);
     }
     else if (group->IsMember(playerGuid))
     {
@@ -1599,7 +1598,7 @@ bool Battleground::AddSpiritGuide(uint32 type, float x, float y, float z, float 
         creature->setDeathState(DEAD);
         creature->SetGuidValue(UNIT_FIELD_CHANNEL_OBJECT, creature->GetGUID());
         // aura
-        /// @todo: Fix display here
+        // TODO: Fix display here
         // creature->SetVisibleAura(0, SPELL_SPIRIT_HEAL_CHANNEL);
         // casting visual effect
         creature->SetUInt32Value(UNIT_CHANNEL_SPELL, SPELL_SPIRIT_HEAL_CHANNEL);

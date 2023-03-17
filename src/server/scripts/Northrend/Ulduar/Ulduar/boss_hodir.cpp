@@ -264,15 +264,15 @@ public:
                 SpawnHelpers();
         }
 
-        void JustEngagedWith(Unit*  /*pWho*/) override
+        void EnterCombat(Unit*  /*pWho*/) override
         {
             me->CastSpell(me, SPELL_BITING_COLD_BOSS_AURA, true);
             SmallIcicles(true);
             events.Reset();
-            events.ScheduleEvent(EVENT_FLASH_FREEZE, 48s, 49s);
-            events.ScheduleEvent(EVENT_FREEZE, 17s, 20s);
-            events.ScheduleEvent(EVENT_BERSERK, 8min);
-            events.ScheduleEvent(EVENT_HARD_MODE_MISSED, 3min);
+            events.ScheduleEvent(EVENT_FLASH_FREEZE, urand(48000, 49000));
+            events.ScheduleEvent(EVENT_FREEZE, urand(17000,20000));
+            events.ScheduleEvent(EVENT_BERSERK, 480000);
+            events.ScheduleEvent(EVENT_HARD_MODE_MISSED, 180000);
             Talk(TEXT_AGGRO);
 
             if (pInstance && pInstance->GetData(TYPE_HODIR) != DONE)
@@ -298,7 +298,7 @@ public:
                             if (GameObject* go = pInstance->instance->GetGameObject(pInstance->GetGuidData(GO_HODIR_CHEST_HARD)))
                             {
                                 go->SetGoState(GO_STATE_ACTIVE);
-                                events.ScheduleEvent(EVENT_DESPAWN_CHEST, 3s);
+                                events.ScheduleEvent(EVENT_DESPAWN_CHEST, 3000);
                             }
                         }
                         break;
@@ -461,10 +461,10 @@ public:
                         Talk(TEXT_FLASH_FREEZE);
                         Talk(TEXT_EMOTE_FREEZE);
                         SmallIcicles(false);
-                        events.ScheduleEvent(EVENT_FLASH_FREEZE, 48s, 49s);
-                        events.ScheduleEvent(EVENT_SMALL_ICICLES_ENABLE, Is25ManRaid() ? 12s : 24s);
-                        events.ScheduleEvent(EVENT_FROZEN_BLOWS, 15s);
-                        events.RescheduleEvent(EVENT_FREEZE, 17s, 20s);
+                        events.ScheduleEvent(EVENT_FLASH_FREEZE, urand(48000, 49000));
+                        events.ScheduleEvent(EVENT_SMALL_ICICLES_ENABLE, Is25ManRaid() ? 12000 : 24000);
+                        events.ScheduleEvent(EVENT_FROZEN_BLOWS, 15000);
+                        events.RescheduleEvent(EVENT_FREEZE, urand(17000, 20000));
                     }
                     break;
                 case EVENT_SMALL_ICICLES_ENABLE:
@@ -488,7 +488,7 @@ public:
                     {
                         me->CastSpell(target, SPELL_FREEZE, false);
                     }
-                    events.RescheduleEvent(EVENT_FREEZE, 17s, 20s);
+                    events.RescheduleEvent(EVENT_FREEZE, urand(17000, 20000));
                     break;
             }
 
@@ -781,9 +781,9 @@ public:
 
         void ScheduleAbilities()
         {
-            events.ScheduleEvent(EVENT_PRIEST_DISPELL_MAGIC, 7s);
-            events.ScheduleEvent(EVENT_PRIEST_GREAT_HEAL, 6s, 7s);
-            events.ScheduleEvent(EVENT_PRIEST_SMITE, 2100ms);
+            events.ScheduleEvent(EVENT_PRIEST_DISPELL_MAGIC, 7000);
+            events.ScheduleEvent(EVENT_PRIEST_GREAT_HEAL, urand(6000, 7000));
+            events.ScheduleEvent(EVENT_PRIEST_SMITE, 2100);
         }
 
         void SpellHit(Unit* /*caster*/, SpellInfo const* spell) override
@@ -791,7 +791,7 @@ public:
             if(spell->Id == SPELL_FLASH_FREEZE_TRAPPED_NPC)
             {
                 events.Reset();
-                events.ScheduleEvent(EVENT_TRY_FREE_HELPER, 2s);
+                events.ScheduleEvent(EVENT_TRY_FREE_HELPER, 2000);
             }
         }
 
@@ -817,21 +817,21 @@ public:
                                         ScheduleAbilities();
                                         break;
                                     }
-                        events.Repeat(2s);
+                        events.RepeatEvent(2000);
                     }
                     break;
                 case EVENT_PRIEST_DISPELL_MAGIC:
                     me->CastCustomSpell(SPELL_PRIEST_DISPELL_MAGIC, SPELLVALUE_MAX_TARGETS, 1, (Unit*)nullptr, false);
-                    events.Repeat(7s);
+                    events.RepeatEvent(7000);
                     break;
                 case EVENT_PRIEST_GREAT_HEAL:
                     me->CastSpell(me, SPELL_PRIEST_GREAT_HEAL, false);
-                    events.Repeat(6s, 7s);
+                    events.RepeatEvent(urand(6000, 7000));
                     break;
                 case EVENT_PRIEST_SMITE:
                     if (Unit* victim = me->GetVictim())
                         me->CastSpell(victim, SPELL_PRIEST_SMITE, false);
-                    events.Repeat(2100ms);
+                    events.RepeatEvent(2100);
                     break;
             }
         }
@@ -879,8 +879,8 @@ public:
 
         void ScheduleAbilities()
         {
-            events.ScheduleEvent(EVENT_DRUID_WRATH, 1600ms);
-            events.ScheduleEvent(EVENT_DRUID_STARLIGHT, 10s);
+            events.ScheduleEvent(EVENT_DRUID_WRATH, 1600);
+            events.ScheduleEvent(EVENT_DRUID_STARLIGHT, 10000);
         }
 
         void SpellHit(Unit* /*caster*/, SpellInfo const* spell) override
@@ -888,7 +888,7 @@ public:
             if(spell->Id == SPELL_FLASH_FREEZE_TRAPPED_NPC)
             {
                 events.Reset();
-                events.ScheduleEvent(EVENT_TRY_FREE_HELPER, 2s);
+                events.ScheduleEvent(EVENT_TRY_FREE_HELPER, 2000);
             }
         }
 
@@ -914,22 +914,22 @@ public:
                                         ScheduleAbilities();
                                         break;
                                     }
-                        events.Repeat(2s);
+                        events.RepeatEvent(2000);
                     }
                     break;
                 case EVENT_DRUID_WRATH:
                     if (Unit* victim = me->GetVictim())
                         me->CastSpell(victim, SPELL_DRUID_WRATH, false);
-                    events.Repeat(1600ms);
+                    events.RepeatEvent(1600);
                     break;
                 case EVENT_DRUID_STARLIGHT:
                     if (me->GetPositionZ() < 433.0f) // ensure npc is on the ground
                     {
                         me->CastSpell(me, SPELL_DRUID_STARLIGHT_AREA_AURA, false);
-                        events.Repeat(15s);
+                        events.RepeatEvent(15000);
                         break;
                     }
-                    events.Repeat(3s);
+                    events.RepeatEvent(3000);
                     break;
             }
         }
@@ -977,8 +977,8 @@ public:
 
         void ScheduleAbilities()
         {
-            events.ScheduleEvent(EVENT_SHAMAN_LAVA_BURST, 2600ms);
-            events.ScheduleEvent(EVENT_SHAMAN_STORM_CLOUD, 10s);
+            events.ScheduleEvent(EVENT_SHAMAN_LAVA_BURST, 2600);
+            events.ScheduleEvent(EVENT_SHAMAN_STORM_CLOUD, 10000);
         }
 
         void SpellHit(Unit* /*caster*/, SpellInfo const* spell) override
@@ -986,7 +986,7 @@ public:
             if(spell->Id == SPELL_FLASH_FREEZE_TRAPPED_NPC)
             {
                 events.Reset();
-                events.ScheduleEvent(EVENT_TRY_FREE_HELPER, 2s);
+                events.ScheduleEvent(EVENT_TRY_FREE_HELPER, 2000);
             }
         }
 
@@ -1019,18 +1019,18 @@ public:
                                         ScheduleAbilities();
                                         break;
                                     }
-                        events.Repeat(2s);
+                        events.RepeatEvent(2000);
                     }
                     break;
                 case EVENT_SHAMAN_LAVA_BURST:
                     if (Unit* victim = me->GetVictim())
                         me->CastSpell(victim, SPELL_SHAMAN_LAVA_BURST, false);
-                    events.Repeat(2600ms);
+                    events.RepeatEvent(2600);
                     break;
                 case EVENT_SHAMAN_STORM_CLOUD:
                     if (Player* target = ScriptedAI::SelectTargetFromPlayerList(35.0f, SPELL_SHAMAN_STORM_CLOUD))
                         me->CastSpell(target, SPELL_SHAMAN_STORM_CLOUD, false);
-                    events.Repeat(30s);
+                    events.RepeatEvent(30000);
                     break;
             }
         }
@@ -1078,9 +1078,9 @@ public:
 
         void ScheduleAbilities()
         {
-            events.ScheduleEvent(EVENT_MAGE_FIREBALL, 3100ms);
-            events.ScheduleEvent(EVENT_MAGE_TOASTY_FIRE, 6s);
-            events.ScheduleEvent(EVENT_MAGE_MELT_ICE, 1s);
+            events.ScheduleEvent(EVENT_MAGE_FIREBALL, 3100);
+            events.ScheduleEvent(EVENT_MAGE_TOASTY_FIRE, 6000);
+            events.ScheduleEvent(EVENT_MAGE_MELT_ICE, 1000);
         }
 
         void SpellHit(Unit* /*caster*/, SpellInfo const* spell) override
@@ -1088,7 +1088,7 @@ public:
             if(spell->Id == SPELL_FLASH_FREEZE_TRAPPED_NPC)
             {
                 events.Reset();
-                events.ScheduleEvent(EVENT_TRY_FREE_HELPER, 2s);
+                events.ScheduleEvent(EVENT_TRY_FREE_HELPER, 2000);
             }
         }
 
@@ -1114,17 +1114,17 @@ public:
                                         ScheduleAbilities();
                                         break;
                                     }
-                        events.Repeat(2s);
+                        events.RepeatEvent(2000);
                     }
                     break;
                 case EVENT_MAGE_FIREBALL:
                     if (Unit* victim = me->GetVictim())
                         me->CastSpell(victim, SPELL_MAGE_FIREBALL, false);
-                    events.Repeat(3100ms);
+                    events.RepeatEvent(3100);
                     break;
                 case EVENT_MAGE_TOASTY_FIRE:
                     me->CastSpell(me, SPELL_MAGE_CONJURE_TOASTY_FIRE, false);
-                    events.Repeat(10s);
+                    events.RepeatEvent(10000);
                     break;
                 case EVENT_MAGE_MELT_ICE:
                     {
@@ -1141,11 +1141,11 @@ public:
 
                         if( found )
                         {
-                            events.DelayEvents(2s);
-                            events.Repeat(2s);
+                            events.DelayEvents(2000);
+                            events.RepeatEvent(1999);
                             break;
                         }
-                        events.Repeat(5s);
+                        events.RepeatEvent(5000);
                     }
                     break;
             }
@@ -1361,7 +1361,11 @@ public:
 
         void HandleEffectPeriodic(AuraEffect const* aurEff)
         {
-            if (aurEff->GetTotalTicks() > 0 && aurEff->GetTickNumber() == uint32(aurEff->GetTotalTicks()) - 1)
+
+            float dmgRatio;
+            int ticks = aurEff->GetTotalTicks(dmgRatio);
+
+            if (ticks > 0 && aurEff->GetTickNumber() == uint32(ticks) - 1)
             {
                 Unit* target = GetTarget();
                 Unit* caster = GetCaster();

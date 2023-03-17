@@ -84,7 +84,7 @@ public:
                 me->SetImmuneToPC(true);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
 
         void AttackedBy(Unit* pAttacker) override
         {

@@ -351,16 +351,12 @@ WorldSocket::ReadDataHandlerResult WorldSocket::ReadDataHandler()
             LOG_ERROR("network", "WorldSocket::ReadDataHandler(): client {} sent malformed CMSG_AUTH_SESSION", GetRemoteIpAddress().to_string());
             return ReadDataHandlerResult::Error;
         }
-        case CMSG_KEEP_ALIVE: /// @todo: handle this packet in the same way of CMSG_TIME_SYNC_RESP
+        case CMSG_KEEP_ALIVE: // todo: handle this packet in the same way of CMSG_TIME_SYNC_RESP
             sessionGuard.lock();
             LogOpcodeText(opcode, sessionGuard);
             if (_worldSession)
-            {
                 _worldSession->ResetTimeOutTime(true);
-                return ReadDataHandlerResult::Ok;
-            }
-            LOG_ERROR("network", "WorldSocket::ReadDataHandler: client {} sent CMSG_KEEP_ALIVE without being authenticated", GetRemoteIpAddress().to_string());
-            return ReadDataHandlerResult::Error;
+            return ReadDataHandlerResult::Ok;
         case CMSG_TIME_SYNC_RESP:
             packetToQueue = new WorldPacket(std::move(packet), GameTime::Now());
             break;
@@ -389,10 +385,7 @@ WorldSocket::ReadDataHandlerResult WorldSocket::ReadDataHandler()
     }
 
     // Our Idle timer will reset on any non PING opcodes on login screen, allowing us to catch people idling.
-    if (packetToQueue->GetOpcode() != CMSG_WARDEN_DATA)
-    {
-        _worldSession->ResetTimeOutTime(false);
-    }
+    _worldSession->ResetTimeOutTime(false);
 
     // Copy the packet to the heap before enqueuing
     _worldSession->QueuePacket(packetToQueue);

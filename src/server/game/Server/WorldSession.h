@@ -159,6 +159,12 @@ namespace WorldPackets
         class PetSpellAutocast;
         class RequestPetInfo;
     }
+
+    namespace NPC
+    {
+        class Hello;
+        class TrainerBuySpell;
+    }
 }
 
 enum AccountDataType
@@ -334,7 +340,6 @@ public:
 
     bool PlayerLoading() const { return m_playerLoading; }
     bool PlayerLogout() const { return m_playerLogout; }
-    bool PlayerRecentlyLoggedOut() const { return m_playerRecentlyLogout; }
     bool PlayerLogoutWithSave() const { return m_playerLogout && m_playerSave; }
 
     void ReadAddonsInfo(ByteBuffer& data);
@@ -375,7 +380,6 @@ public:
     uint32 GetTotalTime() const { return m_total_time; }
 
     void InitWarden(SessionKey const&, std::string const& os);
-    Warden* GetWarden();
 
     /// Session in auth.queue currently
     void SetInQueue(bool state) { m_inQueue = state; }
@@ -415,8 +419,7 @@ public:
     //void SendTestCreatureQueryOpcode(uint32 entry, ObjectGuid guid, uint32 testvalue);
     void SendNameQueryOpcode(ObjectGuid guid);
 
-    void SendTrainerList(ObjectGuid guid);
-    void SendTrainerList(ObjectGuid guid, std::string const& strTitle);
+    void SendTrainerList(Creature* npc);
     void SendListInventory(ObjectGuid guid, uint32 vendorEntry = 0);
     void SendShowBank(ObjectGuid guid);
     bool CanOpenMailBox(ObjectGuid guid);
@@ -449,9 +452,10 @@ public:
     AccountData* GetAccountData(AccountDataType type) { return &m_accountData[type]; }
     void SetAccountData(AccountDataType type, time_t tm, std::string const& data);
     void SendAccountDataTimes(uint32 mask);
+    void LoadGlobalAccountData();
     void LoadAccountData(PreparedQueryResult result, uint32 mask);
 
-    void LoadTutorialsData(PreparedQueryResult result);
+    void LoadTutorialsData();
     void SendTutorialsData();
     void SaveTutorialsData(CharacterDatabaseTransaction trans);
     uint32 GetTutorialInt(uint8 index) const { return m_Tutorials[index]; }
@@ -722,8 +726,8 @@ public:                                                 // opcodes handlers
     void SendActivateTaxiReply(ActivateTaxiReply reply);
 
     void HandleTabardVendorActivateOpcode(WorldPacket& recvPacket);
-    void HandleTrainerListOpcode(WorldPacket& recvPacket);
-    void HandleTrainerBuySpellOpcode(WorldPacket& recvPacket);
+    void HandleTrainerListOpcode(WorldPackets::NPC::Hello& packet);
+    void HandleTrainerBuySpellOpcode(WorldPackets::NPC::TrainerBuySpell& packet);
     void HandlePetitionShowListOpcode(WorldPacket& recvPacket);
     void HandleGossipHelloOpcode(WorldPacket& recvPacket);
     void HandleGossipSelectOptionOpcode(WorldPacket& recvPacket);
@@ -1066,6 +1070,8 @@ public:                                                 // opcodes handlers
     uint32 GetOfflineTime() const { return _offlineTime; }
     bool IsKicked() const { return _kicked; }
     void SetKicked(bool val) { _kicked = val; }
+    void SetShouldSetOfflineInDB(bool val) { _shouldSetOfflineInDB = val; }
+    bool GetShouldSetOfflineInDB() const { return _shouldSetOfflineInDB; }
     bool IsSocketClosed() const;
 
     /*
@@ -1075,9 +1081,6 @@ public:                                                 // opcodes handlers
     QueryCallbackProcessor& GetQueryProcessor() { return _queryProcessor; }
     TransactionCallback& AddTransactionCallback(TransactionCallback&& callback);
     SQLQueryHolderCallback& AddQueryHolderCallback(SQLQueryHolderCallback&& callback);
-
-    void InitializeSession();
-    void InitializeSessionCallback(CharacterDatabaseQueryHolder const& realmHolder, uint32 clientCacheVersion);
 
 private:
     void ProcessQueryCallbacks();
@@ -1138,7 +1141,7 @@ private:
     // characters who failed on Player::BuildEnumData shouldn't login
     GuidSet _legitCharacters;
 
-    ObjectGuid::LowType m_GUIDLow;                     // set logined or recently logout player (while m_playerRecentlyLogout set)
+    ObjectGuid::LowType m_GUIDLow;
     Player* _player;
     std::shared_ptr<WorldSocket> m_Socket;
     std::string m_Address;
@@ -1159,7 +1162,6 @@ private:
     bool m_inQueue;                                     // session wait in auth.queue
     bool m_playerLoading;                               // code processed in LoginPlayer
     bool m_playerLogout;                                // code processed in LogoutPlayer
-    bool m_playerRecentlyLogout;
     bool m_playerSave;
     LocaleConstant m_sessionDbcLocale;
     LocaleConstant m_sessionDbLocaleIndex;
@@ -1175,11 +1177,9 @@ private:
     ObjectGuid m_currentBankerGUID;
     uint32 _offlineTime;
     bool _kicked;
+    bool _shouldSetOfflineInDB;
     // Packets cooldown
     time_t _calendarEventCreationCooldown;
-
-    // Addon Message count for Metric
-    std::atomic<uint32> _addonMessageReceiveCount;
 
     CircularBuffer<std::pair<int64, uint32>> _timeSyncClockDeltaQueue; // first member: clockDelta. Second member: latency of the packet exchange that was used to compute that clockDelta.
     int64 _timeSyncClockDelta;

@@ -83,20 +83,20 @@ public:
             events.Reset();
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
             DoZoneInCombat();
             Talk(SAY_AGGRO);
             DoCast(me, SPELL_EARTH_SHIELD);
             events.Reset();
-            events.RescheduleEvent(EVENT_SPELL_BLOODLUST, 15s);
-            events.RescheduleEvent(EVENT_SPELL_BREAK_BONDS, 9s, 14s);
-            events.RescheduleEvent(EVENT_SPELL_CHAIN_HEAL, 0ms);
-            events.RescheduleEvent(EVENT_SPELL_EARTH_SHIELD, 20s);
-            events.RescheduleEvent(EVENT_SPELL_EARTH_SHOCK, 2s, 8s);
-            events.RescheduleEvent(EVENT_SPELL_LIGHTNING_BOLT, 5s, 10s);
+            events.RescheduleEvent(EVENT_SPELL_BLOODLUST, 15000);
+            events.RescheduleEvent(EVENT_SPELL_BREAK_BONDS, urand(9000, 14000));
+            events.RescheduleEvent(EVENT_SPELL_CHAIN_HEAL, 0);
+            events.RescheduleEvent(EVENT_SPELL_EARTH_SHIELD, 20000);
+            events.RescheduleEvent(EVENT_SPELL_EARTH_SHOCK, urand(2000, 8000));
+            events.RescheduleEvent(EVENT_SPELL_LIGHTNING_BOLT, urand(5000, 10000));
             if (IsHeroic())
-                events.RescheduleEvent(EVENT_SPELL_STORMSTRIKE, 3s);
+                events.RescheduleEvent(EVENT_SPELL_STORMSTRIKE, 3000);
 
             if (Creature* c = pInstance->instance->GetCreature(pInstance->GetGuidData(DATA_EREKEM_GUARD_1_GUID)))
                 if (!c->IsInCombat())
@@ -122,11 +122,11 @@ public:
                     break;
                 case EVENT_SPELL_BLOODLUST:
                     me->CastSpell((Unit*)nullptr, SPELL_BLOODLUST, false);
-                    events.Repeat(35s, 45s);
+                    events.RepeatEvent(urand(35000, 45000));
                     break;
                 case EVENT_SPELL_BREAK_BONDS:
                     me->CastSpell((Unit*)nullptr, SPELL_BREAK_BONDS, false);
-                    events.Repeat(16s, 22s);
+                    events.RepeatEvent(urand(16000, 22000));
                     break;
                 case EVENT_SPELL_CHAIN_HEAL:
                     if (ObjectGuid TargetGUID = GetChainHealTargetGUID())
@@ -139,24 +139,24 @@ public:
                             Creature* pGuard2 = pInstance->instance->GetCreature(pInstance->GetGuidData(DATA_EREKEM_GUARD_2_GUID));
                             if ((pGuard1 && !pGuard1->IsAlive()) || (pGuard2 && !pGuard2->IsAlive()))
                             {
-                                events.Repeat(3s, 6s);
+                                events.RepeatEvent(urand(3000, 6000));
                                 break;
                             }
                         }
-                    events.Repeat(8s, 11s);
+                    events.RepeatEvent(urand(8000, 11000));
                     break;
                 case EVENT_SPELL_EARTH_SHIELD:
                     me->CastSpell(me, SPELL_EARTH_SHIELD, false);
-                    events.Repeat(20s);
+                    events.RepeatEvent(20000);
                     break;
                 case EVENT_SPELL_EARTH_SHOCK:
                     me->CastSpell(me->GetVictim(), SPELL_EARTH_SHOCK, false);
-                    events.Repeat(8s, 13s);
+                    events.RepeatEvent(urand(8000, 13000));
                     break;
                 case EVENT_SPELL_LIGHTNING_BOLT:
                     if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0, 35.0f, true))
                         me->CastSpell(target, SPELL_LIGHTNING_BOLT, false);
-                    events.Repeat(15s, 25s);
+                    events.RepeatEvent(urand(15000, 25000));
                     break;
                 case EVENT_SPELL_STORMSTRIKE:
                     {
@@ -164,7 +164,7 @@ public:
                         Creature* pGuard2 = pInstance->instance->GetCreature(pInstance->GetGuidData(DATA_EREKEM_GUARD_2_GUID));
                         if (pGuard1 && !pGuard1->IsAlive() && pGuard2 && !pGuard2->IsAlive()) // both dead
                             me->CastSpell(me->GetVictim(), SPELL_STORMSTRIKE, false);
-                        events.Repeat(3s);
+                        events.RepeatEvent(3000);
                     }
                     break;
             }
@@ -257,13 +257,13 @@ public:
             events.Reset();
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
             DoZoneInCombat();
             events.Reset();
-            events.RescheduleEvent(EVENT_SPELL_GUSHING_WOUND, 1s, 3s);
-            events.RescheduleEvent(EVENT_SPELL_HOWLING_SCREECH, 8s, 13s);
-            events.RescheduleEvent(EVENT_SPELL_STRIKE, 4s, 8s);
+            events.RescheduleEvent(EVENT_SPELL_GUSHING_WOUND, urand(1000, 3000));
+            events.RescheduleEvent(EVENT_SPELL_HOWLING_SCREECH, urand(8000, 13000));
+            events.RescheduleEvent(EVENT_SPELL_STRIKE, urand(4000, 8000));
 
             if (Creature* c = pInstance->instance->GetCreature(pInstance->GetGuidData(DATA_EREKEM_GUID)))
                 if (!c->IsInCombat())
@@ -286,15 +286,15 @@ public:
                     break;
                 case EVENT_SPELL_GUSHING_WOUND:
                     me->CastSpell(me->GetVictim(), SPELL_GUSHING_WOUND, false);
-                    events.Repeat(7s, 12s);
+                    events.RepeatEvent(urand(7000, 12000));
                     break;
                 case EVENT_SPELL_HOWLING_SCREECH:
                     me->CastSpell(me->GetVictim(), SPELL_HOWLING_SCREECH, false);
-                    events.Repeat(8s, 13s);
+                    events.RepeatEvent(urand(8000, 13000));
                     break;
                 case EVENT_SPELL_STRIKE:
                     me->CastSpell(me->GetVictim(), SPELL_STRIKE, false);
-                    events.Repeat(4s, 8s);
+                    events.RepeatEvent(urand(4000, 8000));
                     break;
             }
 

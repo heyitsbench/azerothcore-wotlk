@@ -78,7 +78,7 @@ public:
             ScriptedAI::MoveInLineOfSight(who);
         }
 
-        void JustEngagedWith(Unit*) override
+        void EnterCombat(Unit*) override
         {
             Talk(SAY_AGGRO);
 

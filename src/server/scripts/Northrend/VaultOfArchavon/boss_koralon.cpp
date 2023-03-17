@@ -85,13 +85,13 @@ public:
             ScriptedAI::AttackStart(who);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             me->CastSpell(me, SPELL_BURNING_FURY, true);
 
-            events.ScheduleEvent(EVENT_BURNING_BREATH, 10s);
-            events.ScheduleEvent(EVENT_METEOR_FISTS, 30s);
-            events.ScheduleEvent(EVENT_FLAME_CINDER, 20s);
+            events.ScheduleEvent(EVENT_BURNING_BREATH, 10000);
+            events.ScheduleEvent(EVENT_METEOR_FISTS, 30000);
+            events.ScheduleEvent(EVENT_FLAME_CINDER, 20000);
 
             if (pInstance)
                 pInstance->SetData(EVENT_KORALON, IN_PROGRESS);
@@ -140,15 +140,15 @@ public:
                 case EVENT_BURNING_BREATH:
                     rotateTimer = 1500;
                     me->CastSpell(me, SPELL_BURNING_BREATH, false);
-                    events.Repeat(45s);
+                    events.RepeatEvent(45000);
                     break;
                 case EVENT_METEOR_FISTS:
                     me->CastSpell(me, SPELL_METEOR_FISTS, true);
-                    events.Repeat(45s);
+                    events.RepeatEvent(45000);
                     break;
                 case EVENT_FLAME_CINDER:
                     me->CastSpell(me, SPELL_FLAMING_CINDER, true);
-                    events.Repeat(30s);
+                    events.RepeatEvent(30000);
                     break;
                 default:
                     break;

@@ -71,16 +71,9 @@ PlayerSetting Player::GetPlayerSetting(std::string source, uint8 index)
 {
     auto itr = m_charSettingsMap.find(source);
 
-    if (itr == m_charSettingsMap.end())
+    if (itr == m_charSettingsMap.end() || itr->second.size() <= index)
     {
         // Settings not found, this will initialize a new entry.
-        UpdatePlayerSetting(source, index, 0);
-        return GetPlayerSetting(source, index);
-    }
-
-    PlayerSettingVector settingVector = itr->second;
-    if (settingVector.size() < (uint8)(index + 1))
-    {
         UpdatePlayerSetting(source, index, 0);
         return GetPlayerSetting(source, index);
     }
@@ -115,15 +108,16 @@ void Player::_SavePlayerSettings(CharacterDatabaseTransaction trans)
 void Player::UpdatePlayerSetting(std::string source, uint8 index, uint32 value)
 {
     auto itr = m_charSettingsMap.find(source);
-    uint8 size = index + 1;
 
     if (itr == m_charSettingsMap.end())
     {
         // Settings not found, initialize a new entry.
+        uint8 size = index ? index : index + 1;
+
         PlayerSettingVector setting;
         setting.resize(size);
 
-        for (uint32 itr = 0; itr <= index; ++itr)
+        for (uint32 itr = 0; itr < index; ++itr)
         {
             PlayerSetting set;
             set.value = itr == index ? value : 0;
@@ -133,12 +127,17 @@ void Player::UpdatePlayerSetting(std::string source, uint8 index, uint32 value)
 
         m_charSettingsMap[source] = setting;
     }
+    else if (itr->second.size() <= index)
+    {
+        uint8 size = index + 1;
+        itr->second.resize(size);
+        PlayerSetting set;
+        set.value = value;
+
+        itr->second[index] = set;
+    }
     else
     {
-        if (size > itr->second.size())
-        {
-            itr->second.resize(size);
-        }
         itr->second[index].value = value;
     }
 }

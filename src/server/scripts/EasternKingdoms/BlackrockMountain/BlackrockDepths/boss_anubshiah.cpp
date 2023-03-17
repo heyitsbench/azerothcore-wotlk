@@ -51,9 +51,9 @@ public:
     {
         boss_anubshiahAI(Creature* creature) :  BossAI(creature, DATA_ANUBSHIAH) { }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
-            _JustEngagedWith();
+            _EnterCombat();
             events.ScheduleEvent(SPELL_SHADOWBOLT, 0.2 * (int)TIMER_SHADOWBOLT);
             events.ScheduleEvent(SPELL_CURSE_TONGUES, 0.2 * (int)TIMER_CURSE_TONGUES);
             events.ScheduleEvent(SPELL_CURSE_WEAKNESS, 0.2 * (int)TIMER_CURSE_WEAKNESS);

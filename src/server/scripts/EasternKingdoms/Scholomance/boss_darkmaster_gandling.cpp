@@ -183,7 +183,7 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             DoZoneInCombat();
             instance->SetData(DATA_DARKMASTER_GANDLING, IN_PROGRESS);
@@ -387,14 +387,9 @@ public:
         int room;
         Unit* Gandling;
 
-        void IsSummonedBy(WorldObject* summoner) override
+        void IsSummonedBy(Unit* summoner) override
         {
-            if (summoner->GetTypeId() != TYPEID_UNIT)
-            {
-                return;
-            }
-
-            Gandling = summoner->ToCreature();
+            Gandling = summoner;
             if (instance)
             {
                 room = Gandling->GetAI()->GetData(GANDLING_ROOM_TO_USE); // it's set just before my spawn

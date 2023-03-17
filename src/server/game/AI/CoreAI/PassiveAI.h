@@ -30,7 +30,7 @@ public:
     void AttackStart(Unit*) override {}
     void UpdateAI(uint32) override;
 
-    static int32 Permissible(Creature const* /*creature*/) { return PERMIT_BASE_NO; }
+    static int Permissible(Creature const*) { return PERMIT_BASE_IDLE;  }
 };
 
 class PossessedAI : public CreatureAI
@@ -46,7 +46,7 @@ public:
     void JustDied(Unit*) override;
     void KilledUnit(Unit* victim) override;
 
-    static int32 Permissible(Creature const* /*creature*/) { return PERMIT_BASE_NO; }
+    static int Permissible(Creature const*) { return PERMIT_BASE_IDLE;  }
 };
 
 class NullCreatureAI : public CreatureAI
@@ -60,29 +60,28 @@ public:
     void EnterEvadeMode(EvadeReason /*why*/) override {}
     void OnCharmed(bool /*apply*/) override {}
 
-    static int32 Permissible(Creature const* creature);
+    static int Permissible(Creature const*) { return PERMIT_BASE_IDLE;  }
 };
 
 class CritterAI : public PassiveAI
 {
 public:
-    explicit CritterAI(Creature* c) : PassiveAI(c) { }
+    explicit CritterAI(Creature* c) : PassiveAI(c) { _combatTimer = 0; }
 
-    void JustEngagedWith(Unit* /*who*/) override;
+    void DamageTaken(Unit* /*done_by*/, uint32& /*damage*/, DamageEffectType damagetype, SpellSchoolMask damageSchoolMask) override;
     void EnterEvadeMode(EvadeReason why) override;
-    void MovementInform(uint32 type, uint32 id) override;
-    void UpdateAI(uint32 /*diff*/) override { }
+    void UpdateAI(uint32) override;
 
-    static int32 Permissible(Creature const* creature);
+    // Xinef: Added
+private:
+    uint32 _combatTimer;
 };
 
 class TriggerAI : public NullCreatureAI
 {
 public:
     explicit TriggerAI(Creature* c) : NullCreatureAI(c) {}
-    void IsSummonedBy(WorldObject* summoner) override;
-
-    static int32 Permissible(Creature const* creature);
+    void IsSummonedBy(Unit* summoner) override;
 };
 
 #endif

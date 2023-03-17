@@ -25,7 +25,7 @@
 #include "SpellMgr.h"
 #include "Totem.h"
 
-int32 TotemAI::Permissible(Creature const* creature)
+int TotemAI::Permissible(Creature const* creature)
 {
     if (creature->IsTotem())
         return PERMIT_BASE_PROACTIVE;
@@ -60,23 +60,8 @@ void TotemAI::UpdateAI(uint32 /*diff*/)
     if (me->ToTotem()->GetTotemType() != TOTEM_ACTIVE)
         return;
 
-    if (!me->IsAlive())
-    {
+    if (!me->IsAlive() || me->IsNonMeleeSpellCast(false))
         return;
-    }
-
-    if (me->IsNonMeleeSpellCast(false))
-    {
-        if (Unit* victim = ObjectAccessor::GetUnit(*me, i_victimGuid))
-        {
-            if (!victim || !victim->IsAlive())
-            {
-                me->InterruptNonMeleeSpells(false);
-            }
-        }
-
-        return;
-    }
 
     // Search spell
     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(me->ToTotem()->GetSpell());

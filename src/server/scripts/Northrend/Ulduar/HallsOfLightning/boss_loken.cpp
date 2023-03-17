@@ -112,14 +112,14 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit*) override
+        void EnterCombat(Unit*) override
         {
             me->SetInCombatWithZone();
             Talk(SAY_AGGRO);
 
-            events.ScheduleEvent(EVENT_ARC_LIGHTNING, 10s);
-            events.ScheduleEvent(EVENT_SHOCKWAVE, 3s);
-            events.ScheduleEvent(EVENT_LIGHTNING_NOVA, 15s);
+            events.ScheduleEvent(EVENT_ARC_LIGHTNING, 10000);
+            events.ScheduleEvent(EVENT_SHOCKWAVE, 3000);
+            events.ScheduleEvent(EVENT_LIGHTNING_NOVA, 15000);
 
             if (m_pInstance)
             {
@@ -222,15 +222,15 @@ public:
                         HealthCheck -= 25;
                     }
 
-                    events.Repeat(1s);
+                    events.RepeatEvent(1000);
                     break;
                 case EVENT_LIGHTNING_NOVA:
-                    events.Repeat(15s);
+                    events.RepeatEvent(15000);
                     me->CastSpell(me, SPELL_LIGHTNING_NOVA_VISUAL, true);
                     me->CastSpell(me, SPELL_LIGHTNING_NOVA_THUNDERS, true);
 
-                    events.DelayEvents(5s);
-                    events.ScheduleEvent(EVENT_AURA_REMOVE, me->GetMap()->IsHeroic() ? 4s : 5s);
+                    events.DelayEvents(5001);
+                    events.ScheduleEvent(EVENT_AURA_REMOVE, me->GetMap()->IsHeroic() ? 4000 : 5000);
 
                     me->CastSpell(me, me->GetMap()->IsHeroic() ? SPELL_LIGHTNING_NOVA_H : SPELL_LIGHTNING_NOVA_N, false);
                     break;
@@ -241,7 +241,7 @@ public:
                     if (Unit* target = SelectTargetFromPlayerList(100, SPELL_ARC_LIGHTNING))
                         me->CastSpell(target, SPELL_ARC_LIGHTNING, false);
 
-                    events.Repeat(12s);
+                    events.RepeatEvent(12000);
                     break;
                 case EVENT_AURA_REMOVE:
                     me->RemoveAura(SPELL_LIGHTNING_NOVA_THUNDERS);

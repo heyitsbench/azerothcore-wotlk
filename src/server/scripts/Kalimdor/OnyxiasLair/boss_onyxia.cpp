@@ -177,14 +177,14 @@ public:
         }
     }
 
-    void JustEngagedWith(Unit* who) override
+    void EnterCombat(Unit* who) override
     {
         Talk(SAY_AGGRO);
         SetPhase(PHASE_GROUNDED);
 
         instance->DoStopTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, ACHIEV_TIMED_START_EVENT); // just in case at reset some players already left the instance
         instance->DoStartTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, ACHIEV_TIMED_START_EVENT);
-        BossAI::JustEngagedWith(who);
+        BossAI::EnterCombat(who);
 
         me->SummonCreature(NPC_ONYXIAN_LAIR_GUARD, -167.837936f, -200.549332f, -66.343231f, 5.598287f, TEMPSUMMON_MANUAL_DESPAWN);
     }
@@ -211,7 +211,7 @@ public:
             return;
         }
 
-        if (summon->GetEntry() == NPC_ONYXIAN_LAIR_GUARD && Phase < PHASE_AIRPHASE)
+        if (summon->GetEntry() == NPC_ONYXIAN_LAIR_GUARD && Phase != PHASE_LANDED)
         {
             return;
         }
@@ -221,6 +221,8 @@ public:
             summon->AI()->AttackStart(target);
             DoZoneInCombat(summon);
         }
+
+        summons.Summon(summon);
     }
 
     void MovementInform(uint32 type, uint32 id) override
@@ -352,7 +354,7 @@ public:
                 me->AttackStop();
                 me->SetReactState(REACT_PASSIVE);
                 me->StopMoving();
-                DoResetThreatList();
+                DoResetThreat();
                 me->GetMotionMaster()->MovePoint(10, OnyxiaMoveData[0].x, OnyxiaMoveData[0].y, OnyxiaMoveData[0].z);
                 break;
             }
@@ -402,7 +404,7 @@ public:
                 Talk(SAY_PHASE_3_TRANS);
                 me->SendMeleeAttackStop(me->GetVictim());
                 me->GetMotionMaster()->MoveLand(13, OnyxiaMoveData[0].x + 1.0f, OnyxiaMoveData[0].y, OnyxiaMoveData[0].z, 12.0f);
-                DoResetThreatList();
+                DoResetThreat();
                 break;
             }
             case EVENT_SPELL_FIREBALL_FIRST:
@@ -552,7 +554,7 @@ public:
 
     EventMap events;
 
-    void JustEngagedWith(Unit* /*who*/) override
+    void EnterCombat(Unit* /*who*/) override
     {
         events.Reset();
         events.ScheduleEvent(EVENT_OLG_SPELL_BLASTNOVA, 15000);

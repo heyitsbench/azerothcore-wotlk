@@ -97,14 +97,14 @@ public:
             Talk(SAY_DEATH);
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
             Talk(SAY_AGGRO);
             me->SetInCombatWithZone();
-            events.ScheduleEvent(EVENT_HATEFUL_STRIKE, 1500ms);
-            events.ScheduleEvent(EVENT_BERSERK, 6min);
-            events.ScheduleEvent(EVENT_HEALTH_CHECK, 1s);
+            events.ScheduleEvent(EVENT_HATEFUL_STRIKE, 1500);
+            events.ScheduleEvent(EVENT_BERSERK, 360000);
+            events.ScheduleEvent(EVENT_HEALTH_CHECK, 1000);
             if (pInstance)
             {
                 pInstance->DoStartTimedAchievement(ACHIEVEMENT_TIMED_TYPE_EVENT, ACHIEV_TIMED_START_EVENT);
@@ -128,8 +128,8 @@ public:
                         std::list<Unit*> meleeRangeTargets;
                         Unit* finalTarget = nullptr;
                         uint8 counter = 0;
-                        auto i = me->GetThreatMgr().GetThreatList().begin();
-                        for (; i != me->GetThreatMgr().GetThreatList().end(); ++i, ++counter)
+                        auto i = me->GetThreatMgr().getThreatList().begin();
+                        for (; i != me->GetThreatMgr().getThreatList().end(); ++i, ++counter)
                         {
                             // Gather all units with melee range
                             Unit* target = (*i)->getTarget();
@@ -167,17 +167,17 @@ public:
                         {
                             me->CastSpell(finalTarget, RAID_MODE(SPELL_HATEFUL_STRIKE_10, SPELL_HATEFUL_STRIKE_25), false);
                         }
-                        events.Repeat(1s);
+                        events.RepeatEvent(1000);
                         break;
                     }
                 case EVENT_BERSERK:
                     Talk(EMOTE_BERSERK);
                     me->CastSpell(me, SPELL_BERSERK, true);
-                    events.ScheduleEvent(EVENT_SLIME_BOLT, 3s);
+                    events.ScheduleEvent(EVENT_SLIME_BOLT, 3000);
                     break;
                 case EVENT_SLIME_BOLT:
                     me->CastSpell(me, SPELL_SLIME_BOLT, false);
-                    events.Repeat(3s);
+                    events.RepeatEvent(3000);
                     break;
                 case EVENT_HEALTH_CHECK:
                     if (me->GetHealthPct() <= 5)
@@ -186,7 +186,7 @@ public:
                         me->CastSpell(me, SPELL_FRENZY, true);
                         break;
                     }
-                    events.Repeat(1s);
+                    events.RepeatEvent(1000);
                     break;
             }
             DoMeleeAttackIfReady();

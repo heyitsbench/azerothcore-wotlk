@@ -15,10 +15,9 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "DatabaseEnv.h"
+#include "MapUpdater.h"
 #include "LFGMgr.h"
 #include "Map.h"
-#include "MapUpdater.h"
 #include "Metric.h"
 
 class UpdateRequest
@@ -141,10 +140,6 @@ void MapUpdater::update_finished()
 
 void MapUpdater::WorkerThread()
 {
-    LoginDatabase.WarnAboutSyncQueries(true);
-    CharacterDatabase.WarnAboutSyncQueries(true);
-    WorldDatabase.WarnAboutSyncQueries(true);
-
     while (1)
     {
         UpdateRequest* request = nullptr;

@@ -31,7 +31,7 @@
 #include "SpellMgr.h"
 #include "SpellScript.h"
 
-/// @todo: this import is not necessary for compilation and marked as unused by the IDE
+// TODO: this import is not necessary for compilation and marked as unused by the IDE
 //  however, for some reasons removing it would cause a damn linking issue
 //  there is probably some underlying problem with imports which should properly addressed
 //  see: https://github.com/azerothcore/azerothcore-wotlk/issues/9766
@@ -449,21 +449,27 @@ class spell_hun_chimera_shot : public SpellScript
                     // Serpent Sting - Instantly deals 40% of the damage done by your Serpent Sting.
                     if (familyFlag[0] & 0x4000)
                     {
-                        int32 TickCount = aurEff->GetTotalTicks();
+                        float f;
+                        int32 TickCount = aurEff->GetTotalTicks(f);
                         spellId = SPELL_HUNTER_CHIMERA_SHOT_SERPENT;
                         basePoint = aurEff->GetAmount();
+
+                        if (f != 0)
+                            basePoint += basePoint * f;
+
                         ApplyPct(basePoint, TickCount * 40);
                         basePoint = unitTarget->SpellDamageBonusTaken(caster, aura->GetSpellInfo(), basePoint, DOT, aura->GetStackAmount());
                     }
                     // Viper Sting - Instantly restores mana to you equal to 60% of the total amount drained by your Viper Sting.
                     else if (familyFlag[1] & 0x00000080)
                     {
-                        int32 TickCount = aura->GetEffect(0)->GetTotalTicks();
+                        float f;
+                        int32 TickCount = aura->GetEffect(0)->GetTotalTicks(f, true);
                         spellId = SPELL_HUNTER_CHIMERA_SHOT_VIPER;
 
                         // Amount of one aura tick
                         basePoint = int32(CalculatePct(unitTarget->GetMaxPower(POWER_MANA), aurEff->GetAmount()));
-                        int32 casterBasePoint = aurEff->GetAmount() * unitTarget->GetMaxPower(POWER_MANA) / 50; /// @todo: Caster uses unitTarget?
+                        int32 casterBasePoint = aurEff->GetAmount() * unitTarget->GetMaxPower(POWER_MANA) / 50; // TODO: Caster uses unitTarget?
                         if (basePoint > casterBasePoint)
                             basePoint = casterBasePoint;
                         ApplyPct(basePoint, TickCount * 60);
@@ -655,31 +661,23 @@ class spell_hun_readiness : public SpellScript
 
         SpellCooldowns& cooldowns = caster->GetSpellCooldownMap();
 
-        std::set<std::pair<uint32, bool>> spellsToRemove;
-        std::set<uint32> categoriesToRemove;
-
-        for (const auto& [spellId, cooldown] : cooldowns)
+        SpellCooldowns::iterator itr, next;
+        for (itr = cooldowns.begin(); itr != cooldowns.end(); itr = next)
         {
-            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+            next = itr;
+            ++next;
+
+            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(itr->first);
             if (spellInfo
             && spellInfo->SpellFamilyName == SPELLFAMILY_HUNTER
             && spellInfo->Id != SPELL_HUNTER_READINESS
             && spellInfo->Id != SPELL_HUNTER_BESTIAL_WRATH
-            && spellInfo->Id != SPELL_DRAENEI_GIFT_OF_THE_NAARU)
+            && spellInfo->Id != SPELL_DRAENEI_GIFT_OF_THE_NAARU
+            && spellInfo->GetRecoveryTime() > 0)
             {
-                if (spellInfo->RecoveryTime > 0)
-                    spellsToRemove.insert(std::make_pair(spellInfo->Id, cooldown.needSendToClient));
-
-                if (spellInfo->CategoryRecoveryTime > 0)
-                    categoriesToRemove.insert(spellInfo->GetCategory());
+                caster->RemoveSpellCooldown(spellInfo->Id, itr->second.needSendToClient);
             }
         }
-
-        // we can't remove spell cooldowns while iterating.
-        for (const auto& [spellId, sendToClient] : spellsToRemove)
-            caster->RemoveSpellCooldown(spellId, sendToClient);
-        for (const auto& category : categoriesToRemove)
-            caster->RemoveCategoryCooldown(category);
     }
 
     void Register() override
@@ -950,7 +948,7 @@ class spell_hun_tame_beast : public SpellScript
 
         if (Creature* target = GetExplTargetUnit()->ToCreature())
         {
-            if (target->GetLevel() > player->GetLevel())
+            if (target->getLevel() > player->getLevel())
             {
                 player->SendTameFailure(PET_TAME_TOO_HIGHLEVEL);
                 return SPELL_FAILED_DONT_REPORT;

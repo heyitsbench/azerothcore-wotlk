@@ -158,7 +158,7 @@ public:
             Initialize();
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(SAY_DOROTHEE_AGGRO);
             DoZoneInCombat();
@@ -201,7 +201,6 @@ public:
                 if (AggroTimer <= diff)
                 {
                     me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
-                    me->SetImmuneToPC(false);
                     AggroTimer = 0;
                 }
                 else
@@ -263,7 +262,7 @@ public:
             YipTimer = 10000;
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             DoZoneInCombat();
         }
@@ -358,7 +357,7 @@ public:
             ScriptedAI::MoveInLineOfSight(who);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(SAY_STRAWMAN_AGGRO);
             DoZoneInCombat();
@@ -401,7 +400,6 @@ public:
                 if (AggroTimer <= diff)
                 {
                     me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
-                    me->SetImmuneToPC(false);
                     AggroTimer = 0;
                 }
                 else
@@ -467,7 +465,7 @@ public:
             RustCount   = 0;
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(SAY_TINHEAD_AGGRO);
             DoZoneInCombat();
@@ -514,7 +512,6 @@ public:
                 if (AggroTimer <= diff)
                 {
                     me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
-                    me->SetImmuneToPC(false);
                     AggroTimer = 0;
                 }
                 else
@@ -599,7 +596,7 @@ public:
             ScriptedAI::AttackStart(who);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(SAY_ROAR_AGGRO);
             DoZoneInCombat();
@@ -629,7 +626,6 @@ public:
                 if (AggroTimer <= diff)
                 {
                     me->RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
-                    me->SetImmuneToPC(false);
                     AggroTimer = 0;
                 }
                 else
@@ -707,17 +703,10 @@ public:
             Talk(SAY_CRONE_SLAY);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(SAY_CRONE_AGGRO);
             DoZoneInCombat();
-        }
-
-        void EnterEvadeMode(EvadeReason reason) override
-        {
-            ScriptedAI::EnterEvadeMode(reason);
-
-            instance->SetBossState(DATA_OPERA_PERFORMANCE, FAIL);
         }
 
         void JustDied(Unit* /*killer*/) override
@@ -775,7 +764,7 @@ public:
             MoveTimer = 1000;
         }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
 
         void MoveInLineOfSight(Unit* /*who*/) override
 
@@ -886,7 +875,7 @@ public:
             IsChasing = false;
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(SAY_WOLF_AGGRO);
             DoZoneInCombat();
@@ -900,13 +889,6 @@ public:
         void JustReachedHome() override
         {
             me->DespawnOrUnsummon();
-        }
-
-        void EnterEvadeMode(EvadeReason reason) override
-        {
-            ScriptedAI::EnterEvadeMode(reason);
-
-            instance->SetBossState(DATA_OPERA_PERFORMANCE, FAIL);
         }
 
         void JustDied(Unit* /*killer*/) override
@@ -933,7 +915,7 @@ public:
                         DoCast(target, SPELL_LITTLE_RED_RIDING_HOOD, true);
                         TempThreat = DoGetThreat(target);
                         if (TempThreat)
-                            DoModifyThreatByPercent(target, -100);
+                            DoModifyThreatPercent(target, -100);
                         HoodGUID = target->GetGUID();
                         me->AddThreat(target, 1000000.0f);
                         ChaseTimer = 20000;
@@ -948,7 +930,7 @@ public:
                     {
                         HoodGUID.Clear();
                         if (DoGetThreat(target))
-                            DoModifyThreatByPercent(target, -100);
+                            DoModifyThreatPercent(target, -100);
                         me->AddThreat(target, TempThreat);
                         TempThreat = 0;
                     }
@@ -1118,7 +1100,7 @@ public:
             RomuloDead = false;
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             DoZoneInCombat();
         }
@@ -1155,13 +1137,6 @@ public:
         }
 
         void DamageTaken(Unit*, uint32& damage, DamageEffectType, SpellSchoolMask) override;
-
-        void EnterEvadeMode(EvadeReason reason) override
-        {
-            ScriptedAI::EnterEvadeMode(reason);
-
-            instance->SetBossState(DATA_OPERA_PERFORMANCE, FAIL);
-        }
 
         void JustDied(Unit*) override
         {
@@ -1288,7 +1263,7 @@ public:
             //LOG_ERROR("scripts", "boss_romuloAI: DamageTaken reach end of code, that should not happen.");
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             DoZoneInCombat();
             Talk(SAY_ROMULO_AGGRO);
@@ -1310,13 +1285,6 @@ public:
                 return;
 
             ScriptedAI::MoveInLineOfSight(who);
-        }
-
-        void EnterEvadeMode(EvadeReason reason) override
-        {
-            ScriptedAI::EnterEvadeMode(reason);
-
-            instance->SetBossState(DATA_OPERA_PERFORMANCE, FAIL);
         }
 
         void JustDied(Unit* /*killer*/) override

@@ -48,7 +48,7 @@ public:
             IsSelfRooted = false;
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
             if (!me->IsWithinMeleeRange(who))
                 IsSelfRooted = true;

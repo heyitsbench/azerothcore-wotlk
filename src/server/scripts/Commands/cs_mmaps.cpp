@@ -61,7 +61,7 @@ public:
         return commandTable;
     }
 
-    static bool HandleMmapPathCommand(ChatHandler* handler, Optional<std::string> param)
+    static bool HandleMmapPathCommand(ChatHandler* handler, Optional<std::string> para)
     {
         if (!MMAP::MMapFactory::createOrGetMMapMgr()->GetNavMesh(handler->GetSession()->GetPlayer()->GetMapId()))
         {
@@ -81,19 +81,13 @@ public:
         }
 
         bool useStraightPath = false;
-        bool useRaycast = false;
-        if (param)
-        {
-            auto paramValue = param.value();
-            if (paramValue.starts_with("true"))
-            {
-                useStraightPath = true;
-            }
+        if (StringStartsWith("true", *para))
+            useStraightPath = true;
 
-            if (paramValue.starts_with("line") || paramValue.starts_with("ray") || paramValue.starts_with("raycast"))
-            {
-                useRaycast = true;
-            }
+        bool useRaycast = false;
+        if (StringStartsWith("line", *para) || StringStartsWith("ray", *para) || StringStartsWith("raycast", *para))
+        {
+            useRaycast = true;
         }
 
         // unit locations

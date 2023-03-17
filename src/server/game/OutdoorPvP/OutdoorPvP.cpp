@@ -68,7 +68,7 @@ void OPvPCapturePoint::AddGO(uint32 type, ObjectGuid::LowType guid, uint32 entry
 {
     if (!entry)
     {
-        const GameObjectData* data = sObjectMgr->GetGameObjectData(guid);
+        const GameObjectData* data = sObjectMgr->GetGOData(guid);
         if (!data)
             return;
         entry = data->id;

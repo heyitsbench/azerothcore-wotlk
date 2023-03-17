@@ -20,18 +20,7 @@
 
 #include "CreatureAIImpl.h"
 
-#define DataHeaders "SH"
-
-uint32 constexpr EncounterCount = 3;
-
 #define SethekkHallsScriptName "instance_sethekk_halls"
-
-enum Encounters
-{
-    DATA_DARKWEAVER_SYTH,
-    DATA_ANZU,
-    DATA_IKISS,
-};
 
 enum eTypes
 {
@@ -39,17 +28,12 @@ enum eTypes
     TYPE_ANZU_ENCOUNTER = 2,
 };
 
-enum InstanceData
-{
-    DATA_GO_TALON_KING_COFFER
-};
-
 enum eIds
 {
     NPC_VOICE_OF_THE_RAVEN_GOD  = 21851,
     NPC_ANZU                    = 23035,
 
-    GO_IKISS_DOOR               = 183398,
+    GO_IKISS_DOOR               = 177203,
     GO_THE_TALON_KINGS_COFFER   = 187372
 };
 
@@ -58,7 +42,5 @@ inline AI* GetSethekkHallsAI(T* obj)
 {
     return GetInstanceAI<AI>(obj, SethekkHallsScriptName);
 }
-
-#define RegisterSethekkHallsCreatureAI(ai_name) RegisterCreatureAIWithFactory(ai_name, GetSethekkHallsAI)
 
 #endif

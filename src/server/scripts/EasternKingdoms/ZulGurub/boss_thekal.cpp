@@ -121,9 +121,9 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
-            _JustEngagedWith();
+            _EnterCombat();
 
             _scheduler.CancelAll();
             _scheduler.Schedule(4s, [this](TaskContext context) {
@@ -144,7 +144,7 @@ public:
             CheckPhaseTransition();
 
             _scheduler.Schedule(10s, [this, data](TaskContext /*context*/) {
-                if (!_lorkhanDied || !_zathDied || !WasDead)
+                if ((!_lorkhanDied || !_zathDied) && !WasDead)
                 {
                     ReviveZealot(data);
                 }
@@ -153,7 +153,7 @@ public:
 
         void DamageTaken(Unit* /*attacker*/, uint32& damage, DamageEffectType, SpellSchoolMask) override
         {
-            if (!me->HasAura(SPELL_TIGER_FORM) && damage >= me->GetHealth())
+            if (me->GetEntry() == NPC_HIGH_PRIEST_THEKAL && damage >= me->GetHealth())
             {
                 damage = me->GetHealth() - 1;
 
@@ -163,14 +163,14 @@ public:
                     me->SetReactState(REACT_PASSIVE);
                     me->SetStandState(UNIT_STAND_STATE_SLEEP);
                     me->AttackStop();
-                    DoResetThreatList();
+                    DoResetThreat();
                     WasDead = true;
                     CheckPhaseTransition();
                     Talk(EMOTE_THEKAL_DIES);
                 }
             }
 
-            if (!Enraged && me->HealthBelowPctDamaged(20, damage) && me->HasAura(SPELL_TIGER_FORM))
+            if (!Enraged && me->HealthBelowPctDamaged(20, damage) && me->GetEntry() != NPC_HIGH_PRIEST_THEKAL)
             {
                 DoCastSelf(SPELL_ENRAGE);
                 Enraged = true;
@@ -204,7 +204,6 @@ public:
             if (Creature* zealot = instance->GetCreature(zealotData))
             {
                 zealot->Respawn(true);
-                zealot->SetInCombatWithZone();
                 UpdateZealotStatus(zealotData, false);
             }
         }
@@ -245,7 +244,7 @@ public:
                             if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0))
                             {
                                 DoCast(target, SPELL_CHARGE);
-                                DoResetThreatList();
+                                DoResetThreat();
                                 AttackStart(target);
                             }
                             context.Repeat(15s, 22s);
@@ -306,7 +305,7 @@ public:
             });
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             _scheduler.Schedule(1s, [this](TaskContext context) {
                 DoCastSelf(SPELL_SHIELD);
@@ -391,7 +390,7 @@ public:
             });
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             _scheduler.Schedule(13s, [this](TaskContext context) {
                 DoCastSelf(SPELL_SWEEPINGSTRIKES);
@@ -407,7 +406,7 @@ public:
 
                 if (DoGetThreat(me->GetVictim()))
                 {
-                    DoModifyThreatByPercent(me->GetVictim(), -100);
+                    DoModifyThreatPercent(me->GetVictim(), -100);
                 }
 
                 context.Repeat(17s, 27s);

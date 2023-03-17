@@ -114,26 +114,26 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* victim) override
         {
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(victim);
 
             DoCastAOE(SPELL_ESSENCE_OF_THE_RED);
             // now drop damage requirement to be able to take loot
             me->ResetPlayerDamageReq();
 
-            events.ScheduleEvent(EVENT_CLEAVE, 10s);
-            events.ScheduleEvent(EVENT_FLAME_BREATH, 15s);
-            events.ScheduleEvent(EVENT_FIRE_NOVA, 5s);
-            events.ScheduleEvent(EVENT_TAIL_SWEEP, 11s);
-            events.ScheduleEvent(EVENT_BURNING_ADRENALINE, 15s);
+            events.ScheduleEvent(EVENT_CLEAVE, 10000);
+            events.ScheduleEvent(EVENT_FLAME_BREATH, 15000);
+            events.ScheduleEvent(EVENT_FIRE_NOVA, 5000);
+            events.ScheduleEvent(EVENT_TAIL_SWEEP, 11000);
+            events.ScheduleEvent(EVENT_BURNING_ADRENALINE, 15000);
         }
 
         void BeginSpeech(Unit* target)
         {
             PlayerGUID = target->GetGUID();
             me->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
-            _eventsIntro.ScheduleEvent(EVENT_SPEECH_1, 1s);
+            _eventsIntro.ScheduleEvent(EVENT_SPEECH_1, 1000);
         }
 
         void KilledUnit(Unit* victim) override
@@ -159,7 +159,7 @@ public:
                         case EVENT_SPEECH_1:
                             me->SetStandState(UNIT_STAND_STATE_STAND);
                             me->SummonCreature(NPC_VICTOR_NEFARIUS, aNefariusSpawnLoc[0], aNefariusSpawnLoc[1], aNefariusSpawnLoc[2], aNefariusSpawnLoc[3], TEMPSUMMON_TIMED_DESPAWN, 26000);
-                            _eventsIntro.ScheduleEvent(EVENT_SPEECH_2, 1s);
+                            _eventsIntro.ScheduleEvent(EVENT_SPEECH_2, 1000);
                             me->SetUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
                             break;
                         case EVENT_SPEECH_2:
@@ -169,27 +169,27 @@ public:
                                 nefarius->Yell(SAY_NEFARIAN_VAEL_INTRO);
                                 nefarius->SetStandState(UNIT_STAND_STATE_STAND);
                             }
-                            _eventsIntro.ScheduleEvent(EVENT_SPEECH_3, 18s);
+                            _eventsIntro.ScheduleEvent(EVENT_SPEECH_3, 18000);
                             break;
                         case EVENT_SPEECH_3:
                             if (Creature* nefarius = me->GetMap()->GetCreature(m_nefariusGuid))
                                 nefarius->CastSpell(me, SPELL_RED_LIGHTNING, TRIGGERED_NONE);
-                            _eventsIntro.ScheduleEvent(EVENT_SPEECH_4, 2s);
+                            _eventsIntro.ScheduleEvent(EVENT_SPEECH_4, 2000);
                             break;
                         case EVENT_SPEECH_4:
                             Talk(SAY_LINE1);
                             me->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
-                            _eventsIntro.ScheduleEvent(EVENT_SPEECH_5, 12s);
+                            _eventsIntro.ScheduleEvent(EVENT_SPEECH_5, 12000);
                             break;
                         case EVENT_SPEECH_5:
                             Talk(SAY_LINE2);
                             me->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
-                            _eventsIntro.ScheduleEvent(EVENT_SPEECH_6, 12s);
+                            _eventsIntro.ScheduleEvent(EVENT_SPEECH_6, 12000);
                             break;
                         case EVENT_SPEECH_6:
                             Talk(SAY_LINE3);
                             me->HandleEmoteCommand(EMOTE_ONESHOT_TALK);
-                            _eventsIntro.ScheduleEvent(EVENT_SPEECH_7, 17s);
+                            _eventsIntro.ScheduleEvent(EVENT_SPEECH_7, 17000);
                             me->RemoveUnitFlag(UNIT_FLAG_NOT_SELECTABLE);
                             break;
                         case EVENT_SPEECH_7:
@@ -211,20 +211,20 @@ public:
                 switch (eventId)
                 {
                     case EVENT_CLEAVE:
-                        events.ScheduleEvent(EVENT_CLEAVE, 15s);
+                        events.ScheduleEvent(EVENT_CLEAVE, 15000);
                         DoCastVictim(SPELL_CLEAVE);
                         break;
                     case EVENT_FLAME_BREATH:
                         DoCastVictim(SPELL_FLAME_BREATH);
-                        events.ScheduleEvent(EVENT_FLAME_BREATH, 8s, 14s);
+                        events.ScheduleEvent(EVENT_FLAME_BREATH, 8000, 14000);
                         break;
                     case EVENT_FIRE_NOVA:
                         DoCastVictim(SPELL_FIRE_NOVA);
-                        events.ScheduleEvent(EVENT_FIRE_NOVA, 3s, 5s);
+                        events.ScheduleEvent(EVENT_FIRE_NOVA, urand(3000, 5000));
                         break;
                     case EVENT_TAIL_SWEEP:
                         DoCastAOE(SPELL_TAIL_SWEEP);
-                        events.ScheduleEvent(EVENT_TAIL_SWEEP, 15s);
+                        events.ScheduleEvent(EVENT_TAIL_SWEEP, 15000);
                         break;
                     case EVENT_BURNING_ADRENALINE:
                     {
@@ -244,7 +244,7 @@ public:
                             me->CastSpell(me->GetVictim(), SPELL_BURNING_ADRENALINE, true);
                             _burningAdrenalineCast = 0;
                         }
-                        events.ScheduleEvent(EVENT_BURNING_ADRENALINE, 15s);
+                        events.ScheduleEvent(EVENT_BURNING_ADRENALINE, 15000);
                         break;
                     }
                 }

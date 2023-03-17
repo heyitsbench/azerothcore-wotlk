@@ -22,8 +22,6 @@
 
 uint32 const EncounterCount = 13;
 
-#define DataHeader "ZG"
-
 #define ZGScriptName "instance_zulgurub"
 
 enum DataTypes
@@ -76,12 +74,6 @@ enum GameobjectIds
 {
     GO_FORCEFIELD           = 180497, // Arlokk Event
     GO_GONG_OF_BETHEKK      = 180526  // Arlokk Event
-};
-
-enum SpellIds
-{
-    SPELL_HAKKAR_POWER      = 24692,
-    SPELL_HAKKAR_POWER_DOWN = 24693
 };
 
 template <class AI, class T>

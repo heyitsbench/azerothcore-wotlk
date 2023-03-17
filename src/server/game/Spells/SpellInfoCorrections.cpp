@@ -334,6 +334,12 @@ void SpellMgr::LoadSpellInfoCorrections()
         spellInfo->Attributes &= ~SPELL_ATTR0_NOT_SHAPESHIFTED;   // with this spell atrribute aura can be stacked several times
     });
 
+    // Nether Portal - Perseverence
+    ApplySpellFix({ 30421 }, [](SpellInfo* spellInfo)
+    {
+        spellInfo->Effects[EFFECT_2].BasePoints += 30000;
+    });
+
     // Natural shapeshifter
     ApplySpellFix({ 16834, 16835 }, [](SpellInfo* spellInfo)
     {
@@ -789,7 +795,7 @@ void SpellMgr::LoadSpellInfoCorrections()
     });
 
     // Wandering Plague
-    ApplySpellFix({ 50526 }, [](SpellInfo* spellInfo)
+    ApplySpellFix({ 1150002 }, [](SpellInfo* spellInfo)
     {
         spellInfo->AttributesEx3 |= SPELL_ATTR3_IGNORE_CASTER_MODIFIERS;
         spellInfo->AttributesEx3 |= SPELL_ATTR3_SUPRESS_TARGET_PROCS;
@@ -4293,206 +4299,6 @@ void SpellMgr::LoadSpellInfoCorrections()
     ApplySpellFix({ 24681, 24728, 24729 }, [](SpellInfo* spellInfo)
     {
         spellInfo->Effects[EFFECT_0].MiscValueB = 64;
-    });
-
-    // Blood Siphon
-    ApplySpellFix({ 24322, 24323 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->Effects[EFFECT_1].ApplyAuraName = SPELL_AURA_MOD_STUN;
-        spellInfo->Effects[EFFECT_2].Effect = 0;
-        spellInfo->Attributes |= SPELL_ATTR0_NO_AURA_CANCEL;
-        spellInfo->AttributesEx5 |= SPELL_ATTR5_ALLOW_ACTION_DURING_CHANNEL;
-        spellInfo->ChannelInterruptFlags &= ~AURA_INTERRUPT_FLAG_MOVE;
-    });
-
-    // Place Fake Fur
-    ApplySpellFix({ 46085 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->Effects[EFFECT_0].MiscValue = 8;
-    });
-
-    // Smash Mammoth Trap
-    ApplySpellFix({ 46201 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->Effects[EFFECT_0].MiscValue = 8;
-    });
-
-    // Elemental Mastery
-    ApplySpellFix({ 16166 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->Effects[EFFECT_0].SpellClassMask = flag96(0x00000003, 0x00001000);
-    });
-
-    // Elemental Vulnerability
-    ApplySpellFix({ 28772 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->Speed = 1;
-    });
-
-    // Find the Ancient Hero: Kill Credit
-    ApplySpellFix({ 25729 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_SUMMONER;
-    });
-
-    // Artorius Demonic Doom
-    ApplySpellFix({ 23298 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->AttributesEx4 |= SPELL_ATTR4_IGNORE_DAMAGE_TAKEN_MODIFIERS;
-        spellInfo->AttributesEx6 |= SPELL_ATTR6_IGNORE_CASTER_DAMAGE_MODIFIERS;
-    });
-
-    // Lash
-    ApplySpellFix({ 25852 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->Effects[EFFECT_1].Effect = 0;
-    });
-
-    // Explosion
-    ApplySpellFix({ 5255 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->AttributesEx2 |= SPELL_ATTR2_IGNORE_LINE_OF_SIGHT;
-        spellInfo->AttributesEx3 |= SPELL_ATTR3_ALWAYS_HIT;
-    });
-
-    // Death's Respite
-    ApplySpellFix({ 67731, 68305 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->AttributesEx3 |= SPELL_ATTR3_SUPRESS_TARGET_PROCS;
-    });
-
-    // Wyvern Sting DoT
-    ApplySpellFix({ 24131, 24134, 24135 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ENEMY);
-    });
-
-     // Feed Pet
-    ApplySpellFix({ 1539, 51284 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->Attributes |= SPELL_ATTR0_ALLOW_WHILE_SITTING;
-    });
-
-    // Judgement (Paladin T2 8P Bonus)
-    ApplySpellFix({ 23591 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->ProcFlags = PROC_FLAG_DONE_SPELL_MELEE_DMG_CLASS;
-    });
-
-    // Gift of Arthas
-    ApplySpellFix({ 11371 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->SpellFamilyName = SPELLFAMILY_POTION;
-    });
-
-    // Refocus (Renataki's charm of beasts)
-    ApplySpellFix({ 24531 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
-    });
-
-    // Collect Rookery Egg
-    ApplySpellFix({ 15958 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->Effects[EFFECT_1].Effect = 0;
-    });
-
-    // WotLK Prologue Frozen Shade Visual, temp used to restore visual after Dispersion
-    ApplySpellFix({ 53444 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(27);
-    });
-
-    // Rental Racing Ram
-    ApplySpellFix({ 43883 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->AuraInterruptFlags &= ~AURA_INTERRUPT_FLAG_NOT_ABOVEWATER;
-    });
-
-    // Summon Worm
-    ApplySpellFix({ 518, 25831, 25832 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->Effects[EFFECT_0].MiscValueB = 64;
-    });
-
-    // Uppercut
-    ApplySpellFix({ 26007 }, [](SpellInfo* spellInfo)
-    {
-            spellInfo->AttributesEx3 |= SPELL_ATTR3_SUPRESS_CASTER_PROCS;
-    });
-
-    // Digestive Acid (Temporary)
-    ApplySpellFix({ 26476 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->Attributes |= SPELL_ATTR0_NO_IMMUNITIES;
-        spellInfo->AttributesEx2 |= SPELL_ATTR2_IGNORE_LINE_OF_SIGHT;
-        spellInfo->AttributesEx3 |= SPELL_ATTR3_ALWAYS_HIT;
-    });
-
-    // Drums of War/Battle/Speed/Restoration
-    ApplySpellFix({ 35475, 35476, 35477, 35478 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->ExcludeTargetAuraSpell = 51120;
-    });
-
-    // Slap!
-    ApplySpellFix({ 6754 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->AttributesEx |= SPELL_ATTR1_NO_THREAT;
-        spellInfo->AttributesEx3 |= SPELL_ATTR3_SUPRESS_TARGET_PROCS;
-    });
-
-    // Summon Cauldron Stuff
-    ApplySpellFix({ 36549 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(28); // 5 seconds
-        spellInfo->Effects[EFFECT_0].TargetB = TARGET_DEST_CASTER;
-    });
-
-    // Hunter's Mark
-    ApplySpellFix({ 31615 }, [](SpellInfo* spellInfo)
-    {
-        for (uint8 index = EFFECT_0; index <= EFFECT_1; ++index)
-        {
-            spellInfo->Effects[index].TargetA = TARGET_UNIT_TARGET_ENEMY;
-            spellInfo->Effects[index].TargetB = 0;
-        }
-    });
-
-    // Self Visual - Sleep Until Cancelled(DND)
-    ApplySpellFix({ 14915 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->AuraInterruptFlags &= ~AURA_INTERRUPT_FLAG_NOT_SEATED;
-    });
-
-     // Cleansing Totem, Healing Stream Totem, Mana Tide Totem
-    ApplySpellFix({ 8171,52025, 52041, 52042, 52046, 52047, 52048, 52049, 52050, 58759, 58760, 58761, 39610, 39609 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->AttributesEx2 |= SPELL_ATTR2_IGNORE_LINE_OF_SIGHT;
-    });
-    // Game In Session
-    ApplySpellFix({ 39331 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->Effects[EFFECT_0].Effect = SPELL_EFFECT_APPLY_AURA;
-        spellInfo->Attributes |= SPELL_ATTR0_NO_AURA_CANCEL;
-        spellInfo->AuraInterruptFlags |= AURA_INTERRUPT_FLAG_CHANGE_MAP;
-    });
-    // Death Ray Warning Visual, Death Ray Damage Visual
-    ApplySpellFix({ 63882, 63886 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->AttributesEx5 |= SPELL_ATTR5_ALLOW_ACTION_DURING_CHANNEL;
-    });
-
-    // Buffeting Winds of Susurrus
-    ApplySpellFix({ 32474 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(556); // 28 seconds
-    });
-
-    // Quest - Healing Salve
-    ApplySpellFix({ 29314 }, [](SpellInfo* spellInfo)
-    {
-        spellInfo->CastTimeEntry = sSpellCastTimesStore.LookupEntry(1); // 0s
     });
 
     for (uint32 i = 0; i < GetSpellInfoStoreSize(); ++i)

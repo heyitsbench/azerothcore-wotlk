@@ -19,11 +19,12 @@
 
 enum Yells
 {
-    SAY_AGGRO                                     = 0,
-    SAY_SLAY                                      = 1,
-    SAY_DEATH                                     = 2,
-    SAY_IMPENDING_DESPAIR                         = 3,
-    SAY_DEFILING_HORROR                           = 4,
+    SAY_AGGRO                                     = 50,
+    SAY_SLAY_1                                    = 51,
+    SAY_SLAY_2                                    = 52,
+    SAY_DEATH                                     = 53,
+    SAY_IMPENDING_DESPAIR                         = 54,
+    SAY_DEFILING_HORROR                           = 55,
 };
 
 enum Spells
@@ -72,13 +73,13 @@ public:
                 pInstance->SetData(DATA_FALRIC, NOT_STARTED);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             me->SetImmuneToAll(false);
 
-            events.ScheduleEvent(EVENT_QUIVERING_STRIKE, 5s);
-            events.ScheduleEvent(EVENT_IMPENDING_DESPAIR, 11s);
-            events.ScheduleEvent(EVENT_DEFILING_HORROR, 20s);
+            events.ScheduleEvent(EVENT_QUIVERING_STRIKE, 5000);
+            events.ScheduleEvent(EVENT_IMPENDING_DESPAIR, 11000);
+            events.ScheduleEvent(EVENT_DEFILING_HORROR, 20000);
         }
 
         void DoAction(int32 a) override
@@ -115,7 +116,7 @@ public:
             {
                 case EVENT_QUIVERING_STRIKE:
                     me->CastSpell(me->GetVictim(), SPELL_QUIVERING_STRIKE, false);
-                    events.ScheduleEvent(EVENT_QUIVERING_STRIKE, 5s);
+                    events.ScheduleEvent(EVENT_QUIVERING_STRIKE, 5000);
                     break;
                 case EVENT_IMPENDING_DESPAIR:
                     if (Unit* target = SelectTargetFromPlayerList(45.0f, 0, true))
@@ -123,15 +124,15 @@ public:
                         Talk(SAY_IMPENDING_DESPAIR);
                         me->CastSpell(target, SPELL_IMPENDING_DESPAIR, false);
                     }
-                    events.ScheduleEvent(EVENT_IMPENDING_DESPAIR, 12s);
+                    events.ScheduleEvent(EVENT_IMPENDING_DESPAIR, 12000);
                     break;
                 case EVENT_DEFILING_HORROR:
                     Talk(SAY_DEFILING_HORROR);
                     me->CastSpell((Unit*)nullptr, SPELL_DEFILING_HORROR, false);
                     me->SetControlled(true, UNIT_STATE_ROOT);
                     events.DelayEventsToMax(5000, 0);
-                    events.ScheduleEvent(EVENT_UNROOT, 4s);
-                    events.ScheduleEvent(EVENT_DEFILING_HORROR, 20s);
+                    events.ScheduleEvent(EVENT_UNROOT, 4000);
+                    events.ScheduleEvent(EVENT_DEFILING_HORROR, 20000);
                     break;
                 case EVENT_UNROOT:
                     me->SetControlled(false, UNIT_STATE_ROOT);
@@ -160,7 +161,7 @@ public:
         void KilledUnit(Unit* who) override
         {
             if (who->GetTypeId() == TYPEID_PLAYER)
-                Talk(SAY_SLAY);
+                Talk(RAND(SAY_SLAY_1, SAY_SLAY_2));
         }
 
         void EnterEvadeMode(EvadeReason why) override

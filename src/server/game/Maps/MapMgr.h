@@ -128,15 +128,6 @@ public:
         return std::fmod(o, 2.0f * static_cast<float>(M_PI));
     }
 
-    /**
-    * @name GetInstanceIDs
-    * @return vector of instance IDs
-    */
-    std::vector<bool> GetInstanceIDs()
-    {
-        return _instanceIds;
-    }
-
     void DoDelayedMovesAndRemoves();
 
     Map::EnterState PlayerCannotEnter(uint32 mapid, Player* player, bool loginCheck = false);
@@ -159,8 +150,11 @@ public:
     template<typename Worker>
     void DoForAllMapsWithMapId(uint32 mapId, Worker&& worker);
 
-private:
+
     typedef std::unordered_map<uint32, Map*> MapMapType;
+
+    MapMapType i_maps;
+private:
     typedef std::vector<bool> InstanceIds;
 
     MapMgr();
@@ -170,7 +164,6 @@ private:
     MapMgr& operator=(const MapMgr&);
 
     std::mutex Lock;
-    MapMapType i_maps;
     IntervalTimer i_timer[4]; // continents, bgs/arenas, instances, total from the beginning
     uint8 mapUpdateStep;
 

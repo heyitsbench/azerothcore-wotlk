@@ -60,7 +60,7 @@ public:
             });
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             _scheduler.Schedule(1s, [this](TaskContext context){
                 DoCastVictim(SPELL_BANSHEEWAIL);

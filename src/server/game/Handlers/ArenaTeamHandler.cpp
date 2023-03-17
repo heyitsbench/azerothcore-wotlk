@@ -34,28 +34,15 @@ void WorldSession::HandleInspectArenaTeamsOpcode(WorldPacket& recvData)
     recvData >> guid;
     LOG_DEBUG("network", "Inspect Arena stats ({})", guid.ToString());
 
-    Player* player = ObjectAccessor::FindPlayer(guid);
-    if (!player)
+    if (Player* player = ObjectAccessor::FindPlayer(guid))
     {
-        return;
-    }
-
-    if (!GetPlayer()->IsWithinDistInMap(player, INSPECT_DISTANCE, false))
-    {
-        return;
-    }
-
-    if (GetPlayer()->IsValidAttackTarget(player))
-    {
-        return;
-    }
-
-    for (uint8 i = 0; i < MAX_ARENA_SLOT; ++i)
-    {
-        if (uint32 a_id = player->GetArenaTeamId(i))
+        for (uint8 i = 0; i < MAX_ARENA_SLOT; ++i)
         {
-            if (ArenaTeam* arenaTeam = sArenaTeamMgr->GetArenaTeamById(a_id))
-                arenaTeam->Inspect(this, player->GetGUID());
+            if (uint32 a_id = player->GetArenaTeamId(i))
+            {
+                if (ArenaTeam* arenaTeam = sArenaTeamMgr->GetArenaTeamById(a_id))
+                    arenaTeam->Inspect(this, player->GetGUID());
+            }
         }
     }
 }
@@ -110,7 +97,7 @@ void WorldSession::HandleArenaTeamInviteOpcode(WorldPacket& recvData)
         return;
     }
 
-    if (player->GetLevel() < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
+    if (player->getLevel() < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
     {
         SendArenaTeamCommandResult(ERR_ARENA_TEAM_CREATE_S, "", invitedName, ERR_ARENA_TEAM_TARGET_TOO_LOW_S);
         return;

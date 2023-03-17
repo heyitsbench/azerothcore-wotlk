@@ -36,7 +36,7 @@ namespace lfg
         if (!sLFGMgr->isOptionEnabled(LFG_OPTION_ENABLE_DUNGEON_FINDER | LFG_OPTION_ENABLE_RAID_BROWSER | LFG_OPTION_ENABLE_SEASONAL_BOSSES))
             return;
 
-        sLFGMgr->InitializeLockedDungeons(player, player->GetGroup());
+        sLFGMgr->InitializeLockedDungeons(player);
     }
 
     void LFGPlayerScript::OnLogout(Player* player)
@@ -68,8 +68,7 @@ namespace lfg
         ObjectGuid guid = player->GetGUID();
         ObjectGuid gguid = sLFGMgr->GetGroup(guid);
 
-        Group const* group = player->GetGroup();
-        if (group)
+        if (Group const* group = player->GetGroup())
         {
             ObjectGuid gguid2 = group->GetGUID();
             if (gguid != gguid2)
@@ -78,16 +77,16 @@ namespace lfg
             }
         }
 
-        sLFGMgr->InitializeLockedDungeons(player, group);
+        sLFGMgr->InitializeLockedDungeons(player);
         sLFGMgr->SetTeam(player->GetGUID(), player->GetTeamId());
-        /// @todo - Restore LfgPlayerData and send proper status to player if it was in a group
+        // TODO - Restore LfgPlayerData and send proper status to player if it was in a group
     }
 
     void LFGPlayerScript::OnBindToInstance(Player* player, Difficulty difficulty, uint32 mapId, bool /*permanent*/)
     {
         MapEntry const* mapEntry = sMapStore.LookupEntry(mapId);
         if (mapEntry->IsDungeon() && difficulty > DUNGEON_DIFFICULTY_NORMAL)
-            sLFGMgr->InitializeLockedDungeons(player, player->GetGroup());
+            sLFGMgr->InitializeLockedDungeons(player);
     }
 
     void LFGPlayerScript::OnMapChanged(Player* player)
@@ -106,7 +105,7 @@ namespace lfg
                 sLFGMgr->LeaveLfg(player->GetGUID());
                 sLFGMgr->LeaveAllLfgQueues(player->GetGUID(), true);
                 player->RemoveAurasDueToSpell(LFG_SPELL_LUCK_OF_THE_DRAW);
-                player->TeleportTo(player->m_homebindMapId, player->m_homebindX, player->m_homebindY, player->m_homebindZ, player->m_homebindO);
+                player->TeleportTo(player->m_homebindMapId, player->m_homebindX, player->m_homebindY, player->m_homebindZ, 0.0f);
                 LOG_DEBUG("lfg", "LFGPlayerScript::OnMapChanged, Player {} ({}) is in LFG dungeon map but does not have a valid group! Teleporting to homebind.",
                     player->GetName(), player->GetGUID().ToString());
                 return;

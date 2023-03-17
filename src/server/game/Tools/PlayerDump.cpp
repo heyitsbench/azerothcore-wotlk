@@ -117,7 +117,8 @@ DumpTable const DumpTables[] =
     { "pet_spell",                      DTT_PET_TABLE    }, // must be after character_pet
     { "pet_spell_cooldown",             DTT_PET_TABLE    }, // must be after character_pet
     { "item_instance",                  DTT_ITEM         }, // must be after character_inventory and mail_items
-    { "character_gifts",                DTT_ITEM_GIFT    }  // must be after item_instance
+    { "character_gifts",                DTT_ITEM_GIFT    }, // must be after item_instance
+    { "character_spell_charges",        DTT_CHAR_TABLE   },
 };
 
 uint32 const DUMP_TABLE_COUNT = std::extent<decltype(DumpTables)>::value;
@@ -375,8 +376,7 @@ void PlayerDump::InitializeTables()
 
     ASSERT(CharacterTables.size() == DUMP_TABLE_COUNT);
 
-    LOG_INFO("server.loading", ">> Initialized Tables For PlayerDump in {} ms.", GetMSTimeDiffToNow(oldMSTime));
-    LOG_INFO("server.loading", " ");
+    LOG_INFO("server.loading", ">> Initialized tables for PlayerDump in {} ms.", GetMSTimeDiffToNow(oldMSTime));
 }
 
 // Low level functions

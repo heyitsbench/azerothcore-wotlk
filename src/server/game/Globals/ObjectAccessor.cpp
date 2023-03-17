@@ -100,11 +100,6 @@ namespace PlayerNameMapHolder
         PlayerNameMap.erase(p->GetName());
     }
 
-    void RemoveByName(std::string const& name)
-    {
-        PlayerNameMap.erase(name);
-    }
-
     Player* Find(std::string const& name)
     {
         std::string charName(name);
@@ -282,58 +277,6 @@ Player* ObjectAccessor::FindPlayerByName(std::string const& name, bool checkInWo
     return nullptr;
 }
 
-/**
- * @brief Get a spawned creature by DB `guid` column. MODULE USAGE ONLY - USE IT FOR CUSTOM CONTENT.
- *
- * @param uint32 mapId The map id where the creature is spawned.
- * @param uint64 guid Database guid of the creature we are accessing.
- */
-Creature* ObjectAccessor::GetSpawnedCreatureByDBGUID(uint32 mapId, uint64 guid)
-{
-    if (Map* map = sMapMgr->FindBaseMap(mapId))
-    {
-        auto bounds = map->GetCreatureBySpawnIdStore().equal_range(guid);
-
-        if (bounds.first == bounds.second)
-        {
-            return nullptr;
-        }
-
-        if (Creature* creature = bounds.first->second)
-        {
-            return creature;
-        }
-    }
-
-    return nullptr;
-}
-
-/**
- * @brief Get a spawned gameobject by DB `guid` column. MODULE USAGE ONLY - USE IT FOR CUSTOM CONTENT.
- *
- * @param uint32 mapId The map id where the gameobject is spawned.
- * @param uint64 guid Database guid of the gameobject we are accessing.
- */
-GameObject* ObjectAccessor::GetSpawnedGameObjectByDBGUID(uint32 mapId, uint64 guid)
-{
-    if (Map* map = sMapMgr->FindBaseMap(mapId))
-    {
-        auto bounds = map->GetGameObjectBySpawnIdStore().equal_range(guid);
-
-        if (bounds.first == bounds.second)
-        {
-            return nullptr;
-        }
-
-        if (GameObject* go = bounds.first->second)
-        {
-            return go;
-        }
-    }
-
-    return nullptr;
-}
-
 template<>
 void ObjectAccessor::AddObject(Player* player)
 {
@@ -346,10 +289,4 @@ void ObjectAccessor::RemoveObject(Player* player)
 {
     HashMapHolder<Player>::Remove(player);
     PlayerNameMapHolder::Remove(player);
-}
-
-void ObjectAccessor::UpdatePlayerNameMapReference(std::string oldname, Player* player)
-{
-    PlayerNameMapHolder::RemoveByName(oldname);
-    PlayerNameMapHolder::Insert(player);
 }

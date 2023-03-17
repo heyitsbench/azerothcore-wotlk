@@ -73,7 +73,7 @@ public:
             warps = 0;
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(SAY_AGGRO);
 

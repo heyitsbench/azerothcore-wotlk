@@ -22,6 +22,7 @@
 #include "ScriptedCreature.h"
 #include "trial_of_the_crusader.h"
 
+#define CLEANUP_CHECK_INTERVAL  5000
 std::map<uint32, bool> validDedicatedInsanityItems;
 
 class instance_trial_of_the_crusader : public InstanceMapScript
@@ -31,11 +32,7 @@ public:
 
     struct instance_trial_of_the_crusader_InstanceMapScript : public InstanceScript
     {
-        instance_trial_of_the_crusader_InstanceMapScript(Map* pMap) : InstanceScript(pMap)
-        {
-            SetHeaders(DataHeader);
-            Initialize();
-        }
+        instance_trial_of_the_crusader_InstanceMapScript(Map* pMap) : InstanceScript(pMap) { Initialize(); }
 
         bool CLEANED;
         uint32 EncounterStatus;
@@ -570,11 +567,9 @@ public:
                             DoCheckDedicatedInsanity();
                         bSwitcher = !bSwitcher;
 
-                        if (DoNeedCleanup())
-                        {
+                        if( DoNeedCleanup(false) )
                             InstanceCleanup();
-                        }
-                        events.Repeat(5s);
+                        events.RepeatEvent(CLEANUP_CHECK_INTERVAL);
                     }
                     break;
                 case EVENT_OPEN_GATE:
@@ -1406,37 +1401,27 @@ public:
             else
                 plr->SendUpdateWorldState(UPDATE_STATE_UI_SHOW, 0);
 
-            if (DoNeedCleanup(plr))
-            {
+            if( DoNeedCleanup(true) )
                 InstanceCleanup();
-            }
 
             // if missing spawn anub'arak
             SpawnAnubArak();
 
-            events.RescheduleEvent(EVENT_CHECK_PLAYERS, 5s);
+            events.RescheduleEvent(EVENT_CHECK_PLAYERS, CLEANUP_CHECK_INTERVAL);
         }
 
-        bool DoNeedCleanup(Player* ignoredPlayer = nullptr)
+        bool DoNeedCleanup(bool /*enter*/)
         {
             uint8 aliveCount = 0;
-            for (auto const& itr: instance->GetPlayers())
-            {
-                if (Player* plr = itr.GetSource())
-                {
-                    if (plr != ignoredPlayer && plr->IsAlive() && !plr->IsGameMaster())
-                    {
+            Map::PlayerList const& pl = instance->GetPlayers();
+            for( Map::PlayerList::const_iterator itr = pl.begin(); itr != pl.end(); ++itr )
+                if( Player* plr = itr->GetSource() )
+                    if( plr->IsAlive() && !plr->IsGameMaster() )
                         ++aliveCount;
-                    }
-                }
-            }
 
             bool need = aliveCount == 0;
-            if (!need && CLEANED)
-            {
+            if( !need && CLEANED )
                 CLEANED = false;
-            }
-
             return need;
         }
 
@@ -1589,35 +1574,57 @@ public:
             Counter = 0;
             EncounterStatus = NOT_STARTED;
             events.Reset();
-            events.RescheduleEvent(EVENT_CHECK_PLAYERS, 5s);
+            events.RescheduleEvent(EVENT_CHECK_PLAYERS, CLEANUP_CHECK_INTERVAL);
         }
 
-        void ReadSaveDataMore(std::istringstream& data) override
+        std::string GetSaveData() override
         {
-            data >> InstanceProgress;
-
-            if (instance->IsHeroic())
-            {
-                data >> AttemptsLeft;
-                uint32 temp = 0;
-                data >> temp;
-                bDedicatedInsanity = !!temp;
-                data >> temp;
-                bNooneDied = !!temp;
-            }
+            OUT_SAVE_INST_DATA;
+            std::ostringstream saveStream;
+            saveStream << "T C " << InstanceProgress;
+            if( instance->IsHeroic() )
+                saveStream << ' ' << AttemptsLeft << ' ' << (bDedicatedInsanity ? (uint32)1 : (uint32)0) << ' ' << (bNooneDied ? (uint32)1 : (uint32)0);
+            str_data = saveStream.str();
+            OUT_SAVE_INST_DATA_COMPLETE;
+            return str_data;
         }
 
-        void WriteSaveDataMore(std::ostringstream& data) override
+        void Load(const char* in) override
         {
-            data << InstanceProgress;
+            EncounterStatus = NOT_STARTED;
+            CLEANED = false;
+            events.Reset();
+            events.RescheduleEvent(EVENT_CHECK_PLAYERS, 0);
 
-            if (instance->IsHeroic())
+            if( !in )
             {
-                data << ' '
-                    << AttemptsLeft << ' '
-                    << (bDedicatedInsanity ? 1 : 0) << ' '
-                    << (bNooneDied ? 1 : 0);
+                OUT_LOAD_INST_DATA_FAIL;
+                return;
             }
+
+            OUT_LOAD_INST_DATA(in);
+
+            char dataHead1, dataHead2;
+            uint16 data0;
+            std::istringstream loadStream(in);
+            loadStream >> dataHead1 >> dataHead2 >> data0;
+
+            if( dataHead1 == 'T' && dataHead2 == 'C' )
+            {
+                InstanceProgress = data0;
+                if( instance->IsHeroic() )
+                {
+                    uint32 data1 = 0, data2 = 0, data3 = 0;
+                    loadStream >> data1 >> data2 >> data3;
+                    AttemptsLeft = data1;
+                    bDedicatedInsanity = !!data2;
+                    bNooneDied = !!data3;
+                }
+            }
+            else
+                OUT_LOAD_INST_DATA_FAIL;
+
+            OUT_LOAD_INST_DATA_COMPLETE;
         }
 
         bool CheckAchievementCriteriaMeet(uint32 criteria_id, Player const*  /*source*/, Unit const*  /*target*/, uint32  /*miscvalue1*/) override

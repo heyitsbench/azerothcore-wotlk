@@ -56,11 +56,12 @@ enum PhaseHalazzi
 enum Yells
 {
     SAY_AGGRO                   = 0,
-    SAY_KILL                    = 1,
-    SAY_SABER                   = 2,
-    SAY_SPLIT                   = 3,
-    SAY_MERGE                   = 4,
-    SAY_DEATH                   = 5
+    SAY_SABER                   = 1,
+    SAY_SPLIT                   = 2,
+    SAY_MERGE                   = 3,
+    SAY_KILL                    = 4,
+    SAY_DEATH                   = 5,
+    SAY_BERSERK                 = 6
 };
 
 class boss_halazzi : public CreatureScript
@@ -105,7 +106,7 @@ public:
             EnterPhase(PHASE_LYNX);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             instance->SetData(DATA_HALAZZIEVENT, IN_PROGRESS);
             Talk(SAY_AGGRO);
@@ -196,6 +197,7 @@ public:
 
             if (BerserkTimer <= diff)
             {
+                Talk(SAY_BERSERK);
                 DoCast(me, SPELL_BERSERK, true);
                 BerserkTimer = 60000;
             }
@@ -205,7 +207,6 @@ public:
             {
                 if (SaberlashTimer <= diff)
                 {
-                    Talk(SAY_SABER);
                     // A tank with more than 490 defense skills should receive no critical hit
                     //DoCast(me, 41296, true);
                     DoCastVictim(SPELL_SABER_LASH, true);
@@ -350,7 +351,7 @@ public:
                 ScriptedAI::AttackStart(who);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override {/*DoZoneInCombat();*/ }
+        void EnterCombat(Unit* /*who*/) override {/*DoZoneInCombat();*/ }
 
         void UpdateAI(uint32 diff) override
         {

@@ -317,8 +317,6 @@ public:
     }
 
     uint32 m_mapId;
-
-    std::string GetDebugInfo() const;
 };
 
 ByteBuffer& operator<<(ByteBuffer& buf, Position::PositionXYStreamer const& streamer);

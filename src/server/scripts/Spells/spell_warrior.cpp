@@ -288,8 +288,6 @@ class spell_warr_charge : public SpellScript
     {
         return ValidateSpellInfo(
             {
-                SPELL_WARRIOR_JUGGERNAUT_CRIT_BONUS_TALENT,
-                SPELL_WARRIOR_JUGGERNAUT_CRIT_BONUS_BUFF,
                 SPELL_WARRIOR_CHARGE
             });
     }
@@ -299,10 +297,6 @@ class spell_warr_charge : public SpellScript
         int32 chargeBasePoints0 = GetEffectValue();
         Unit* caster = GetCaster();
         caster->CastCustomSpell(caster, SPELL_WARRIOR_CHARGE, &chargeBasePoints0, nullptr, nullptr, true);
-
-        // Juggernaut crit bonus
-        if (caster->HasAura(SPELL_WARRIOR_JUGGERNAUT_CRIT_BONUS_TALENT))
-            caster->CastSpell(caster, SPELL_WARRIOR_JUGGERNAUT_CRIT_BONUS_BUFF, true);
     }
 
     void Register() override
@@ -406,13 +400,6 @@ class spell_warr_execute : public SpellScript
             int32 rageUsed = std::min<int32>(300 - spellInfo->CalcPowerCost(caster, SpellSchoolMask(spellInfo->SchoolMask)), caster->GetPower(POWER_RAGE));
             int32 newRage = std::max<int32>(0, caster->GetPower(POWER_RAGE) - rageUsed);
 
-            // Sudden Death rage save
-            if (AuraEffect* aurEff = caster->GetAuraEffect(SPELL_AURA_PROC_TRIGGER_SPELL, SPELLFAMILY_GENERIC, WARRIOR_ICON_ID_SUDDEN_DEATH, EFFECT_0))
-            {
-                int32 ragesave = aurEff->GetSpellInfo()->Effects[EFFECT_1].CalcValue() * 10;
-                newRage = std::max(newRage, ragesave);
-            }
-
             caster->SetPower(POWER_RAGE, uint32(newRage));
             // Glyph of Execution bonus
             if (AuraEffect* aurEff = caster->GetAuraEffect(SPELL_WARRIOR_GLYPH_OF_EXECUTION, EFFECT_0))
@@ -456,14 +443,14 @@ class spell_warr_bloodthirst : public SpellScript
         return ValidateSpellInfo({ SPELL_WARRIOR_BLOODTHIRST });
     }
 
-    void HandleDamage(SpellEffIndex effIndex)
+    void HandleDamage(SpellEffIndex /*effIndex*/)
     {
         int32 damage = GetEffectValue();
         ApplyPct(damage, GetCaster()->GetTotalAttackPowerValue(BASE_ATTACK));
 
         if (Unit* target = GetHitUnit())
         {
-            damage = GetCaster()->SpellDamageBonusDone(target, GetSpellInfo(), uint32(damage), SPELL_DIRECT_DAMAGE, effIndex);
+            damage = GetCaster()->SpellDamageBonusDone(target, GetSpellInfo(), uint32(damage), SPELL_DIRECT_DAMAGE);
             damage = target->SpellDamageBonusTaken(GetCaster(), GetSpellInfo(), uint32(damage), SPELL_DIRECT_DAMAGE);
         }
         SetHitDamage(damage);
@@ -567,14 +554,8 @@ class spell_warr_rend : public AuraScript
             // $0.2 * (($MWB + $mwb) / 2 + $AP / 14 * $MWS) bonus per tick
             float ap = caster->GetTotalAttackPowerValue(BASE_ATTACK);
             int32 mws = caster->GetAttackTime(BASE_ATTACK);
-            float mwbMin = 0.f;
-            float mwbMax = 0.f;
-            for (uint8 i = 0; i < MAX_ITEM_PROTO_DAMAGES; ++i)
-            {
-                mwbMin += caster->GetWeaponDamageRange(BASE_ATTACK, MINDAMAGE, i);
-                mwbMax += caster->GetWeaponDamageRange(BASE_ATTACK, MAXDAMAGE, i);
-            }
-
+            float mwbMin = caster->GetWeaponDamageRange(BASE_ATTACK, MINDAMAGE);
+            float mwbMax = caster->GetWeaponDamageRange(BASE_ATTACK, MAXDAMAGE);
             float mwb = ((mwbMin + mwbMax) / 2 + ap * mws / 14000) * 0.2f;
             amount += int32(caster->ApplyEffectModifiers(GetSpellInfo(), aurEff->GetEffIndex(), mwb));
 

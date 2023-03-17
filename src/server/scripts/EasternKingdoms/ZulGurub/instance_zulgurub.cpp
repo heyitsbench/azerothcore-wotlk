@@ -50,7 +50,6 @@ public:
     {
         instance_zulgurub_InstanceMapScript(Map* map) : InstanceScript(map)
         {
-            SetHeaders(DataHeader);
             SetBossNumber(EncounterCount);
             LoadDoorData(doorData);
             LoadObjectData(creatureData, nullptr);
@@ -83,15 +82,11 @@ public:
                 case NPC_GAHZRANKA:
                     _gahzrankaGUID = creature->GetGUID();
                     break;
-                case NPC_GRILEK:
-                case NPC_HAZZARAH:
-                case NPC_RENATAKI:
-                case NPC_WUSHOOLAY:
-                    _edgeOfMadnessGUID = creature->GetGUID();
-                    break;
                 default:
                     break;
             }
+
+            InstanceScript::OnCreatureCreate(creature);
         }
 
         void OnGameObjectCreate(GameObject* go) override
@@ -124,8 +119,6 @@ public:
                     return _goGongOfBethekkGUID;
                 case DATA_HAKKAR:
                     return _hakkarGUID;
-                case DATA_EDGE_OF_MADNESS:
-                    return _edgeOfMadnessGUID;
             }
 
             return ObjectGuid::Empty;
@@ -141,36 +134,48 @@ public:
             return 0;
         }
 
-        void RemoveHakkarPowerStack()
+        std::string GetSaveData() override
         {
-            if (Creature* hakkar = instance->GetCreature(_hakkarGUID))
-            {
-                hakkar->CastSpell(hakkar, SPELL_HAKKAR_POWER_DOWN, true);
-            }
+            OUT_SAVE_INST_DATA;
+
+            std::ostringstream saveStream;
+            saveStream << "Z G " << GetBossSaveData();
+
+            OUT_SAVE_INST_DATA_COMPLETE;
+            return saveStream.str();
         }
 
-        bool SetBossState(uint32 type, EncounterState state) override
+        void Load(const char* str) override
         {
-            if (!InstanceScript::SetBossState(type, state))
-                return false;
-
-            switch (type)
+            if (!str)
             {
-                case DATA_JEKLIK:
-                case DATA_VENOXIS:
-                case DATA_MARLI:
-                case DATA_ARLOKK:
-                case DATA_THEKAL:
-                    if (state == DONE)
-                        RemoveHakkarPowerStack();
-                    break;
-                default:
-                    break;
+                OUT_LOAD_INST_DATA_FAIL;
+                return;
             }
 
-            return true;
-        }
+            OUT_LOAD_INST_DATA(str);
 
+            char dataHead1, dataHead2;
+
+            std::istringstream loadStream(str);
+            loadStream >> dataHead1 >> dataHead2;
+
+            if (dataHead1 == 'Z' && dataHead2 == 'G')
+            {
+                for (uint32 i = 0; i < EncounterCount; ++i)
+                {
+                    uint32 tmpState;
+                    loadStream >> tmpState;
+                    if (tmpState == IN_PROGRESS || tmpState > SPECIAL)
+                        tmpState = NOT_STARTED;
+                    SetBossState(i, EncounterState(tmpState));
+                }
+            }
+            else
+                OUT_LOAD_INST_DATA_FAIL;
+
+            OUT_LOAD_INST_DATA_COMPLETE;
+        }
     private:
         // If all High Priest bosses were killed. Ohgan is added too.
         // Jindo is needed for healfunction.
@@ -181,7 +186,6 @@ public:
         ObjectGuid _goGongOfBethekkGUID;
         ObjectGuid _hakkarGUID;
         ObjectGuid _gahzrankaGUID;
-        ObjectGuid _edgeOfMadnessGUID;
     };
 
     InstanceScript* GetInstanceScript(InstanceMap* map) const override
@@ -217,14 +221,6 @@ struct go_brazier_of_madness : public GameObjectAI
         if (reportUse)
         {
             return true;
-        }
-
-        if (InstanceScript* instanceScript = me->GetInstanceScript())
-        {
-            if (instanceScript->GetGuidData(DATA_EDGE_OF_MADNESS))
-            {
-                return false;
-            }
         }
 
         uint32 bossEntry = 0;

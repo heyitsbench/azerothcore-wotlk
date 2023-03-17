@@ -40,6 +40,8 @@ public:
     explicit ChatHandler(WorldSession* session) : m_session(session), sentErrorMessage(false) {}
     virtual ~ChatHandler() { }
 
+    static std::vector<std::string> SplitString(const std::string& str, int splitLength);
+
     // Builds chat packet and returns receiver guid position in the packet to substitute in whisper builders
     static size_t BuildChatPacket(WorldPacket& data, ChatMsg chatType, Language language, ObjectGuid senderGUID, ObjectGuid receiverGUID, std::string_view message, uint8 chatTag,
                                   std::string const& senderName = "", std::string const& receiverName = "",

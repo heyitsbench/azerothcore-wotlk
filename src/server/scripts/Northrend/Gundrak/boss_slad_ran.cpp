@@ -102,16 +102,16 @@ public:
                 _achievement = false;
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
             Talk(SAY_AGGRO);
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
 
-            events.ScheduleEvent(EVENT_POISON_NOVA, 10s);
-            events.ScheduleEvent(EVENT_POWERFULL_BITE, 3s);
-            events.ScheduleEvent(EVENT_VENOM_BOLT, 15s);
-            events.ScheduleEvent(EVENT_CHECK_HEALTH1, 1s);
-            events.ScheduleEvent(EVENT_CHECK_HEALTH2, 1s);
+            events.ScheduleEvent(EVENT_POISON_NOVA, 10000);
+            events.ScheduleEvent(EVENT_POWERFULL_BITE, 3000);
+            events.ScheduleEvent(EVENT_VENOM_BOLT, 15000);
+            events.ScheduleEvent(EVENT_CHECK_HEALTH1, 1000);
+            events.ScheduleEvent(EVENT_CHECK_HEALTH2, 1000);
         }
 
         void JustDied(Unit* killer) override
@@ -126,7 +126,7 @@ public:
             if (events.GetNextEventTime(EVENT_KILL_TALK) == 0)
             {
                 Talk(SAY_SLAY);
-                events.ScheduleEvent(EVENT_KILL_TALK, 6s);
+                events.ScheduleEvent(EVENT_KILL_TALK, 6000);
             }
         }
 
@@ -151,42 +151,42 @@ public:
                     if (me->HealthBelowPct(70))
                     {
                         Talk(SAY_SUMMON_SNAKES);
-                        events.ScheduleEvent(EVENT_SUMMON1, 1s);
+                        events.ScheduleEvent(EVENT_SUMMON1, 1000);
                         break;
                     }
-                    events.ScheduleEvent(EVENT_CHECK_HEALTH1, 1s);
+                    events.ScheduleEvent(EVENT_CHECK_HEALTH1, 1000);
                     break;
                 case EVENT_CHECK_HEALTH2:
                     if (me->HealthBelowPct(50))
                     {
                         Talk(SAY_SUMMON_CONSTRICTORS);
-                        events.ScheduleEvent(EVENT_SUMMON2, 1s);
+                        events.ScheduleEvent(EVENT_SUMMON2, 1000);
                         break;
                     }
-                    events.ScheduleEvent(EVENT_CHECK_HEALTH2, 1s);
+                    events.ScheduleEvent(EVENT_CHECK_HEALTH2, 1000);
                     break;
                 case EVENT_POISON_NOVA:
                     Talk(EMOTE_NOVA);
                     me->CastSpell(me, SPELL_POISON_NOVA, false);
-                    events.ScheduleEvent(EVENT_POISON_NOVA, 15s);
+                    events.ScheduleEvent(EVENT_POISON_NOVA, 15000);
                     break;
                 case EVENT_POWERFULL_BITE:
                     me->CastSpell(me->GetVictim(), SPELL_POWERFULL_BITE, false);
-                    events.ScheduleEvent(EVENT_POWERFULL_BITE, 10s);
+                    events.ScheduleEvent(EVENT_POWERFULL_BITE, 10000);
                     break;
                 case EVENT_VENOM_BOLT:
                     me->CastSpell(me->GetVictim(), SPELL_VENOM_BOLT, false);
-                    events.ScheduleEvent(EVENT_VENOM_BOLT, 10s);
+                    events.ScheduleEvent(EVENT_VENOM_BOLT, 10000);
                     break;
                 case EVENT_SUMMON1:
                     for (uint8 i = MAX_CONSTRICTOR; i < MAX_SUMMONS; ++i)
                         me->SummonCreature(NPC_SLADRAN_VIPER, SpawnLoc[i], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 20 * IN_MILLISECONDS);
-                    events.ScheduleEvent(EVENT_SUMMON1, 8s);
+                    events.ScheduleEvent(EVENT_SUMMON1, 8000);
                     break;
                 case EVENT_SUMMON2:
                     for (uint8 i = 0; i < MAX_CONSTRICTOR; ++i)
                         me->SummonCreature(NPC_SLADRAN_CONSTRICTORS, SpawnLoc[i], TEMPSUMMON_CORPSE_TIMED_DESPAWN, 20 * IN_MILLISECONDS);
-                    events.ScheduleEvent(EVENT_SUMMON2, 3s, 5s);
+                    events.ScheduleEvent(EVENT_SUMMON2, urand(3000, 5000));
                     break;
             }
 

@@ -161,7 +161,7 @@ enum GuildEvents
     GE_RANK_DELETED                     = 11,
     GE_SIGNED_ON                        = 12,
     GE_SIGNED_OFF                       = 13,
-    GE_GUILDBANKBAGSLOTS_CHANGED        = 14,   /// @todo: Sent when items are moved in gbank - all players with bank open will send tab query
+    GE_GUILDBANKBAGSLOTS_CHANGED        = 14,   /// TODO: Sent when items are moved in gbank - all players with bank open will send tab query
     GE_BANK_TAB_PURCHASED               = 15,
     GE_BANK_TAB_UPDATED                 = 16,
     GE_BANK_MONEY_SET                   = 17,
@@ -306,8 +306,7 @@ public: // pussywizard: public class Member
             m_class(0),
             m_flags(GUILDMEMBER_STATUS_NONE),
             m_accountId(0),
-            m_rankId(rankId),
-            receiveGuildBankUpdatePackets(false)
+            m_rankId(rankId)
         {
         }
 
@@ -354,10 +353,6 @@ public: // pussywizard: public class Member
 
         inline Player* FindPlayer() const { return ObjectAccessor::FindConnectedPlayer(m_guid); }
 
-        void SubscribeToGuildBankUpdatePackets() { receiveGuildBankUpdatePackets = true; }
-        void UnsubscribeFromGuildBankUpdatePackets() { receiveGuildBankUpdatePackets = false; }
-        [[nodiscard]] bool ShouldReceiveBankPartialUpdatePackets() const { return receiveGuildBankUpdatePackets; }
-
     private:
         uint32 m_guildId;
         // Fields from characters table
@@ -376,8 +371,6 @@ public: // pussywizard: public class Member
         std::string m_officerNote;
 
         std::array<int32, GUILD_BANK_MAX_TABS + 1> m_bankWithdraw = {};
-
-        bool receiveGuildBankUpdatePackets;
     };
 
     // pussywizard: public GetMember
@@ -725,10 +718,10 @@ public:
     void SendInfo(WorldSession* session) const;
     void SendEventLog(WorldSession* session) const;
     void SendBankLog(WorldSession* session, uint8 tabId) const;
-    void SendBankTabsInfo(WorldSession* session, bool showTabs = false);
+    void SendBankTabsInfo(WorldSession* session, bool showTabs = false) const;
     void SendBankTabData(WorldSession* session, uint8 tabId, bool sendAllSlots) const;
     void SendBankTabText(WorldSession* session, uint8 tabId) const;
-    void SendPermissions(WorldSession* session);
+    void SendPermissions(WorldSession* session) const;
     void SendMoneyInfo(WorldSession* session) const;
     void SendLoginInfo(WorldSession* session);
 
@@ -854,7 +847,7 @@ private:
     bool _MemberHasTabRights(ObjectGuid guid, uint8 tabId, uint32 rights) const;
 
     void _LogEvent(GuildEventLogTypes eventType, ObjectGuid playerGuid1, ObjectGuid playerGuid2 = ObjectGuid::Empty, uint8 newRank = 0);
-    void _LogBankEvent(CharacterDatabaseTransaction trans, GuildBankEventLogTypes eventType, uint8 tabId, ObjectGuid playerGuid, uint32 itemOrMoney, uint16 itemStackCount = 0, uint8 destTabId = 0);
+    void _LogBankEvent(CharacterDatabaseTransaction trans, GuildBankEventLogTypes eventType, uint8 tabId, Player* playerGuid, uint32 itemOrMoney, uint16 itemStackCount = 0, uint8 destTabId = 0);
 
     Item* _GetItem(uint8 tabId, uint8 slotId) const;
     void _RemoveItem(CharacterDatabaseTransaction trans, uint8 tabId, uint8 slotId);

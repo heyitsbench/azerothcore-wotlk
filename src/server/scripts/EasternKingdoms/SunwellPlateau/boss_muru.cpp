@@ -86,9 +86,9 @@ public:
             me->SetVisible(true);
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
             me->CastSpell(me, SPELL_NEGATIVE_ENERGY, true);
             me->CastSpell(me, SPELL_SUMMON_BLOOD_ELVES_PERIODIC, true);
             me->CastSpell(me, SPELL_OPEN_PORTAL_PERIODIC, true);
@@ -186,7 +186,7 @@ public:
             me->DespawnOrUnsummon();
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             events.ScheduleEvent(EVENT_SPAWN_BLACK_HOLE, 15000);
             events.ScheduleEvent(EVENT_SPAWN_DARKNESS, 10000);
@@ -299,7 +299,7 @@ public:
             switch (events.ExecuteEvent())
             {
                 case EVENT_SINGULARITY_DEATH:
-                    me->KillSelf();
+                    Unit::Kill(me, me);
                     break;
                 case EVENT_START_BLACK_HOLE:
                     me->RemoveAurasDueToSpell(SPELL_BLACK_HOLE_SUMMON_VISUAL2);

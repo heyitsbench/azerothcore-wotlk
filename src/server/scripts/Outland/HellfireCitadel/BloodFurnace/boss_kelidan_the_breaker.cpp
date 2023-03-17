@@ -99,7 +99,7 @@ public:
                 instance->SetData(DATA_KELIDAN, NOT_STARTED);
         }
 
-        void JustEngagedWith(Unit*  /*who*/) override
+        void EnterCombat(Unit*  /*who*/) override
         {
             events.ScheduleEvent(EVENT_SPELL_VOLLEY, 1000);
             events.ScheduleEvent(EVENT_SPELL_CORRUPTION, 5000);
@@ -301,13 +301,12 @@ public:
 
         Creature* GetKelidan()
         {
-            if (InstanceScript* instance = me->GetInstanceScript())
-                return instance->GetCreature(DATA_KELIDAN);
-
+            if (me->GetInstanceScript())
+                return ObjectAccessor::GetCreature(*me, me->GetInstanceScript()->GetGuidData(DATA_KELIDAN));
             return nullptr;
         }
 
-        void JustEngagedWith(Unit*  /*who*/) override
+        void EnterCombat(Unit*  /*who*/) override
         {
             if (Creature* kelidan = GetKelidan())
                 kelidan->AI()->DoAction(ACTION_CHANNELER_ENGAGED);

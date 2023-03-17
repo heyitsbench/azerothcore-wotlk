@@ -203,7 +203,7 @@ class spell_pri_divine_aegis : public AuraScript
         if (AuraEffect const* aegis = eventInfo.GetProcTarget()->GetAuraEffect(SPELL_PRIEST_DIVINE_AEGIS, EFFECT_0))
             absorb += aegis->GetAmount();
 
-        absorb = std::min(absorb, eventInfo.GetProcTarget()->GetLevel() * 125);
+        absorb = std::min(absorb, eventInfo.GetProcTarget()->getLevel() * 125);
 
         GetTarget()->CastCustomSpell(SPELL_PRIEST_DIVINE_AEGIS, SPELLVALUE_BASE_POINT0, absorb, eventInfo.GetProcTarget(), true, nullptr, aurEff);
     }
@@ -260,7 +260,12 @@ class spell_pri_glyph_of_prayer_of_healing : public AuraScript
         }
 
         SpellInfo const* triggeredSpellInfo = sSpellMgr->AssertSpellInfo(SPELL_PRIEST_GLYPH_OF_PRAYER_OF_HEALING_HEAL);
-        int32 heal = int32(CalculatePct(int32(healInfo->GetHeal()), aurEff->GetAmount()) / triggeredSpellInfo->GetMaxTicks());
+        float dmgRatio;
+        int32 heal = int32(CalculatePct(int32(healInfo->GetHeal()), aurEff->GetAmount()) / triggeredSpellInfo->GetMaxTicks(eventInfo.GetActor(), dmgRatio));
+
+        if (dmgRatio != 0)
+            heal = heal * dmgRatio;
+
         GetTarget()->CastCustomSpell(SPELL_PRIEST_GLYPH_OF_PRAYER_OF_HEALING_HEAL, SPELLVALUE_BASE_POINT0, heal, eventInfo.GetProcTarget(), true, nullptr, aurEff);
     }
 
@@ -428,26 +433,9 @@ class spell_pri_lightwell_renew : public AuraScript
         }
     }
 
-    void HandleUpdateSpellclick(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-    {
-        if (Unit* caster = GetCaster())
-        {
-            if (Player* player = GetTarget()->ToPlayer())
-            {
-                UpdateData data;
-                WorldPacket packet;
-                caster->BuildValuesUpdateBlockForPlayer(&data, player);
-                data.BuildPacket(&packet);
-                player->SendDirectMessage(&packet);
-            }
-        }
-    }
-
     void Register() override
     {
         DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_pri_lightwell_renew::CalculateAmount, EFFECT_0, SPELL_AURA_PERIODIC_HEAL);
-        AfterEffectApply += AuraEffectApplyFn(spell_pri_lightwell_renew::HandleUpdateSpellclick, EFFECT_0, SPELL_AURA_PERIODIC_HEAL, AURA_EFFECT_HANDLE_REAL);
-        AfterEffectRemove += AuraEffectRemoveFn(spell_pri_lightwell_renew::HandleUpdateSpellclick, EFFECT_0, SPELL_AURA_PERIODIC_HEAL, AURA_EFFECT_HANDLE_REAL);
     }
 };
 
@@ -798,8 +786,12 @@ class spell_pri_renew : public AuraScript
             {
                 uint32 heal = GetEffect(EFFECT_0)->GetAmount();
                 heal = GetTarget()->SpellHealingBonusTaken(caster, GetSpellInfo(), heal, DOT);
+                float f;
+                int32 basepoints0 = empoweredRenewAurEff->GetAmount() * GetEffect(EFFECT_0)->GetTotalTicks(f) * int32(heal) / 100;
 
-                int32 basepoints0 = empoweredRenewAurEff->GetAmount() * GetEffect(EFFECT_0)->GetTotalTicks() * int32(heal) / 100;
+                if (f != 0)
+                    basepoints0 += basepoints0 * f;
+
                 caster->CastCustomSpell(GetTarget(), SPELL_PRIEST_EMPOWERED_RENEW, &basepoints0, nullptr, nullptr, true, nullptr, aurEff);
             }
         }
@@ -859,17 +851,22 @@ class spell_pri_vampiric_touch : public AuraScript
     bool CheckProc(ProcEventInfo& eventInfo)
     {
         if (!eventInfo.GetActionTarget() || GetOwner()->GetGUID() != eventInfo.GetActionTarget()->GetGUID())
+            return false;
+
+        if (eventInfo.GetTypeMask() & PROC_FLAG_KILLED)
         {
+            if (SpellInfo const* spellInfo = eventInfo.GetSpellInfo())
+            {
+                if (spellInfo->SpellFamilyName == SPELLFAMILY_PRIEST && (spellInfo->SpellFamilyFlags[0] & 0x00002000))
+                {
+                    return true;
+                }
+            }
+
             return false;
         }
 
-        SpellInfo const* spellInfo = eventInfo.GetSpellInfo();
-        if (!spellInfo || spellInfo->SpellFamilyName != SPELLFAMILY_PRIEST || !(spellInfo->SpellFamilyFlags[0] & 0x00002000))
-        {
-            return false;
-        }
-
-        return true;
+        return eventInfo.GetActionTarget()->IsAlive();
     }
 
     void HandleProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)

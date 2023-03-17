@@ -150,7 +150,7 @@ public:
             instance->HandleGameObject(instance->GetGuidData(DATA_GO_LIBRARY_DOOR), true);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(SAY_AGGRO);
 
@@ -162,7 +162,7 @@ public:
         void FlameWreathEffect()
         {
             std::vector<Unit*> targets;
-            ThreatContainer::StorageType const& t_list = me->GetThreatMgr().GetThreatList();
+            ThreatContainer::StorageType const& t_list = me->GetThreatMgr().getThreatList();
 
             if (t_list.empty())
                 return;
@@ -584,7 +584,7 @@ public:
             CastTimer = 2000 + (rand() % 3000);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override { }
+        void EnterCombat(Unit* /*who*/) override { }
 
         void UpdateAI(uint32 diff) override
         {

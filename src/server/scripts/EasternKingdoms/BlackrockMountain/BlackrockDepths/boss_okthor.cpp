@@ -51,9 +51,9 @@ public:
 
         uint32 nextArcaneExplosionTime;
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
-            _JustEngagedWith();
+            _EnterCombat();
             events.ScheduleEvent(SPELL_ARCANE_BOLT, 0.2 * (int) TIMER_ARCANE_BOLT);
             events.ScheduleEvent(SPELL_ARCANE_EXPLOSION, 0.2 * (int) TIMER_ARCANE_EXPLOSION);
             events.ScheduleEvent(SPELL_POLYMORPH, 0.2 * (int) TIMER_POLYMORPH);

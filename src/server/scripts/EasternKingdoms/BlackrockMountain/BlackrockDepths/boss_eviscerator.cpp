@@ -49,9 +49,9 @@ public:
 
         bool SpellShieldReady = false;
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
-            _JustEngagedWith();
+            _EnterCombat();
             events.ScheduleEvent(SPELL_SHADOWBOLT_VOLLEY, 0.2 * (int)TIMER_SHADOWBOLT_VOLLEY);
             events.ScheduleEvent(SPELL_REND, 0.2 * (int) TIMER_REND);
             events.ScheduleEvent(SPELL_SHIELD, 0.2 * (int) TIMER_SHIELD);

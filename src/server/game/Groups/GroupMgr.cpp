@@ -148,7 +148,7 @@ void GroupMgr::LoadGroups()
         }
     }
 
-    LOG_INFO("server.loading", "Loading Group Members...");
+    LOG_INFO("server.loading", "Loading Group members...");
     {
         uint32 oldMSTime = getMSTime();
 

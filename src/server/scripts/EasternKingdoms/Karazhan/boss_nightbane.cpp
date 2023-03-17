@@ -158,7 +158,7 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             if (instance)
                 instance->SetData(DATA_NIGHTBANE, IN_PROGRESS);

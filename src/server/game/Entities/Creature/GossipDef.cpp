@@ -29,7 +29,6 @@ GossipMenu::GossipMenu()
 {
     _menuId = 0;
     _locale = DEFAULT_LOCALE;
-    _senderGUID.Clear();
 }
 
 GossipMenu::~GossipMenu()
@@ -189,10 +188,8 @@ void PlayerMenu::ClearMenus()
     _questMenu.ClearMenu();
 }
 
-void PlayerMenu::SendGossipMenu(uint32 titleTextId, ObjectGuid objectGUID)
+void PlayerMenu::SendGossipMenu(uint32 titleTextId, ObjectGuid objectGUID) const
 {
-    _gossipMenu.SetSenderGUID(objectGUID);
-
     WorldPacket data(SMSG_GOSSIP_MESSAGE, 24 + _gossipMenu.GetMenuItemCount() * 100 + _questMenu.GetMenuItemCount() * 75);     // guess size
     data << objectGUID;
     data << uint32(_gossipMenu.GetMenuId());            // new 2.4.0
@@ -237,10 +234,8 @@ void PlayerMenu::SendGossipMenu(uint32 titleTextId, ObjectGuid objectGUID)
     _session->SendPacket(&data);
 }
 
-void PlayerMenu::SendCloseGossip()
+void PlayerMenu::SendCloseGossip() const
 {
-    _gossipMenu.SetSenderGUID(ObjectGuid::Empty);
-
     WorldPacket data(SMSG_GOSSIP_COMPLETE, 0);
     _session->SendPacket(&data);
 }
@@ -450,26 +445,9 @@ void PlayerMenu::SendQuestGiverQuestDetails(Quest const* quest, ObjectGuid npcGU
                 data << uint32(0);
         }
 
-        uint32 moneyRew = 0;
-        Player* player = _session->GetPlayer();
-        uint8 playerLevel = player ? player->GetLevel() : 0;
-        if (player && (player->getLevel() >= sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL) || sScriptMgr->ShouldBeRewardedWithMoneyInsteadOfExp(player)))
-        {
-            moneyRew = quest->GetRewMoneyMaxLevel();
-        }
-        moneyRew += quest->GetRewOrReqMoney(player ? player->GetLevel() : 0); // reward money (below max lvl)
-        data << moneyRew;
-        uint32 questXp;
-        if (player && !sScriptMgr->ShouldBeRewardedWithMoneyInsteadOfExp(player))
-        {
-            questXp = uint32(quest->XPValue(playerLevel) * player->GetQuestRate());
-        }
-        else
-        {
-            questXp = 0;
-        }
-        sScriptMgr->OnQuestComputeXP(player, quest, questXp);
-        data << questXp;
+        uint8 playerLevel = _session->GetPlayer() ? _session->GetPlayer()->getLevel() : 0;
+        data << uint32(quest->GetRewOrReqMoney(playerLevel));
+        data << uint32(quest->XPValue(playerLevel) * _session->GetPlayer()->GetQuestRate());
     }
 
     // rewarded honor points. Multiply with 10 to satisfy client
@@ -550,16 +528,7 @@ void PlayerMenu::SendQuestQueryResponse(Quest const* quest) const
     if (quest->HasFlag(QUEST_FLAGS_HIDDEN_REWARDS))
         data << uint32(0);                                  // Hide money rewarded
     else
-    {
-        uint32 moneyRew = 0;
-        Player* player = _session->GetPlayer();
-        if (player && (player->GetLevel() >= sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL) || sScriptMgr->ShouldBeRewardedWithMoneyInsteadOfExp(player)))
-        {
-            moneyRew = quest->GetRewMoneyMaxLevel();
-        }
-        moneyRew += quest->GetRewOrReqMoney(player ? player->GetLevel() : 0); // reward money (below max lvl)
-        data << moneyRew;
-    }
+        data << uint32(quest->GetRewOrReqMoney(_session->GetPlayer() ? _session->GetPlayer()->getLevel() : 0)); // reward money (below max lvl)
 
     data << uint32(quest->GetRewMoneyMaxLevel());           // used in XP calculation at client
     data << uint32(quest->GetRewSpell());                   // reward spell, this spell will display (icon) (cast if RewSpellCast == 0)
@@ -703,26 +672,10 @@ void PlayerMenu::SendQuestGiverOfferReward(Quest const* quest, ObjectGuid npcGUI
             data << uint32(0);
     }
 
-    uint32 moneyRew = 0;
-    Player* player = _session->GetPlayer();
-    uint8 playerLevel = player ? player->GetLevel() : 0;
-    if (player && (player->GetLevel() >= sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL) || sScriptMgr->ShouldBeRewardedWithMoneyInsteadOfExp(player)))
-    {
-        moneyRew = quest->GetRewMoneyMaxLevel();
-    }
-    moneyRew += quest->GetRewOrReqMoney(player ? player->GetLevel() : 0); // reward money (below max lvl)
-    data << moneyRew;
-    uint32 questXp;
-    if (player && !sScriptMgr->ShouldBeRewardedWithMoneyInsteadOfExp(player))
-    {
-        questXp = uint32(quest->XPValue(playerLevel) * player->GetQuestRate());
-    }
-    else
-    {
-        questXp = 0;
-    }
-    sScriptMgr->OnQuestComputeXP(player, quest, questXp);
-    data << questXp;
+    uint8 playerLevel = _session->GetPlayer() ? _session->GetPlayer()->getLevel() : 0;
+
+    data << uint32(quest->GetRewOrReqMoney(playerLevel));
+    data << uint32(quest->XPValue(playerLevel) * _session->GetPlayer()->GetQuestRate());
 
     // rewarded honor points. Multiply with 10 to satisfy client
     data << uint32(10 * quest->CalculateHonorGain(_session->GetPlayer()->GetQuestLevel(quest)));

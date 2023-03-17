@@ -104,7 +104,7 @@ public:
             instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_ENERGY_FEEDBACK);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(SAY_AGGRO);
             instance->SetData(DATA_VEXALLUS_EVENT, IN_PROGRESS);

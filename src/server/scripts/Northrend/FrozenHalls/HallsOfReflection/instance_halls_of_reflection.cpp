@@ -40,14 +40,10 @@ public:
                 _owner.AI()->Talk(SAY_BATTERED_HILT_HALT);
                 break;
             case 3:
-                _owner.CastSpell((Unit*)nullptr, SPELL_SUMMON_EVIL_QUEL, true);
+                _owner.CastSpell((Unit*)nullptr, 69966, true);
                 _owner.AI()->Talk(SAY_BATTERED_HILT_REALIZE);
                 if (InstanceScript* instance = _owner.GetInstanceScript())
                     instance->SetData(DATA_BATTERED_HILT, 4);
-                if (Creature* quel = _owner.FindNearestCreature(NPC_QUEL_DELAR, 50))
-                {
-                    quel->AI()->Talk(EMOTE_QUEL_SPAWN);
-                }
                 _owner.m_Events.AddEvent(new UtherBatteredHiltEvent(_owner, 4), _owner.m_Events.CalculateTime(3500));
                 break;
             case 4:
@@ -66,13 +62,8 @@ public:
                 break;
             case 7:
                 if (InstanceScript* instance = _owner.GetInstanceScript())
-                {
                     instance->SetData(DATA_BATTERED_HILT, 7);
-                }
-                if (Creature* quel = _owner.FindNearestCreature(NPC_QUEL_DELAR, 50))
-                {
-                    quel->AI()->Talk(EMOTE_QUEL_PREPARE);
-                }
+                _owner.AI()->Talk(SAY_BATTERED_HILT_PREPARE);
                 _owner.m_Events.AddEvent(new UtherBatteredHiltEvent(_owner, 8), _owner.m_Events.CalculateTime(4000));
                 break;
             case 8:
@@ -135,10 +126,7 @@ public:
 
     struct instance_halls_of_reflection_InstanceMapScript : public InstanceScript
     {
-        instance_halls_of_reflection_InstanceMapScript(Map* pMap) : InstanceScript(pMap)
-        {
-            SetHeaders(DataHeader);
-        };
+        instance_halls_of_reflection_InstanceMapScript(Map* pMap) : InstanceScript(pMap) {};
 
         uint32 EncounterMask;
         TeamId TeamIdInInstance;
@@ -615,7 +603,8 @@ public:
                                 BatteredHiltStatus |= BHSF_THROWN;
                                 if (Creature* c = instance->GetCreature(NPC_UtherGUID))
                                 {
-                                    c->m_Events.AddEvent(new UtherBatteredHiltEvent(*c, 3), c->m_Events.CalculateTime(5500));
+                                    c->AI()->Talk(SAY_BATTERED_HILT_LEAP);
+                                    c->m_Events.AddEvent(new UtherBatteredHiltEvent(*c, 3), c->m_Events.CalculateTime(1500));
                                 }
                                 break;
                             case 4:
@@ -716,15 +705,42 @@ public:
             return ObjectGuid::Empty;
         }
 
-        void ReadSaveDataMore(std::istringstream& data) override
+        std::string GetSaveData() override
         {
-            data >> EncounterMask;
-            BatteredHiltStatus = (EncounterMask & (1 << DATA_BATTERED_HILT)) ? BHSF_FINISHED : BHSF_NONE;
+            OUT_SAVE_INST_DATA;
+
+            std::ostringstream saveStream;
+            saveStream << "H R " << EncounterMask;
+
+            OUT_SAVE_INST_DATA_COMPLETE;
+            return saveStream.str();
         }
 
-        void WriteSaveDataMore(std::ostringstream& data) override
+        void Load(const char* in) override
         {
-            data << EncounterMask;
+            if (!in)
+            {
+                OUT_LOAD_INST_DATA_FAIL;
+                return;
+            }
+
+            OUT_LOAD_INST_DATA(in);
+
+            char dataHead1, dataHead2;
+            uint32 data0;
+
+            std::istringstream loadStream(in);
+            loadStream >> dataHead1 >> dataHead2 >> data0;
+
+            if (dataHead1 == 'H' && dataHead2 == 'R')
+            {
+                EncounterMask = data0;
+                BatteredHiltStatus = (EncounterMask & (1 << DATA_BATTERED_HILT)) ? BHSF_FINISHED : BHSF_NONE;
+            }
+            else
+                OUT_LOAD_INST_DATA_FAIL;
+
+            OUT_LOAD_INST_DATA_COMPLETE;
         }
 
         void OnUnitDeath(Unit* unit) override
@@ -988,7 +1004,7 @@ public:
             {
                 if (ResumeFirstEventTimer <= diff)
                 {
-                    switch (ResumeFirstEventStep) // After a wipe
+                    switch (ResumeFirstEventStep)
                     {
                         case 0:
                             if (Creature* pFalric = instance->GetCreature(NPC_FalricGUID))
@@ -1015,27 +1031,14 @@ public:
                                         a->SetDuration(8000);
                                 }
 
-                                pMarwyn->AI()->Talk(EMOTE_MARWYN_INTRO_SPIRIT);
+                                pMarwyn->TextEmote("Spirits appear and surround the altar!", nullptr, true);
                             }
                             ++ResumeFirstEventStep;
                             ResumeFirstEventTimer = 7500;
                             break;
                         case 1:
                             if (Creature* pFalric = instance->GetCreature(NPC_FalricGUID))
-                            {
-                                if (pFalric->IsAlive())
-                                {
-                                    pFalric->AI()->Talk(SAY_FALRIC_INTRO_2); // Between wave 1 and 4
-                                }
-                                else
-                                {
-                                    if (Creature* marwyn = instance->GetCreature(NPC_MarwynGUID))
-                                    {
-                                        marwyn->AI()->Talk(SAY_MARWYN_WIPE_AFTER_FALRIC); // Between wave 6 and 9
-                                    }
-                                }
-                            }
-
+                                pFalric->AI()->Talk(SAY_FALRIC_INTRO_2);
                             SetData(ACTION_SHOW_TRASH, 1);
                             ResumeFirstEventStep = 0;
                             ResumeFirstEventTimer = 0;
@@ -1175,7 +1178,7 @@ public:
                             break;
                         case 9:
                             if (Creature* c = instance->GetCreature(NPC_LeaderGUID))
-                                c->AI()->Talk(TeamIdInInstance == TEAM_ALLIANCE ? SAY_JAINA_FINAL_1 : SAY_SYLVANA_FINAL);
+                                c->AI()->Talk(TeamIdInInstance == TEAM_ALLIANCE ? SAY_FINAL_ALLY : SAY_FINAL_HORDE);
                             HandleGameObject(GO_CaveInGUID, true);
                             ++outroStep;
                             outroTimer = 11000;
@@ -1189,7 +1192,7 @@ public:
                             if (TeamIdInInstance == TEAM_ALLIANCE)
                                 if (Creature* c = instance->GetCreature(NPC_LeaderGUID))
                                 {
-                                    c->AI()->Talk(SAY_JAINA_FINAL_2);
+                                    c->AI()->Talk(SAY_FINAL_ALLY_SECOND);
                                     outroTimer = 10000;
                                 }
                             break;

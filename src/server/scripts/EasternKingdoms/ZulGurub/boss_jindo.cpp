@@ -15,10 +15,15 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+/* ScriptData
+SDName: Boss_Jin'do the Hexxer
+SD%Complete: 85
+SDComment: Mind Control not working because of core bug. Shades visible for all.
+SDCategory: Zul'Gurub
+EndScriptData */
+
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
-#include "SpellScript.h"
-#include "TaskScheduler.h"
 #include "zulgurub.h"
 
 enum Say
@@ -28,296 +33,269 @@ enum Say
 
 enum Spells
 {
-    SPELL_BRAIN_WASH_TOTEM          = 24262,
-    SPELL_POWERFULL_HEALING_WARD    = 24309,
+    SPELL_BRAINWASHTOTEM            = 24262,
+    SPELL_POWERFULLHEALINGWARD      = 24309,
     SPELL_HEX                       = 24053,
-    SPELL_DELUSIONS_OF_JINDO        = 24306,
-    SPELL_SUMMON_SHADE_OF_JINDO     = 24308,
-    SPELL_BANISH                    = 24466,
-
+    SPELL_DELUSIONSOFJINDO          = 24306,
     //Healing Ward Spell
     SPELL_HEAL                      = 24311,
-
     //Shade of Jindo Spell
-    SPELL_SHADE_OF_JINDO_PASSIVE    = 24307,
-    SPELL_SHADE_OF_JINDO_VISUAL     = 24313,
-    SPELL_SHADOW_SHOCK              = 19460,
-    SPELL_RANDOM_AGGRO              = 23878
+    SPELL_SHADEOFJINDO_PASSIVE      = 24307,
+    SPELL_SHADEOFJINDO_VISUAL       = 24313,
+    SPELL_SHADOWSHOCK               = 19460
 };
 
 enum Events
 {
-    EVENT_BRAIN_WASH_TOTEM          = 1,
-    EVENT_POWERFULL_HEALING_WARD    = 2,
+    EVENT_BRAINWASHTOTEM            = 1,
+    EVENT_POWERFULLHEALINGWARD      = 2,
     EVENT_HEX                       = 3,
-    EVENT_DELUSIONS_OF_JINDO        = 4,
+    EVENT_DELUSIONSOFJINDO          = 4,
     EVENT_TELEPORT                  = 5
 };
 
-struct boss_jindo : public BossAI
+Position const TeleportLoc = {-11583.7783f, -1249.4278f, 77.5471f, 4.745f};
+
+class boss_jindo : public CreatureScript
 {
-    boss_jindo(Creature* creature) : BossAI(creature, DATA_JINDO) { }
+public:
+    boss_jindo() : CreatureScript("boss_jindo") { }
 
-    void JustEngagedWith(Unit* who) override
+    struct boss_jindoAI : public BossAI
     {
-        BossAI::JustEngagedWith(who);
-        events.ScheduleEvent(EVENT_BRAIN_WASH_TOTEM, 20s);
-        events.ScheduleEvent(EVENT_POWERFULL_HEALING_WARD, 16s);
-        events.ScheduleEvent(EVENT_HEX, 8s);
-        events.ScheduleEvent(EVENT_DELUSIONS_OF_JINDO, 10s);
-        events.ScheduleEvent(EVENT_TELEPORT, 5s);
+        boss_jindoAI(Creature* creature) : BossAI(creature, DATA_JINDO) { }
 
-        Talk(SAY_AGGRO);
-
-        me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_NONE);
-        _scheduler.CancelAll();
-    }
-
-    void JustSummoned(Creature* summon) override
-    {
-        BossAI::JustSummoned(summon);
-
-        switch (summon->GetEntry())
+        void Reset() override
         {
-            case NPC_BRAIN_WASH_TOTEM:
-                summon->SetReactState(REACT_PASSIVE);
-                if (Unit* target = SelectTarget(SelectTargetMethod::Random, me->GetThreatMgr().GetThreatListSize() > 1 ? 1 : 0))
-                {
-                    summon->CastSpell(target, summon->m_spells[0], true);
-                }
-                break;
-            default:
-                break;
+            _Reset();
         }
-    }
 
-    void EnterEvadeMode(EvadeReason evadeReason) override
-    {
-        if (_EnterEvadeMode(evadeReason))
+        void JustDied(Unit* /*killer*/) override
         {
-            Reset();
-            me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_DANCE);
-
-            _scheduler.Schedule(4s, [this](TaskContext /*context*/)
-            {
-                me->SetUInt32Value(UNIT_NPC_EMOTESTATE, EMOTE_STATE_NONE);
-                me->AddUnitState(UNIT_STATE_EVADE);
-                me->GetMotionMaster()->MoveTargetedHome();
-            });
+            _JustDied();
         }
-    }
 
-    void UpdateAI(uint32 diff) override
-    {
-        _scheduler.Update(diff);
-
-        if (!UpdateVictim())
-            return;
-
-        events.Update(diff);
-
-        if (me->HasUnitState(UNIT_STATE_CASTING))
-            return;
-
-        while (uint32 eventId = events.ExecuteEvent())
+        void EnterCombat(Unit* /*who*/) override
         {
-            switch (eventId)
+            _EnterCombat();
+            events.ScheduleEvent(EVENT_BRAINWASHTOTEM, 20000);
+            events.ScheduleEvent(EVENT_POWERFULLHEALINGWARD, 16000);
+            events.ScheduleEvent(EVENT_HEX, 8000);
+            events.ScheduleEvent(EVENT_DELUSIONSOFJINDO, 10000);
+            events.ScheduleEvent(EVENT_TELEPORT, 5000);
+            Talk(SAY_AGGRO);
+        }
+
+        void JustSummoned(Creature* summon) override
+        {
+            BossAI::JustSummoned(summon);
+
+            switch (summon->GetEntry())
             {
-            case EVENT_BRAIN_WASH_TOTEM:
-                DoCastSelf(SPELL_BRAIN_WASH_TOTEM);
-                events.ScheduleEvent(EVENT_BRAIN_WASH_TOTEM, 18s, 26s);
-                break;
-            case EVENT_POWERFULL_HEALING_WARD:
-                DoCastSelf(SPELL_POWERFULL_HEALING_WARD, true);
-                events.ScheduleEvent(EVENT_POWERFULL_HEALING_WARD, 14s, 20s);
-                break;
-            case EVENT_HEX:
-                if (me->GetThreatMgr().GetThreatListSize() > 1)
-                    DoCastVictim(SPELL_HEX, true);
-                events.ScheduleEvent(EVENT_HEX, 12s, 20s);
-                break;
-            case EVENT_DELUSIONS_OF_JINDO:
-                DoCastRandomTarget(SPELL_DELUSIONS_OF_JINDO);
-                events.ScheduleEvent(EVENT_DELUSIONS_OF_JINDO, 4s, 12s);
-                break;
-            case EVENT_TELEPORT:
-                DoCastRandomTarget(SPELL_BANISH);
-                events.ScheduleEvent(EVENT_TELEPORT, 15s, 23s);
-                break;
-            default:
-                break;
+                case NPC_BRAIN_WASH_TOTEM:
+                    if (Unit* target = SelectTarget(SelectTargetMethod::Random, 1))
+                    {
+                        summon->CastSpell(target, summon->m_spells[0], true);
+                    }
+                    break;
+                default:
+                    break;
             }
         }
 
-        DoMeleeAttackIfReady();
-    }
-
-    bool CanAIAttack(Unit const* target) const override
-    {
-        if (me->GetThreatMgr().GetThreatListSize() > 1)
+        void UpdateAI(uint32 diff) override
         {
-            ThreatContainer::StorageType::const_iterator lastRef = me->GetThreatMgr().GetOnlineContainer().GetThreatList().end();
-            --lastRef;
-            if (Unit* lastTarget = (*lastRef)->getTarget())
+            if (!UpdateVictim())
+                return;
+
+            events.Update(diff);
+
+            if (me->HasUnitState(UNIT_STATE_CASTING))
+                return;
+
+            while (uint32 eventId = events.ExecuteEvent())
             {
-                if (lastTarget != target)
+                switch (eventId)
                 {
-                    return !target->HasAura(SPELL_HEX);
+                    case EVENT_BRAINWASHTOTEM:
+                        DoCast(me, SPELL_BRAINWASHTOTEM);
+                        events.ScheduleEvent(EVENT_BRAINWASHTOTEM, urand(18000, 26000));
+                        break;
+                    case EVENT_POWERFULLHEALINGWARD:
+                        DoCastSelf(SPELL_POWERFULLHEALINGWARD, true);
+                        events.ScheduleEvent(EVENT_POWERFULLHEALINGWARD, urand(14000, 20000));
+                        break;
+                    case EVENT_HEX:
+                        DoCastVictim(SPELL_HEX, true);
+                        events.ScheduleEvent(EVENT_HEX, urand(12000, 20000));
+                        break;
+                    case EVENT_DELUSIONSOFJINDO: // HACK
+                        // Casting the delusion curse with a shade so shade will attack the same target with the curse.
+                        if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0))
+                        {
+                            DoCast(target, SPELL_DELUSIONSOFJINDO);
+                            Creature* Shade = me->SummonCreature(NPC_SHADE_OF_JINDO, target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 15000);
+                            if (Shade)
+                                Shade->AI()->AttackStart(target);
+                        }
+                        events.ScheduleEvent(EVENT_DELUSIONSOFJINDO, urand(4000, 12000));
+                        break;
+                    case EVENT_TELEPORT: // Possible HACK
+                        // Teleports a random player and spawns 9 Sacrificed Trolls to attack player
+                        if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0))
+                        {
+                            DoTeleportPlayer(target, TeleportLoc.m_positionX, TeleportLoc.m_positionY, TeleportLoc.m_positionZ, TeleportLoc.GetOrientation());
+                            if (DoGetThreat(me->GetVictim()))
+                                DoModifyThreatPercent(target, -100);
+                            Creature* SacrificedTroll;
+                            SacrificedTroll = me->SummonCreature(NPC_SACRIFICED_TROLL, TeleportLoc.m_positionX + 2, TeleportLoc.m_positionY, TeleportLoc.m_positionZ, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 15000);
+                            if (SacrificedTroll)
+                                SacrificedTroll->AI()->AttackStart(target);
+                            SacrificedTroll = me->SummonCreature(NPC_SACRIFICED_TROLL, TeleportLoc.m_positionX - 2, TeleportLoc.m_positionY, TeleportLoc.m_positionZ, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 15000);
+                            if (SacrificedTroll)
+                                SacrificedTroll->AI()->AttackStart(target);
+                            SacrificedTroll = me->SummonCreature(NPC_SACRIFICED_TROLL, TeleportLoc.m_positionX + 4, TeleportLoc.m_positionY, TeleportLoc.m_positionZ, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 15000);
+                            if (SacrificedTroll)
+                                SacrificedTroll->AI()->AttackStart(target);
+                            SacrificedTroll = me->SummonCreature(NPC_SACRIFICED_TROLL, TeleportLoc.m_positionX - 4, TeleportLoc.m_positionY, TeleportLoc.m_positionZ, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 15000);
+                            if (SacrificedTroll)
+                                SacrificedTroll->AI()->AttackStart(target);
+                            SacrificedTroll = me->SummonCreature(NPC_SACRIFICED_TROLL, TeleportLoc.m_positionX, TeleportLoc.m_positionY + 2, TeleportLoc.m_positionZ, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 15000);
+                            if (SacrificedTroll)
+                                SacrificedTroll->AI()->AttackStart(target);
+                            SacrificedTroll = me->SummonCreature(NPC_SACRIFICED_TROLL, TeleportLoc.m_positionX, TeleportLoc.m_positionY - 2, TeleportLoc.m_positionZ, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 15000);
+                            if (SacrificedTroll)
+                                SacrificedTroll->AI()->AttackStart(target);
+                            SacrificedTroll = me->SummonCreature(NPC_SACRIFICED_TROLL, TeleportLoc.m_positionX, TeleportLoc.m_positionY + 4, TeleportLoc.m_positionZ, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 15000);
+                            if (SacrificedTroll)
+                                SacrificedTroll->AI()->AttackStart(target);
+                            SacrificedTroll = me->SummonCreature(NPC_SACRIFICED_TROLL, TeleportLoc.m_positionX, TeleportLoc.m_positionY - 4, TeleportLoc.m_positionZ, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 15000);
+                            if (SacrificedTroll)
+                                SacrificedTroll->AI()->AttackStart(target);
+                            SacrificedTroll = me->SummonCreature(NPC_SACRIFICED_TROLL, TeleportLoc.m_positionX + 3, TeleportLoc.m_positionY, TeleportLoc.m_positionZ, 0, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, 15000);
+                            if (SacrificedTroll)
+                                SacrificedTroll->AI()->AttackStart(target);
+                        }
+                        events.ScheduleEvent(EVENT_TELEPORT, urand(15000, 23000));
+                        break;
+                    default:
+                        break;
                 }
             }
+
+            DoMeleeAttackIfReady();
         }
 
-        return true;
-    }
+        bool CanAIAttack(Unit const* target) const override
+        {
+            return !target->HasAura(SPELL_HEX);
+        }
+    };
 
-private:
-    TaskScheduler _scheduler;
+    CreatureAI* GetAI(Creature* creature) const override
+    {
+        return GetZulGurubAI<boss_jindoAI>(creature);
+    }
 };
 
 //Healing Ward
-struct npc_healing_ward : public ScriptedAI
+class npc_healing_ward : public CreatureScript
 {
-    npc_healing_ward(Creature* creature) : ScriptedAI(creature)
+public:
+    npc_healing_ward()
+        : CreatureScript("npc_healing_ward")
     {
-        _instance = creature->GetInstanceScript();
     }
 
-    void Reset() override
+    struct npc_healing_wardAI : public ScriptedAI
     {
-        _scheduler.CancelAll();
-    }
+        npc_healing_wardAI(Creature* creature) : ScriptedAI(creature)
+        {
+            instance = creature->GetInstanceScript();
+        }
 
-    void JustEngagedWith(Unit* /*who*/) override
-    {
-        _scheduler.
-            Schedule(2s, [this](TaskContext context)
+        uint32 Heal_Timer;
+
+        InstanceScript* instance;
+
+        void Reset() override
+        {
+            Heal_Timer = 2000;
+        }
+
+        void EnterCombat(Unit* /*who*/) override
+        {
+        }
+
+        void UpdateAI(uint32 diff) override
+        {
+            //Heal_Timer
+            if (Heal_Timer <= diff)
             {
-                Unit* pJindo = ObjectAccessor::GetUnit(*me, _instance->GetGuidData(DATA_JINDO));
+                Unit* pJindo = ObjectAccessor::GetUnit(*me, instance->GetGuidData(DATA_JINDO));
                 if (pJindo)
                     DoCast(pJindo, SPELL_HEAL);
-                context.Repeat(3s);
-            });
-    }
+                Heal_Timer = 3000;
+            }
+            else Heal_Timer -= diff;
 
-    void UpdateAI(uint32 diff) override
+            DoMeleeAttackIfReady();
+        }
+    };
+
+    CreatureAI* GetAI(Creature* creature) const override
     {
-        _scheduler.Update(diff, [this]
-            {
-                DoMeleeAttackIfReady();
-            });
+        return GetZulGurubAI<npc_healing_wardAI>(creature);
     }
-
-private:
-    InstanceScript* _instance;
-    TaskScheduler _scheduler;
 };
 
 //Shade of Jindo
-struct npc_shade_of_jindo : public ScriptedAI
+class npc_shade_of_jindo : public CreatureScript
 {
-    npc_shade_of_jindo(Creature* creature) : ScriptedAI(creature) { }
-
-    void IsSummonedBy(WorldObject* /*summoner*/) override
+public:
+    npc_shade_of_jindo()
+        : CreatureScript("npc_shade_of_jindo")
     {
-        DoZoneInCombat();
-        DoCastSelf(SPELL_SHADE_OF_JINDO_PASSIVE, true);
-        DoCastSelf(SPELL_SHADE_OF_JINDO_VISUAL, true);
-        DoCastAOE(SPELL_RANDOM_AGGRO, true);
     }
 
-    void Reset() override
+    struct npc_shade_of_jindoAI : public ScriptedAI
     {
-        _scheduler.CancelAll();
+        npc_shade_of_jindoAI(Creature* creature) : ScriptedAI(creature) { }
 
-        _scheduler.
-            Schedule(1s, [this](TaskContext context)
+        uint32 ShadowShock_Timer;
+
+        void Reset() override
+        {
+            ShadowShock_Timer = 1000;
+            DoCastSelf(SPELL_SHADEOFJINDO_PASSIVE, true);
+            DoCastSelf(SPELL_SHADEOFJINDO_VISUAL, true);
+        }
+
+        void EnterCombat(Unit* /*who*/) override { }
+
+        void UpdateAI(uint32 diff) override
+        {
+            //ShadowShock_Timer
+            if (ShadowShock_Timer <= diff)
             {
-                DoCastAOE(SPELL_RANDOM_AGGRO, true);
-                context.Repeat();
-            });
-    }
+                DoCastVictim(SPELL_SHADOWSHOCK);
+                ShadowShock_Timer = 2000;
+            }
+            else ShadowShock_Timer -= diff;
 
-    void JustEngagedWith(Unit* /*who*/) override
+            DoMeleeAttackIfReady();
+        }
+    };
+
+    CreatureAI* GetAI(Creature* creature) const override
     {
-        _scheduler.
-            Schedule(1s, [this](TaskContext context)
-            {
-                DoCastVictim(SPELL_SHADOW_SHOCK);
-                context.Repeat(2s);
-            });
-    }
-
-    void UpdateAI(uint32 diff) override
-    {
-        _scheduler.Update(diff, [this]
-            {
-                DoMeleeAttackIfReady();
-            });
-    }
-
-private:
-    TaskScheduler _scheduler;
-};
-
-class spell_random_aggro : public SpellScript
-{
-    PrepareSpellScript(spell_random_aggro);
-
-    void HandleOnHit()
-    {
-        Unit* caster = GetCaster();
-        Unit* target = GetHitUnit();
-        if (!caster || !target || !caster->GetAI())
-            return;
-
-        caster->GetAI()->AttackStart(target);
-    }
-
-    void Register() override
-    {
-        OnHit += SpellHitFn(spell_random_aggro::HandleOnHit);
-    }
-};
-
-class spell_delusions_of_jindo : public SpellScript
-{
-    PrepareSpellScript(spell_delusions_of_jindo);
-
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        return ValidateSpellInfo({ SPELL_SUMMON_SHADE_OF_JINDO });
-    }
-
-    void HandleOnHit()
-    {
-        Unit* caster = GetCaster();
-        if (caster)
-            caster->CastSpell(caster, SPELL_SUMMON_SHADE_OF_JINDO, true);
-    }
-
-    void Register() override
-    {
-        OnHit += SpellHitFn(spell_delusions_of_jindo::HandleOnHit);
-    }
-};
-
-struct npc_brain_wash_totem : public ScriptedAI
-{
-    npc_brain_wash_totem(Creature* creature) : ScriptedAI(creature)
-    {
-    }
-
-    void EnterEvadeMode(EvadeReason /*evadeReason*/) override
-    {
+        return GetZulGurubAI<npc_shade_of_jindoAI>(creature);
     }
 };
 
 void AddSC_boss_jindo()
 {
-    RegisterZulGurubCreatureAI(boss_jindo);
-    RegisterZulGurubCreatureAI(npc_healing_ward);
-    RegisterZulGurubCreatureAI(npc_shade_of_jindo);
-    RegisterZulGurubCreatureAI(npc_brain_wash_totem);
-    RegisterSpellScript(spell_random_aggro);
-    RegisterSpellScript(spell_delusions_of_jindo);
+    new boss_jindo();
+    new npc_healing_ward();
+    new npc_shade_of_jindo();
 }

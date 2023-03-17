@@ -172,17 +172,17 @@ public:
 
         void JustReachedHome() override { me->setActive(false); }
 
-        void JustEngagedWith(Unit*  /*who*/) override
+        void EnterCombat(Unit*  /*who*/) override
         {
             if (m_pInstance)
                 m_pInstance->SetData(TYPE_AURIAYA, IN_PROGRESS);
 
-            events.ScheduleEvent(EVENT_TERRIFYING_SCREECH, 35s);
-            events.ScheduleEvent(EVENT_SONIC_SCREECH, 45s);
-            events.ScheduleEvent(EVENT_GUARDIAN_SWARM, 70s);
-            events.ScheduleEvent(EVENT_SUMMON_FERAL_DEFENDER, 60s);
-            events.ScheduleEvent(EVENT_SENTINEL_BLAST, 36s);
-            events.ScheduleEvent(EVENT_ENRAGE, 10min);
+            events.ScheduleEvent(EVENT_TERRIFYING_SCREECH, 35000);
+            events.ScheduleEvent(EVENT_SONIC_SCREECH, 45000);
+            events.ScheduleEvent(EVENT_GUARDIAN_SWARM, 70000);
+            events.ScheduleEvent(EVENT_SUMMON_FERAL_DEFENDER, 60000);
+            events.ScheduleEvent(EVENT_SENTINEL_BLAST, 36000);
+            events.ScheduleEvent(EVENT_ENRAGE, 600000);
 
             summons.DoZoneInCombat(NPC_SANCTUM_SENTRY);
 
@@ -212,7 +212,7 @@ public:
         void DoAction(int32 param) override
         {
             if (param == ACTION_FERAL_DEATH_WITH_STACK)
-                events.ScheduleEvent(EVENT_RESPAWN_FERAL_DEFENDER, 25s);
+                events.ScheduleEvent(EVENT_RESPAWN_FERAL_DEFENDER, 25000);
             else if (param == ACTION_FERAL_DEATH)
                 _nineLives = true;
         }
@@ -232,7 +232,7 @@ public:
                     Talk(EMOTE_DEFFENDER);
                     me->CastSpell(me, SPELL_ACTIVATE_FERAL_DEFENDER, true);
                     me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_INTERRUPT_CAST, true);
-                    events.ScheduleEvent(EVENT_REMOVE_IMMUNE, 3s);
+                    events.ScheduleEvent(EVENT_REMOVE_IMMUNE, 3000);
                     break;
                 case EVENT_REMOVE_IMMUNE:
                     me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_INTERRUPT_CAST, false);
@@ -240,19 +240,19 @@ public:
                 case EVENT_TERRIFYING_SCREECH:
                     Talk(EMOTE_FEAR);
                     me->CastSpell(me, SPELL_TERRIFYING_SCREECH, false);
-                    events.Repeat(35s);
+                    events.RepeatEvent(35000);
                     break;
                 case EVENT_SONIC_SCREECH:
                     me->CastSpell(me, SPELL_SONIC_SCREECH, false);
-                    events.Repeat(50s);
+                    events.RepeatEvent(50000);
                     break;
                 case EVENT_GUARDIAN_SWARM:
                     me->CastSpell(me->GetVictim(), SPELL_GUARDIAN_SWARM, false);
-                    events.Repeat(40s);
+                    events.RepeatEvent(40000);
                     break;
                 case EVENT_SENTINEL_BLAST:
                     me->CastSpell(me, SPELL_SENTINEL_BLAST, false);
-                    events.Repeat(35s);
+                    events.RepeatEvent(35000);
                     events.DelayEvents(5000, 0);
                     break;
                 case EVENT_RESPAWN_FERAL_DEFENDER:
@@ -289,7 +289,7 @@ public:
         uint32 _savagePounceTimer;
         uint32 _ripFleshTimer;
 
-        void JustEngagedWith(Unit*) override
+        void EnterCombat(Unit*) override
         {
             if (me->GetInstanceScript())
                 if (Creature* cr = ObjectAccessor::GetCreature(*me, me->GetInstanceScript()->GetGuidData(TYPE_AURIAYA)))
@@ -412,7 +412,7 @@ public:
 
             if (_feralRushTimer >= 6000)
             {
-                DoResetThreatList();
+                DoResetThreat();
                 if (!UpdateVictim())
                     return;
 

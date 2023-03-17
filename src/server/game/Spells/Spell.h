@@ -280,6 +280,24 @@ struct TriggeredByAuraSpellData
     uint32 tickNumber;
 };
 
+class WeaponSchoolDamageEvent
+{
+public:
+    WeaponSchoolDamageEvent(int32& damage, float& damageMultiplier, int32 amount, SpellEffIndex effIndex,
+        bool aura, int32 triggerSpellId, int32 targetType, std::vector<uint32>& aurasToRemove)
+        : Damage(damage), DamageMultiplier(damageMultiplier), Amount(amount), EffIndex(effIndex),
+        Aura(aura), TriggerSpellId(triggerSpellId), TargetType(targetType), AurasToRemove(aurasToRemove) { }
+
+    int32& Damage;
+    float& DamageMultiplier;
+    int32 Amount;
+    SpellEffIndex EffIndex;
+    bool Aura;
+    int32 TriggerSpellId;
+    int32 TargetType;
+    std::vector<uint32>& AurasToRemove;
+};
+
 class Spell
 {
     friend void Unit::SetCurrentCastedSpell(Spell* pSpell);
@@ -454,6 +472,7 @@ public:
     void TakeRunePower(bool didHit);
     void TakeReagents();
     void TakeCastItem();
+    void TakeCharges();
 
     SpellCastResult CheckCast(bool strict);
     SpellCastResult CheckPetCast(Unit* target);
@@ -589,7 +608,21 @@ public:
 
     [[nodiscard]] TriggerCastFlags GetTriggeredCastFlags() const { return _triggeredCastFlags; }
 
-    [[nodiscard]] SpellSchoolMask GetSpellSchoolMask() const { return m_spellSchoolMask; }
+    void ProcessWeaponDamageSchoolEffects(int32& damage, float& damageMultiplier, SpellEffIndex effIndex);
+    void AddDamagePercent(WeaponSchoolDamageEvent wsdEvent);
+    void CalcBlockValuePctAsDamage(WeaponSchoolDamageEvent wsdEvent);
+    void CalcArmorValuePctAsDamage(WeaponSchoolDamageEvent wsdEvent);
+    void CalcAttackPowerPctAsDamage(WeaponSchoolDamageEvent wsdEvent);
+    void TriggerCastSpell(WeaponSchoolDamageEvent wsdEvent);
+    void AddDamage(WeaponSchoolDamageEvent wsdEvent);
+    void RetainAuras(WeaponSchoolDamageEvent wsdEvent);
+    void ProcessExtraEffects(WeaponSchoolDamageEvent wsdEvent);
+    void AddDamagePerStack(WeaponSchoolDamageEvent wsdEvent);
+    void AddDamagePercentPerStack(WeaponSchoolDamageEvent wsdEvent);
+    void AddStacksToAura(WeaponSchoolDamageEvent wsdEvent);
+    void AddThornsToDamage(WeaponSchoolDamageEvent wsdEvent);
+
+    Unit* ProcessTarget(int32 targetType);
 
  protected:
     bool HasGlobalCooldown() const;
@@ -607,8 +640,6 @@ public:
     Unit* m_originalCaster;                             // cached pointer for m_originalCaster, updated at Spell::UpdatePointers()
 
     Spell** m_selfContainer;                            // pointer to our spell container (if applicable)
-
-    std::string GetDebugInfo() const;
 
     //Spell data
     SpellSchoolMask m_spellSchoolMask;                  // Spell school (can be overwrite for some spells (wand shoot for example)
@@ -743,7 +774,7 @@ public:
     {
         SpellInfo const* triggeredSpell;
         SpellInfo const* triggeredByAura;
-        uint8 triggeredByEffIdx;
+        // uint8 triggeredByEffIdx          This might be needed at a later stage - No need known for now
         int32 chance;
     };
 
@@ -753,7 +784,7 @@ public:
     HitTriggerSpellList m_hitTriggerSpells;
 
     // effect helpers
-    void SummonGuardian(uint32 i, uint32 entry, SummonPropertiesEntry const* properties, uint32 numSummons, bool personalSpawn);
+    void SummonGuardian(uint32 i, uint32 entry, SummonPropertiesEntry const* properties, uint32 numSummons);
     void CalculateJumpSpeeds(uint8 i, float dist, float& speedxy, float& speedz);
 
     SpellCastResult CanOpenLock(uint32 effIndex, uint32 lockid, SkillType& skillid, int32& reqSkillValue, int32& skillValue);
@@ -778,6 +809,8 @@ public:
     bool _spellTargetsSelected;
 
     ByteBuffer* m_effectExecuteData[MAX_SPELL_EFFECTS];
+
+    bool _retainEffectAuras;
 
 #ifdef MAP_BASED_RAND_GEN
     int32 irand(int32 min, int32 max)       { return int32 (m_caster->GetMap()->mtRand.randInt(max - min)) + min; }
@@ -840,6 +873,7 @@ namespace Acore
 }
 
 typedef void(Spell::*pEffect)(SpellEffIndex effIndex);
+typedef void(Spell::*wEffect)(WeaponSchoolDamageEvent wsdEvent);
 
 class ReflectEvent : public BasicEvent
 {

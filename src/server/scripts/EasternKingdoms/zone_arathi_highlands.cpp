@@ -107,7 +107,7 @@ public:
             summoned->AI()->AttackStart(me);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             Talk(SAY_AGGRO);
         }

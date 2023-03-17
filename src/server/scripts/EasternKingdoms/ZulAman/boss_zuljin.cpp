@@ -201,7 +201,7 @@ public:
             //me->SetByteValue(UNIT_FIELD_BYTES_2, 0, SHEATH_STATE_MELEE);
         }
 
-        void JustEngagedWith(Unit* /*who*/) override
+        void EnterCombat(Unit* /*who*/) override
         {
             instance->SetData(DATA_ZULJINEVENT, IN_PROGRESS);
 
@@ -313,7 +313,7 @@ public:
                 case 3:
                 case 4:
                     me->NearTeleportTo(CENTER_X, CENTER_Y, CENTER_Z, me->GetOrientation());
-                    DoResetThreatList();
+                    DoResetThreat();
                     me->SetUInt32Value(UNIT_VIRTUAL_ITEM_SLOT_ID, 0);
                     me->RemoveAurasDueToSpell(Transform[Phase].unaura);
                     DoCast(me, Transform[Phase].spell);
@@ -580,7 +580,7 @@ public:
 
         void Reset() override { }
 
-        void JustEngagedWith(Unit* /*target*/) override { }
+        void EnterCombat(Unit* /*target*/) override { }
 
         void SpellHit(Unit* caster, SpellInfo const* spell) override
         {

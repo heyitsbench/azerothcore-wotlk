@@ -132,13 +132,13 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
-            BossAI::JustEngagedWith(who);
+            BossAI::EnterCombat(who);
             Talk(SAY_AGGRO);
-            events.ScheduleEvent(EVENT_UNBALANCING_STRIKE, 20s);
-            events.ScheduleEvent(EVENT_DISRUPTING_SHOUT, 15s);
-            events.ScheduleEvent(EVENT_JAGGED_KNIFE, 10s);
+            events.ScheduleEvent(EVENT_UNBALANCING_STRIKE, 20000);
+            events.ScheduleEvent(EVENT_DISRUPTING_SHOUT, 15000);
+            events.ScheduleEvent(EVENT_JAGGED_KNIFE, 10000);
             summons.DoZoneInCombat();
         }
 
@@ -155,18 +155,18 @@ public:
             {
                 case EVENT_UNBALANCING_STRIKE:
                     me->CastSpell(me->GetVictim(), SPELL_UNBALANCING_STRIKE, false);
-                    events.Repeat(20s);
+                    events.RepeatEvent(20000);
                     break;
                 case EVENT_DISRUPTING_SHOUT:
                     me->CastSpell(me, RAID_MODE(SPELL_DISRUPTING_SHOUT_10, SPELL_DISRUPTING_SHOUT_25), false);
-                    events.Repeat(15s);
+                    events.RepeatEvent(15000);
                     break;
                 case EVENT_JAGGED_KNIFE:
                     if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0, 45.0f))
                     {
                         me->CastSpell(target, SPELL_JAGGED_KNIFE, false);
                     }
-                    events.Repeat(10s);
+                    events.RepeatEvent(10000);
                     break;
             }
             DoMeleeAttackIfReady();
@@ -203,7 +203,7 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit* who) override
+        void EnterCombat(Unit* who) override
         {
             if (Creature* cr = me->FindNearestCreature(NPC_RAZUVIOUS, 100.0f))
             {

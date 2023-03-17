@@ -22,13 +22,10 @@
 #include "CharacterCache.h"
 #include "Chat.h"
 #include "Common.h"
-#include "CreatureAIFactory.h"
 #include "Config.h"
 #include "Containers.h"
 #include "DatabaseEnv.h"
-#include "DBCStructure.h"
 #include "DisableMgr.h"
-#include "GameObjectAIFactory.h"
 #include "GameEventMgr.h"
 #include "GameTime.h"
 #include "GossipDef.h"
@@ -54,7 +51,6 @@
 #include "World.h"
 #include "StringConvert.h"
 #include "Tokenize.h"
-#include <boost/algorithm/string.hpp>
 
 ScriptMapMap sSpellScripts;
 ScriptMapMap sEventScripts;
@@ -190,7 +186,7 @@ std::string GetScriptCommandName(ScriptCommands command)
         default:
             {
                 char sz[32];
-                snprintf(sz, sizeof(sz), "Unknown command: %d", command);
+                sprintf(sz, "Unknown command: %d", command);
                 res = sz;
                 break;
             }
@@ -201,64 +197,8 @@ std::string GetScriptCommandName(ScriptCommands command)
 std::string ScriptInfo::GetDebugInfo() const
 {
     char sz[256];
-    snprintf(sz, sizeof(sz), "%s ('%s' script id: %u)", GetScriptCommandName(command).c_str(), GetScriptsTableNameByType(type).c_str(), id);
+    sprintf(sz, "%s ('%s' script id: %u)", GetScriptCommandName(command).c_str(), GetScriptsTableNameByType(type).c_str(), id);
     return std::string(sz);
-}
-
-/**
- * @name ReservedNames
- * @brief Checks NamesReserved.dbc for reserved names
- *
- * @param name Name to check for match in NamesReserved.dbc
- * @return true/false
- */
-bool ReservedNames(std::wstring& name)
-{
-    for (NamesReservedEntry const* reservedStore : sNamesReservedStore)
-    {
-        std::wstring PatternString;
-
-        Utf8toWStr(reservedStore->Pattern, PatternString);
-
-        boost::algorithm::replace_all(PatternString, "\\<", "");
-        boost::algorithm::replace_all(PatternString, "\\>", "");
-
-        int stringCompare = name.compare(PatternString);
-        if (stringCompare == 0)
-        {
-            return true;
-        }
-    }
-
-    return false;
-};
-
-/**
- * @name ProfanityNames
- * @brief Checks NamesProfanity.dbc for reserved names
- *
- * @param name Name to check for match in NamesProfanity.dbc
- * @return true/false
- */
-bool ProfanityNames(std::wstring& name)
-{
-    for (NamesProfanityEntry const* profanityStore : sNamesProfanityStore)
-    {
-        std::wstring PatternString;
-
-        Utf8toWStr(profanityStore->Pattern, PatternString);
-
-        boost::algorithm::replace_all(PatternString, "\\<", "");
-        boost::algorithm::replace_all(PatternString, "\\>", "");
-
-        int stringCompare = name.compare(PatternString);
-        if (stringCompare == 0)
-        {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 bool normalizePlayerName(std::string& name)
@@ -398,8 +338,6 @@ ObjectMgr::~ObjectMgr()
     for (CacheVendorItemContainer::iterator itr = _cacheVendorItemStore.begin(); itr != _cacheVendorItemStore.end(); ++itr)
         itr->second.Clear();
 
-    _cacheTrainerSpellStore.clear();
-
     for (DungeonEncounterContainer::iterator itr = _dungeonEncounterStore.begin(); itr != _dungeonEncounterStore.end(); ++itr)
         for (DungeonEncounterList::iterator encounterItr = itr->second.begin(); encounterItr != itr->second.end(); ++encounterItr)
             delete *encounterItr;
@@ -472,7 +410,7 @@ void ObjectMgr::LoadCreatureLocales()
         AddLocaleString(fields[3].Get<std::string>(), locale, data.Title);
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Creature Locale Strings in {} ms", (unsigned long)_creatureLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} Creature Locale strings in {} ms", (unsigned long)_creatureLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadGossipMenuItemsLocales()
@@ -503,47 +441,7 @@ void ObjectMgr::LoadGossipMenuItemsLocales()
         AddLocaleString(fields[4].Get<std::string>(), locale, data.BoxText);
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Gossip Menu Option Locale Strings in {} ms", (uint32)_gossipMenuItemsLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
-}
-
-void ObjectMgr::LoadPetNamesLocales()
-{
-    uint32 oldMSTime = getMSTime();
-
-    //                                                  0     1      2    3
-    QueryResult result = WorldDatabase.Query("SELECT Locale, Word, Entry, Half FROM pet_name_generation_locale");
-
-    if (!result)
-    {
-        LOG_WARN("server.loading", ">> Loaded 0 pet name locales parts. DB table `pet_name_generation_locale` is empty!");
-        LOG_INFO("server.loading", " ");
-        return;
-    }
-
-    uint32 count = 0;
-
-    do
-    {
-        Field* fields = result->Fetch();
-        LocaleConstant locale = GetLocaleByName(fields[0].Get<std::string>());
-        std::string word = fields[1].Get<std::string>();
-
-        uint32 entry = fields[2].Get<uint32>();
-        bool half = fields[3].Get<bool>();
-        std::pair<uint32, LocaleConstant> pairkey = std::make_pair(entry, locale);
-        if (half)
-        {
-            _petHalfLocaleName1[pairkey].push_back(word);
-        }
-        else
-        {
-            _petHalfLocaleName0[pairkey].push_back(word);
-        }
-        ++count;
-    } while (result->NextRow());
-
-    LOG_INFO("server.loading", ">> Loaded {} Pet Name Locales Parts in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
-    LOG_INFO("server.loading", " ");
+    LOG_INFO("server.loading", ">> Loaded {} Gossip Menu Option Locale strings in {} ms", (uint32)_gossipMenuItemsLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadPointOfInterestLocales()
@@ -572,7 +470,7 @@ void ObjectMgr::LoadPointOfInterestLocales()
         AddLocaleString(fields[2].Get<std::string>(), locale, data.Name);
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Points Of Interest Locale Strings in {} ms", (uint32)_pointOfInterestLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} Points Of Interest Locale strings in {} ms", (uint32)_pointOfInterestLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadCreatureTemplates()
@@ -585,13 +483,13 @@ void ObjectMgr::LoadCreatureTemplates()
                          "modelid4, name, subname, IconName, gossip_menu_id, minlevel, maxlevel, exp, faction, npcflag, speed_walk, speed_run, speed_swim, speed_flight, "
 //                        23               24     25      26         27              28              29               30            31             32          33          34
                          "detection_range, scale, `rank`, dmgschool, DamageModifier, BaseAttackTime, RangeAttackTime, BaseVariance, RangeVariance, unit_class, unit_flags, unit_flags2, "
-//                        35            36      37            38             39             40            41
-                         "dynamicflags, family, trainer_type, trainer_spell, trainer_class, trainer_race, type, "
-//                        42          43      44              45        46              47         48       49       50      51
+//                        35            36      37
+                         "dynamicflags, family, type, "
+//                        38          39      40              41        42              43         44       45       46      47
                          "type_flags, lootid, pickpocketloot, skinloot, PetSpellDataId, VehicleId, mingold, maxgold, AIName, MovementType, "
-//                        52          53        54          55          56         57          58                         59           60              61            62             63
+//                        48          49        50          51          52         53          54                         55           56              57            58             59
                          "ctm.Ground, ctm.Swim, ctm.Flight, ctm.Rooted, ctm.Chase, ctm.Random, ctm.InteractionPauseTimer, HoverHeight, HealthModifier, ManaModifier, ArmorModifier, ExperienceModifier, "
-//                        64            65          66           67                    68                        69           70
+//                        61            62          63           64                    65                        66           67
                          "RacialLeader, movementId, RegenHealth, mechanic_immune_mask, spell_school_immune_mask, flags_extra, ScriptName "
                          "FROM creature_template ct LEFT JOIN creature_template_movement ctm ON ct.entry = ctm.CreatureId;");
 
@@ -636,7 +534,7 @@ void ObjectMgr::LoadCreatureTemplates()
         itr->second.InitializeQueryData();
     }
 
-    LOG_INFO("server.loading", ">> Loaded {} Creature Definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} creature definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -689,15 +587,11 @@ void ObjectMgr::LoadCreatureTemplate(Field* fields)
     creatureTemplate.unit_flags2      = fields[34].Get<uint32>();
     creatureTemplate.dynamicflags     = fields[35].Get<uint32>();
     creatureTemplate.family           = uint32(fields[36].Get<uint8>());
-    creatureTemplate.trainer_type     = uint32(fields[37].Get<uint8>());
-    creatureTemplate.trainer_spell    = fields[38].Get<uint32>();
-    creatureTemplate.trainer_class    = uint32(fields[39].Get<uint8>());
-    creatureTemplate.trainer_race     = uint32(fields[40].Get<uint8>());
-    creatureTemplate.type             = uint32(fields[41].Get<uint8>());
-    creatureTemplate.type_flags       = fields[42].Get<uint32>();
-    creatureTemplate.lootid           = fields[43].Get<uint32>();
-    creatureTemplate.pickpocketLootId = fields[44].Get<uint32>();
-    creatureTemplate.SkinLootId       = fields[45].Get<uint32>();
+    creatureTemplate.type             = uint32(fields[37].Get<uint8>());
+    creatureTemplate.type_flags       = fields[38].Get<uint32>();
+    creatureTemplate.lootid           = fields[39].Get<uint32>();
+    creatureTemplate.pickpocketLootId = fields[40].Get<uint32>();
+    creatureTemplate.SkinLootId       = fields[41].Get<uint32>();
 
     for (uint8 i = SPELL_SCHOOL_HOLY; i < MAX_SPELL_SCHOOL; ++i)
     {
@@ -709,49 +603,49 @@ void ObjectMgr::LoadCreatureTemplate(Field* fields)
         creatureTemplate.spells[i] = 0;
     }
 
-    creatureTemplate.PetSpellDataId = fields[46].Get<uint32>();
-    creatureTemplate.VehicleId      = fields[47].Get<uint32>();
-    creatureTemplate.mingold        = fields[48].Get<uint32>();
-    creatureTemplate.maxgold        = fields[49].Get<uint32>();
-    creatureTemplate.AIName         = fields[50].Get<std::string>();
-    creatureTemplate.MovementType   = uint32(fields[51].Get<uint8>());
+    creatureTemplate.PetSpellDataId = fields[42].Get<uint32>();
+    creatureTemplate.VehicleId      = fields[43].Get<uint32>();
+    creatureTemplate.mingold        = fields[44].Get<uint32>();
+    creatureTemplate.maxgold        = fields[45].Get<uint32>();
+    creatureTemplate.AIName         = fields[46].Get<std::string>();
+    creatureTemplate.MovementType   = uint32(fields[47].Get<uint8>());
+    if (!fields[48].IsNull())
+    {
+        creatureTemplate.Movement.Ground = static_cast<CreatureGroundMovementType>(fields[48].Get<uint8>());
+    }
+
+    creatureTemplate.Movement.Swim = fields[49].Get<bool>();
+    if (!fields[50].IsNull())
+    {
+        creatureTemplate.Movement.Flight = static_cast<CreatureFlightMovementType>(fields[50].Get<uint8>());
+    }
+
+    creatureTemplate.Movement.Rooted = fields[51].Get<bool>();
     if (!fields[52].IsNull())
     {
-        creatureTemplate.Movement.Ground = static_cast<CreatureGroundMovementType>(fields[52].Get<uint8>());
+        creatureTemplate.Movement.Chase = static_cast<CreatureChaseMovementType>(fields[52].Get<uint8>());
     }
-
-    creatureTemplate.Movement.Swim = fields[53].Get<bool>();
+    if (!fields[53].IsNull())
+    {
+        creatureTemplate.Movement.Random = static_cast<CreatureRandomMovementType>(fields[53].Get<uint8>());
+    }
     if (!fields[54].IsNull())
     {
-        creatureTemplate.Movement.Flight = static_cast<CreatureFlightMovementType>(fields[54].Get<uint8>());
+        creatureTemplate.Movement.InteractionPauseTimer = fields[54].Get<uint32>();
     }
 
-    creatureTemplate.Movement.Rooted = fields[55].Get<bool>();
-    if (!fields[56].IsNull())
-    {
-        creatureTemplate.Movement.Chase = static_cast<CreatureChaseMovementType>(fields[56].Get<uint8>());
-    }
-    if (!fields[57].IsNull())
-    {
-        creatureTemplate.Movement.Random = static_cast<CreatureRandomMovementType>(fields[57].Get<uint8>());
-    }
-    if (!fields[58].IsNull())
-    {
-        creatureTemplate.Movement.InteractionPauseTimer = fields[58].Get<uint32>();
-    }
-
-    creatureTemplate.HoverHeight           = fields[59].Get<float>();
-    creatureTemplate.ModHealth             = fields[60].Get<float>();
-    creatureTemplate.ModMana               = fields[61].Get<float>();
-    creatureTemplate.ModArmor              = fields[62].Get<float>();
-    creatureTemplate.ModExperience         = fields[63].Get<float>();
-    creatureTemplate.RacialLeader          = fields[64].Get<bool>();
-    creatureTemplate.movementId            = fields[65].Get<uint32>();
-    creatureTemplate.RegenHealth           = fields[66].Get<bool>();
-    creatureTemplate.MechanicImmuneMask    = fields[67].Get<uint32>();
-    creatureTemplate.SpellSchoolImmuneMask = fields[68].Get<uint8>();
-    creatureTemplate.flags_extra           = fields[69].Get<uint32>();
-    creatureTemplate.ScriptID              = GetScriptId(fields[70].Get<std::string>());
+    creatureTemplate.HoverHeight           = fields[55].Get<float>();
+    creatureTemplate.ModHealth             = fields[56].Get<float>();
+    creatureTemplate.ModMana               = fields[57].Get<float>();
+    creatureTemplate.ModArmor              = fields[58].Get<float>();
+    creatureTemplate.ModExperience         = fields[59].Get<float>();
+    creatureTemplate.RacialLeader          = fields[60].Get<bool>();
+    creatureTemplate.movementId            = fields[61].Get<uint32>();
+    creatureTemplate.RegenHealth           = fields[62].Get<bool>();
+    creatureTemplate.MechanicImmuneMask    = fields[63].Get<uint32>();
+    creatureTemplate.SpellSchoolImmuneMask = fields[64].Get<uint8>();
+    creatureTemplate.flags_extra           = fields[65].Get<uint32>();
+    creatureTemplate.ScriptID              = GetScriptId(fields[66].Get<std::string>());
 }
 
 void ObjectMgr::LoadCreatureTemplateResistances()
@@ -796,7 +690,7 @@ void ObjectMgr::LoadCreatureTemplateResistances()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Creature Template Resistances in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} creature template resistances in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -842,7 +736,7 @@ void ObjectMgr::LoadCreatureTemplateSpells()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Creature Template Spells in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} creature template spells in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -935,23 +829,8 @@ void ObjectMgr::LoadCreatureTemplateAddons()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Creature Template Addons in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} creature template addons in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
-}
-
-/**
- * @brief Load config option Creatures.CustomIDs into Store
- */
-void ObjectMgr::LoadCreatureCustomIDs()
-{
-    // Hack for modules
-    std::string stringCreatureIds = sConfigMgr->GetOption<std::string>("Creatures.CustomIDs", "");
-    std::vector<std::string_view> CustomCreatures = Acore::Tokenize(stringCreatureIds, ',', false);
-
-    for (auto itr : CustomCreatures)
-    {
-        _creatureCustomIDsStore.push_back(Acore::StringTo<uint32>(itr).value());
-    }
 }
 
 void ObjectMgr::CheckCreatureTemplate(CreatureTemplate const* cInfo)
@@ -1033,29 +912,6 @@ void ObjectMgr::CheckCreatureTemplate(CreatureTemplate const* cInfo)
                              cInfo->Entry, cInfo->family, diff + 1, cInfo->DifficultyEntry[diff], difficultyInfo->family);
         }
 
-        if (cInfo->trainer_class != difficultyInfo->trainer_class)
-        {
-            LOG_ERROR("sql.sql", "Creature (Entry: {}) has different `trainer_class` in difficulty {} mode (Entry: {}).", cInfo->Entry, diff + 1, cInfo->DifficultyEntry[diff]);
-            continue;
-        }
-
-        if (cInfo->trainer_race != difficultyInfo->trainer_race)
-        {
-            LOG_ERROR("sql.sql", "Creature (Entry: {}) has different `trainer_race` in difficulty {} mode (Entry: {}).", cInfo->Entry, diff + 1, cInfo->DifficultyEntry[diff]);
-            continue;
-        }
-
-        if (cInfo->trainer_type != difficultyInfo->trainer_type)
-        {
-            LOG_ERROR("sql.sql", "Creature (Entry: {}) has different `trainer_type` in difficulty {} mode (Entry: {}).", cInfo->Entry, diff + 1, cInfo->DifficultyEntry[diff]);
-            continue;
-        }
-
-        if (cInfo->trainer_spell != difficultyInfo->trainer_spell)
-        {
-            LOG_ERROR("sql.sql", "Creature (Entry: {}) has different `trainer_spell` in difficulty {} mode (Entry: {}).", cInfo->Entry, diff + 1, cInfo->DifficultyEntry[diff]);
-            continue;
-        }
 
         if (cInfo->type != difficultyInfo->type)
         {
@@ -1092,12 +948,6 @@ void ObjectMgr::CheckCreatureTemplate(CreatureTemplate const* cInfo)
         _hasDifficultyEntries[diff].insert(cInfo->Entry);
         _difficultyEntries[diff].insert(cInfo->DifficultyEntry[diff]);
         ok = true;
-    }
-
-    if (!cInfo->AIName.empty() && !sCreatureAIRegistry->HasItem(cInfo->AIName))
-    {
-        LOG_ERROR("sql.sql", "Creature (Entry: {}) has non-registered `AIName` '{}' set, removing", cInfo->Entry, cInfo->AIName);
-        const_cast<CreatureTemplate*>(cInfo)->AIName.clear();
     }
 
     FactionTemplateEntry const* factionTemplate = sFactionTemplateStore.LookupEntry(cInfo->faction);
@@ -1204,9 +1054,6 @@ void ObjectMgr::CheckCreatureTemplate(CreatureTemplate const* cInfo)
     if (cInfo->RangeAttackTime == 0)
         const_cast<CreatureTemplate*>(cInfo)->RangeAttackTime = BASE_ATTACK_TIME;
 
-    if ((cInfo->npcflag & UNIT_NPC_FLAG_TRAINER) && cInfo->trainer_type >= MAX_TRAINER_TYPE)
-        LOG_ERROR("sql.sql", "Creature (Entry: {}) has wrong trainer type {}.", cInfo->Entry, cInfo->trainer_type);
-
     if (cInfo->speed_walk == 0.0f)
     {
         LOG_ERROR("sql.sql", "Creature (Entry: {}) has wrong value ({}) in speed_walk, set to 1.", cInfo->Entry, cInfo->speed_walk);
@@ -1296,7 +1143,15 @@ void ObjectMgr::CheckCreatureTemplate(CreatureTemplate const* cInfo)
     const_cast<CreatureTemplate*>(cInfo)->DamageModifier *= Creature::_GetDamageMod(cInfo->rank);
 
     // Hack for modules
-    for (auto itr : _creatureCustomIDsStore)
+    std::vector<uint32> CustomCreatures;
+    std::string stringCreatureIds(sConfigMgr->GetOption<std::string>("Creatures.CustomIDs", ""));
+    for (std::string_view id : Acore::Tokenize(stringCreatureIds, ',', false))
+    {
+        uint32 entry = Acore::StringTo<uint32>(id).value_or(0);
+        CustomCreatures.emplace_back(entry);
+    }
+
+    for (auto const& itr : CustomCreatures)
     {
         if (cInfo->Entry == itr)
             return;
@@ -1436,7 +1291,7 @@ void ObjectMgr::LoadCreatureAddons()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Creature Addons in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} creature addons in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -1461,7 +1316,7 @@ void ObjectMgr::LoadGameObjectAddons()
 
         ObjectGuid::LowType guid = fields[0].Get<uint32>();
 
-        const GameObjectData* goData = GetGameObjectData(guid);
+        const GameObjectData* goData = GetGOData(guid);
         if (!goData)
         {
             LOG_ERROR("sql.sql", "GameObject (GUID: {}) does not exist but has a record in `gameobject_addon`", guid);
@@ -1488,7 +1343,7 @@ void ObjectMgr::LoadGameObjectAddons()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Gameobject Addons in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} gameobject addons in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -1624,7 +1479,7 @@ void ObjectMgr::LoadEquipmentTemplates()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Equipment Templates in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} equipment templates in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -1701,8 +1556,7 @@ void ObjectMgr::LoadCreatureMovementOverrides()
         CheckCreatureMovement("creature_movement_override", spawnId, movement);
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Movement Overrides in {} ms", _creatureMovementOverrides.size(), GetMSTimeDiffToNow(oldMSTime));
-    LOG_INFO("server.loading", " ");
+    LOG_INFO("server.loading", ">> Loaded {} movement overrides in {} ms", _creatureMovementOverrides.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 CreatureModelInfo const* ObjectMgr::GetCreatureModelInfo(uint32 modelId) const
@@ -1818,7 +1672,7 @@ void ObjectMgr::LoadCreatureModelInfo()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Creature Model Based Info in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} creature model based info in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -1896,7 +1750,7 @@ void ObjectMgr::LoadLinkedRespawn()
                         break;
                     }
 
-                    const GameObjectData* master = GetGameObjectData(linkedGuidLow);
+                    const GameObjectData* master = GetGOData(linkedGuidLow);
                     if (!master)
                     {
                         LOG_ERROR("sql.sql", "LinkedRespawn: Gameobject (linkedGuid) {} not found in gameobject table", linkedGuidLow);
@@ -1925,7 +1779,7 @@ void ObjectMgr::LoadLinkedRespawn()
                 }
             case GO_TO_GO:
                 {
-                    const GameObjectData* slave = GetGameObjectData(guidLow);
+                    const GameObjectData* slave = GetGOData(guidLow);
                     if (!slave)
                     {
                         LOG_ERROR("sql.sql", "LinkedRespawn: Gameobject (guid) {} not found in gameobject table", guidLow);
@@ -1933,7 +1787,7 @@ void ObjectMgr::LoadLinkedRespawn()
                         break;
                     }
 
-                    const GameObjectData* master = GetGameObjectData(linkedGuidLow);
+                    const GameObjectData* master = GetGOData(linkedGuidLow);
                     if (!master)
                     {
                         LOG_ERROR("sql.sql", "LinkedRespawn: Gameobject (linkedGuid) {} not found in gameobject table", linkedGuidLow);
@@ -1962,7 +1816,7 @@ void ObjectMgr::LoadLinkedRespawn()
                 }
             case GO_TO_CREATURE:
                 {
-                    const GameObjectData* slave = GetGameObjectData(guidLow);
+                    const GameObjectData* slave = GetGOData(guidLow);
                     if (!slave)
                     {
                         LOG_ERROR("sql.sql", "LinkedRespawn: Gameobject (guid) {} not found in gameobject table", guidLow);
@@ -2003,7 +1857,7 @@ void ObjectMgr::LoadLinkedRespawn()
             _linkedRespawnStore[guid] = linkedGuid;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Linked Respawns In {} ms", uint64(_linkedRespawnStore.size()), GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} linked respawns in {} ms", uint64(_linkedRespawnStore.size()), GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -2136,7 +1990,7 @@ void ObjectMgr::LoadTempSummons()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Temporary Summons in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} temp summons in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -2276,11 +2130,6 @@ void ObjectMgr::LoadCreatures()
                 LOG_ERROR("sql.sql", "Table `creature` have creature (SpawnId: {} Entries: {}, {}, {}) with a `creature_template`.`flags_extra` in one or more entries including CREATURE_FLAG_EXTRA_INSTANCE_BIND but creature are not in instance.",
                     spawnId, data.id1, data.id2, data.id3);
         }
-        if (data.movementType >= MAX_DB_MOTION_TYPE)
-        {
-            LOG_ERROR("sql.sql", "Table `creature` has creature (SpawnId: {} Entries: {}, {}, {}) with wrong movement generator type ({}), ignored and set to IDLE.", spawnId, data.id1, data.id2, data.id3, data.movementType);
-            data.movementType = IDLE_MOTION_TYPE;
-        }
         if (data.wander_distance < 0.0f)
         {
             LOG_ERROR("sql.sql", "Table `creature` have creature (SpawnId: {} Entries: {}, {}, {}) with `wander_distance`< 0, set to 0.", spawnId, data.id1, data.id2, data.id3);
@@ -2331,7 +2180,7 @@ void ObjectMgr::LoadCreatures()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Creatures in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} creatures in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -2637,7 +2486,7 @@ void ObjectMgr::LoadGameobjects()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Gameobjects in {} ms", (unsigned long)_gameObjectDataStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} gameobjects in {} ms", (unsigned long)_gameObjectDataStore.size(), GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -2694,7 +2543,7 @@ void ObjectMgr::LoadItemLocales()
         AddLocaleString(fields[3].Get<std::string>(), locale, data.Description);
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Item Locale Strings in {} ms", (uint32)_itemLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} Item Locale strings in {} ms", (uint32)_itemLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadItemTemplates()
@@ -2784,7 +2633,7 @@ void ObjectMgr::LoadItemTemplates()
         for (uint8 i = 0; i < itemTemplate.StatsCount; ++i)
         {
             itemTemplate.ItemStat[i].ItemStatType  = uint32(fields[28 + i * 2].Get<uint8>());
-            itemTemplate.ItemStat[i].ItemStatValue = fields[29 + i * 2].Get<int32>();
+            itemTemplate.ItemStat[i].ItemStatValue = int32(fields[29 + i * 2].Get<int16>());
         }
 
         itemTemplate.ScalingStatDistribution = uint32(fields[48].Get<uint16>());
@@ -2797,13 +2646,13 @@ void ObjectMgr::LoadItemTemplates()
             itemTemplate.Damage[i].DamageType = uint32(fields[52 + i * 3].Get<uint8>());
         }
 
-        itemTemplate.Armor          = fields[56].Get<uint32>();
-        itemTemplate.HolyRes        = fields[57].Get<int32>();
-        itemTemplate.FireRes        = fields[58].Get<int32>();
-        itemTemplate.NatureRes      = fields[59].Get<int32>();
-        itemTemplate.FrostRes       = fields[60].Get<int32>();
-        itemTemplate.ShadowRes      = fields[61].Get<int32>();
-        itemTemplate.ArcaneRes      = fields[62].Get<int32>();
+        itemTemplate.Armor          = uint32(fields[56].Get<uint16>());
+        itemTemplate.HolyRes        = uint32(fields[57].Get<uint8>());
+        itemTemplate.FireRes        = uint32(fields[58].Get<uint8>());
+        itemTemplate.NatureRes      = uint32(fields[59].Get<uint8>());
+        itemTemplate.FrostRes       = uint32(fields[60].Get<uint8>());
+        itemTemplate.ShadowRes      = uint32(fields[61].Get<uint8>());
+        itemTemplate.ArcaneRes      = uint32(fields[62].Get<uint8>());
         itemTemplate.Delay          = uint32(fields[63].Get<uint16>());
         itemTemplate.AmmoType       = uint32(fields[64].Get<uint8>());
         itemTemplate.RangedModRange = fields[65].Get<float>();
@@ -3280,7 +3129,7 @@ void ObjectMgr::LoadItemTemplates()
     for (std::set<uint32>::const_iterator itr = notFoundOutfit.begin(); itr != notFoundOutfit.end(); ++itr)
         LOG_ERROR("sql.sql", "Item (Entry: {}) does not exist in `item_template` but is referenced in `CharStartOutfit.dbc`", *itr);
 
-    LOG_INFO("server.loading", ">> Loaded {} Item Templates in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} item templates in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -3314,7 +3163,7 @@ void ObjectMgr::LoadItemSetNameLocales()
         AddLocaleString(fields[2].Get<std::string>(), locale, data.Name);
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Item Set Name Locale Strings in {} ms", uint32(_itemSetNameLocaleStore.size()), GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} Item Set Name Locale strings in {} ms", uint32(_itemSetNameLocaleStore.size()), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadItemSetNames()
@@ -3397,7 +3246,7 @@ void ObjectMgr::LoadItemSetNames()
         }
     }
 
-    LOG_INFO("server.loading", ">> Loaded {} Item Set Names in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} item set names in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -3554,14 +3403,14 @@ void ObjectMgr::LoadPetLevelInfo()
         // data for level 1 stored in [0] array element, ...
         PetLevelInfo* pLevelInfo = &pInfoMapEntry[current_level - 1];
 
-        pLevelInfo->health = fields[2].Get<uint32>();
-        pLevelInfo->mana   = fields[3].Get<uint32>();
+        pLevelInfo->health = fields[2].Get<uint16>();
+        pLevelInfo->mana   = fields[3].Get<uint16>();
         pLevelInfo->armor  = fields[9].Get<uint32>();
-        pLevelInfo->min_dmg = fields[10].Get<uint32>();
-        pLevelInfo->max_dmg = fields[11].Get<uint32>();
-        for (uint8 i = 0; i < MAX_STATS; i++)
+        pLevelInfo->min_dmg = fields[10].Get<uint16>();
+        pLevelInfo->max_dmg = fields[11].Get<uint16>();
+        for (int i = 0; i < MAX_STATS; i++)
         {
-            pLevelInfo->stats[i] = fields[i + 4].Get<uint32>();
+            pLevelInfo->stats[i] = fields[i + 4].Get<uint16>();
         }
 
         ++count;
@@ -3590,7 +3439,7 @@ void ObjectMgr::LoadPetLevelInfo()
         }
     }
 
-    LOG_INFO("server.loading", ">> Loaded {} Level Pet Stats Definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} level pet stats definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -3723,7 +3572,7 @@ void ObjectMgr::LoadPlayerInfo()
                 ++count;
             } while (result->NextRow());
 
-            LOG_INFO("server.loading", ">> Loaded {} Player Create Definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+            LOG_INFO("server.loading", ">> Loaded {} player create definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
             LOG_INFO("server.loading", " ");
         }
     }
@@ -3737,7 +3586,7 @@ void ObjectMgr::LoadPlayerInfo()
 
         if (!result)
         {
-            LOG_WARN("server.loading", ">> Loaded 0 Custom Player Create Items. DB Table `playercreateinfo_item` Is Empty.");
+            LOG_WARN("server.loading", ">> Loaded 0 custom player create items. DB table `playercreateinfo_item` is empty.");
             LOG_INFO("server.loading", " ");
         }
         else
@@ -3794,7 +3643,7 @@ void ObjectMgr::LoadPlayerInfo()
                 ++count;
             } while (result->NextRow());
 
-            LOG_INFO("server.loading", ">> Loaded {} Custom Player Create Items in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+            LOG_INFO("server.loading", ">> Loaded {} custom player create items in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
             LOG_INFO("server.loading", " ");
         }
     }
@@ -3808,7 +3657,7 @@ void ObjectMgr::LoadPlayerInfo()
 
         if (!result)
         {
-            LOG_WARN("server.loading", ">> Loaded 0 Player Create Skills. DB Table `playercreateinfo_skills` Is Empty.");
+            LOG_WARN("server.loading", ">> Loaded 0 player create skills. DB table `playercreateinfo_skills` is empty.");
         }
         else
         {
@@ -3869,8 +3718,7 @@ void ObjectMgr::LoadPlayerInfo()
                 }
             } while (result->NextRow());
 
-            LOG_INFO("server.loading", ">> Loaded {} Player Create Skills in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
-            LOG_INFO("server.loading", " ");
+            LOG_INFO("server.loading", ">> Loaded {} player create skills in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
         }
     }
 
@@ -3927,7 +3775,7 @@ void ObjectMgr::LoadPlayerInfo()
                 }
             } while (result->NextRow());
 
-            LOG_INFO("server.loading", ">> Loaded {} Custom Player Create Spells in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+            LOG_INFO("server.loading", ">> Loaded {} custom player create spells in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
             LOG_INFO("server.loading", " ");
         }
     }
@@ -3941,7 +3789,7 @@ void ObjectMgr::LoadPlayerInfo()
 
         if (!result)
         {
-            LOG_WARN("server.loading", ">> Loaded 0 Player Create Cast Spells. DB Table `playercreateinfo_cast_spell` Is Empty.");
+            LOG_WARN("server.loading", ">> Loaded 0 player create cast spells. DB table `playercreateinfo_cast_spell` is empty.");
         }
         else
         {
@@ -3985,8 +3833,7 @@ void ObjectMgr::LoadPlayerInfo()
                 }
             } while (result->NextRow());
 
-            LOG_INFO("server.loading", ">> Loaded {} Player Create Cast Spells in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
-            LOG_INFO("server.loading", " ");
+            LOG_INFO("server.loading", ">> Loaded {} player create cast spells in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
         }
     }
 
@@ -4000,7 +3847,7 @@ void ObjectMgr::LoadPlayerInfo()
 
         if (!result)
         {
-            LOG_WARN("server.loading", ">> Loaded 0 Player Create Actions. DB Table `playercreateinfo_action` Is Empty.");
+            LOG_WARN("server.loading", ">> Loaded 0 player create actions. DB table `playercreateinfo_action` is empty.");
             LOG_INFO("server.loading", " ");
         }
         else
@@ -4031,7 +3878,7 @@ void ObjectMgr::LoadPlayerInfo()
                 ++count;
             } while (result->NextRow());
 
-            LOG_INFO("server.loading", ">> Loaded {} Player Create Actions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+            LOG_INFO("server.loading", ">> Loaded {} player create actions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
             LOG_INFO("server.loading", " ");
         }
     }
@@ -4081,8 +3928,8 @@ void ObjectMgr::LoadPlayerInfo()
 
             PlayerClassLevelInfo& levelInfo = info->levelInfo[current_level - 1];
 
-            levelInfo.basehealth = fields[2].Get<uint32>();
-            levelInfo.basemana   = fields[3].Get<uint32>();
+            levelInfo.basehealth = fields[2].Get<uint16>();
+            levelInfo.basemana   = fields[3].Get<uint16>();
 
             ++count;
         } while (result->NextRow());
@@ -4096,72 +3943,40 @@ void ObjectMgr::LoadPlayerInfo()
 
             PlayerClassInfo* pClassInfo = _playerClassInfo[class_];
 
-            // fatal error if no initial level data
-            if (!pClassInfo->levelInfo || (pClassInfo->levelInfo[sWorld->getIntConfig(CONFIG_START_PLAYER_LEVEL) - 1].basehealth == 0 && class_ != CLASS_DEATH_KNIGHT) || (pClassInfo->levelInfo[sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL) - 1].basehealth == 0 && class_ == CLASS_DEATH_KNIGHT))
+            // fatal error if no level 1 data
+            if (!pClassInfo->levelInfo || pClassInfo->levelInfo[0].basehealth == 0)
             {
-                LOG_ERROR("sql.sql", "Class {} initial level does not have health/mana data!", class_);
+                LOG_ERROR("sql.sql", "Class {} Level 1 does not have health/mana data!", class_);
                 exit(1);
             }
 
             // fill level gaps
             for (uint8 level = 1; level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL); ++level)
             {
-                if ((pClassInfo->levelInfo[level].basehealth == 0 && class_ != CLASS_DEATH_KNIGHT) || (level >= sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL) && pClassInfo->levelInfo[level].basehealth == 0 && class_ == CLASS_DEATH_KNIGHT))
+                if (pClassInfo->levelInfo[level].basehealth == 0)
                 {
-                    LOG_ERROR("sql.sql", "Class {} level {} does not have health/mana data. Using stats data of level {}.", class_, level + 1, level);
+                    LOG_ERROR("sql.sql", "Class {} Level {} does not have health/mana data. Using stats data of level {}.", class_, level + 1, level);
                     pClassInfo->levelInfo[level] = pClassInfo->levelInfo[level - 1];
                 }
             }
         }
 
-        LOG_INFO("server.loading", ">> Loaded {} Level Health/Mana Definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+        LOG_INFO("server.loading", ">> Loaded {} level health/mana definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
         LOG_INFO("server.loading", " ");
     }
 
     // Loading levels data (class/race dependent)
     LOG_INFO("server.loading", "Loading Player Create Level Stats Data...");
     {
-        struct RaceStats
-        {
-            int16 StatModifier[MAX_STATS];
-        };
-
-        std::array<RaceStats, MAX_RACES> raceStatModifiers;
-
         uint32 oldMSTime = getMSTime();
 
-        //                                                          0       1         2        3         4        5
-        QueryResult raceStatsResult  = WorldDatabase.Query("SELECT Race, Strength, Agility, Stamina, Intellect, Spirit FROM player_race_stats");
-
-        if (!raceStatsResult)
-        {
-            LOG_WARN("server.loading", ">> Loaded 0 race stats definitions. DB table `player_race_stats` is empty.");
-            LOG_INFO("server.loading", " ");
-            exit(1);
-        }
-
-        do
-        {
-            Field* fields = raceStatsResult->Fetch();
-
-            uint32 current_race = fields[0].Get<uint8>();
-            if (current_race >= MAX_RACES)
-            {
-                LOG_ERROR("sql.sql", "Wrong race {} in `player_race_stats` table, ignoring.", current_race);
-                continue;
-            }
-
-            for (uint32 i = 0; i < MAX_STATS; ++i)
-                raceStatModifiers[current_race].StatModifier[i] = fields[i + 1].Get<int16>();
-
-        } while (raceStatsResult->NextRow());
-
-        //                                                 0      1       2         3        4         5        6
-        QueryResult result = WorldDatabase.Query("SELECT Class, Level, Strength, Agility, Stamina, Intellect, Spirit FROM player_class_stats");
+        //                                                 0     1      2      3    4    5    6    7
+        QueryResult result  = WorldDatabase.Query("SELECT race, class, level, str, agi, sta, inte, spi FROM player_levelstats");
 
         if (!result)
         {
-            LOG_ERROR("server.loading", ">> Loaded 0 level stats definitions. DB table `player_class_stats` is empty.");
+            LOG_WARN("server.loading", ">> Loaded 0 level stats definitions. DB table `player_levelstats` is empty.");
+            LOG_INFO("server.loading", " ");
             exit(1);
         }
 
@@ -4171,35 +3986,41 @@ void ObjectMgr::LoadPlayerInfo()
         {
             Field* fields = result->Fetch();
 
-            uint32 current_class = fields[0].Get<uint8>();
-            if (current_class >= MAX_CLASSES)
+            uint32 current_race = fields[0].Get<uint8>();
+            if (current_race >= MAX_RACES)
             {
-                LOG_ERROR("sql.sql", "Wrong class {} in `player_class_stats` table, ignoring.", current_class);
+                LOG_ERROR("sql.sql", "Wrong race {} in `player_levelstats` table, ignoring.", current_race);
                 continue;
             }
 
-            uint32 current_level = fields[1].Get<uint8>();
+            uint32 current_class = fields[1].Get<uint8>();
+            if (current_class >= MAX_CLASSES)
+            {
+                LOG_ERROR("sql.sql", "Wrong class {} in `player_levelstats` table, ignoring.", current_class);
+                continue;
+            }
+
+            uint32 current_level = fields[2].Get<uint8>();
             if (current_level > sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
             {
                 if (current_level > STRONG_MAX_LEVEL)        // hardcoded level maximum
-                    LOG_ERROR("sql.sql", "Wrong (> {}) level {} in `player_class_stats` table, ignoring.", STRONG_MAX_LEVEL, current_level);
+                    LOG_ERROR("sql.sql", "Wrong (> {}) level {} in `player_levelstats` table, ignoring.", STRONG_MAX_LEVEL, current_level);
                 else
-                    LOG_DEBUG("sql.sql", "Unused (> MaxPlayerLevel in worldserver.conf) level {} in `player_class_stats` table, ignoring.", current_level);
-
+                {
+                    LOG_DEBUG("sql.sql", "Unused (> MaxPlayerLevel in worldserver.conf) level {} in `player_levelstats` table, ignoring.", current_level);
+                    ++count;                                // make result loading percent "expected" correct in case disabled detail mode for example.
+                }
                 continue;
             }
 
-            for (std::size_t race = 0; race < raceStatModifiers.size(); ++race)
+            if (PlayerInfo* info = _playerInfo[current_race][current_class])
             {
-                if (PlayerInfo* info = _playerInfo[race][current_class])
-                {
-                    if (!info->levelInfo)
-                        info->levelInfo = new PlayerLevelInfo[sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL)];
+                if (!info->levelInfo)
+                    info->levelInfo = new PlayerLevelInfo[sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL)];
 
-                    PlayerLevelInfo& levelInfo = info->levelInfo[current_level - 1];
-                    for (int i = 0; i < MAX_STATS; ++i)
-                        levelInfo.stats[i] = fields[i + 2].Get<uint16>() + raceStatModifiers[race].StatModifier[i];
-                }
+                PlayerLevelInfo& levelInfo = info->levelInfo[current_level - 1];
+                for (int i = 0; i < MAX_STATS; i++)
+                    levelInfo.stats[i] = fields[i + 3].Get<uint8>();
             }
 
             ++count;
@@ -4230,26 +4051,26 @@ void ObjectMgr::LoadPlayerInfo()
                 if (sWorld->getIntConfig(CONFIG_EXPANSION) < EXPANSION_WRATH_OF_THE_LICH_KING && class_ == CLASS_DEATH_KNIGHT)
                     continue;
 
-                // fatal error if no initial level data
-                if (!info->levelInfo || (info->levelInfo[sWorld->getIntConfig(CONFIG_START_PLAYER_LEVEL) - 1].stats[0] == 0 && class_ != CLASS_DEATH_KNIGHT) || (info->levelInfo[sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL) - 1].stats[0] == 0 && class_ == CLASS_DEATH_KNIGHT))
+                // fatal error if no level 1 data
+                if (!info->levelInfo || info->levelInfo[0].stats[0] == 0)
                 {
-                    LOG_ERROR("sql.sql", "Race {} class {} initial level does not have stats data!", race, class_);
+                    LOG_ERROR("sql.sql", "Race {} Class {} Level 1 does not have stats data!", race, class_);
                     exit(1);
                 }
 
                 // fill level gaps
                 for (uint8 level = 1; level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL); ++level)
                 {
-                    if ((info->levelInfo[level].stats[0] == 0 && class_ != CLASS_DEATH_KNIGHT) || (level >= sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL) && info->levelInfo[level].stats[0] == 0 && class_ == CLASS_DEATH_KNIGHT))
+                    if (info->levelInfo[level].stats[0] == 0)
                     {
-                        LOG_ERROR("sql.sql", "Race {} class {} level {} does not have stats data. Using stats data of level {}.", race, class_, level + 1, level);
+                        LOG_ERROR("sql.sql", "Race {} Class {} Level {} does not have stats data. Using stats data of level {}.", race, class_, level + 1, level);
                         info->levelInfo[level] = info->levelInfo[level - 1];
                     }
                 }
             }
         }
 
-        LOG_INFO("server.loading", ">> Loaded {} Level Stats Definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+        LOG_INFO("server.loading", ">> Loaded {} level stats definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
         LOG_INFO("server.loading", " ");
     }
 
@@ -4307,7 +4128,7 @@ void ObjectMgr::LoadPlayerInfo()
             }
         }
 
-        LOG_INFO("server.loading", ">> Loaded {} XP For Level Definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+        LOG_INFO("server.loading", ">> Loaded {} xp for level definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
         LOG_INFO("server.loading", " ");
     }
 }
@@ -5161,7 +4982,7 @@ void ObjectMgr::LoadQuests()
         }
     }
 
-    LOG_INFO("server.loading", ">> Loaded {} Quests Definitions in {} ms", (unsigned long)_questTemplates.size(), GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} quests definitions in {} ms", (unsigned long)_questTemplates.size(), GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -5198,7 +5019,7 @@ void ObjectMgr::LoadQuestLocales()
             AddLocaleString(fields[i + 7].Get<std::string>(), locale, data.ObjectiveText[i]);
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Quest Locale Strings in {} ms", (uint32)_questLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} Quest Locale strings in {} ms", (uint32)_questLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadScripts(ScriptsType type)
@@ -5358,7 +5179,7 @@ void ObjectMgr::LoadScripts(ScriptsType type)
 
             case SCRIPT_COMMAND_RESPAWN_GAMEOBJECT:
                 {
-                    GameObjectData const* data = GetGameObjectData(tmp.RespawnGameobject.GOGuid);
+                    GameObjectData const* data = GetGOData(tmp.RespawnGameobject.GOGuid);
                     if (!data)
                     {
                         LOG_ERROR("sql.sql", "Table `{}` has invalid gameobject (GUID: {}) in SCRIPT_COMMAND_RESPAWN_GAMEOBJECT for script id {}",
@@ -5409,7 +5230,7 @@ void ObjectMgr::LoadScripts(ScriptsType type)
             case SCRIPT_COMMAND_OPEN_DOOR:
             case SCRIPT_COMMAND_CLOSE_DOOR:
                 {
-                    GameObjectData const* data = GetGameObjectData(tmp.ToggleDoor.GOGuid);
+                    GameObjectData const* data = GetGOData(tmp.ToggleDoor.GOGuid);
                     if (!data)
                     {
                         LOG_ERROR("sql.sql", "Table `{}` has invalid gameobject (GUID: {}) in {} for script id {}",
@@ -5781,7 +5602,7 @@ void ObjectMgr::LoadPageTexts()
         }
     }
 
-    LOG_INFO("server.loading", ">> Loaded {} Page Texts in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} page texts in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -5820,7 +5641,7 @@ void ObjectMgr::LoadPageTextLocales()
         AddLocaleString(fields[2].Get<std::string>(), locale, data.Text);
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Page Text Locale Strings in {} ms", (uint32)_pageTextLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} Page Text Locale strings in {} ms", (uint32)_pageTextLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadInstanceTemplate()
@@ -5861,7 +5682,7 @@ void ObjectMgr::LoadInstanceTemplate()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Instance Templates in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} instance templates in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -5955,7 +5776,7 @@ void ObjectMgr::LoadInstanceEncounters()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Instance Encounters in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} instance encounters in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -6039,7 +5860,7 @@ void ObjectMgr::LoadGossipText()
         count++;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Npc Texts in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} npc texts in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -6075,7 +5896,7 @@ void ObjectMgr::LoadNpcTextLocales()
         }
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Npc Text Locale Strings in {} ms", (uint32)_npcTextLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} Npc Text Locale strings in {} ms", (uint32)_npcTextLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::ReturnOrDeleteOldMails(bool serverUp)
@@ -6255,7 +6076,7 @@ void ObjectMgr::LoadQuestAreaTriggers()
         _questAreaTriggerStore[trigger_ID] = quest_ID;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Quest Trigger Points in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} quest trigger points in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -6326,7 +6147,6 @@ void ObjectMgr::LoadQuestGreetings()
     while (result->NextRow());
 
     LOG_INFO("server.loading", ">> Loaded {} quest_greeting in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
-    LOG_INFO("server.loading", " ");
 }
 
 void ObjectMgr::LoadQuestGreetingsLocales()
@@ -6383,8 +6203,7 @@ void ObjectMgr::LoadQuestGreetingsLocales()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} quest greeting Locale Strings in {} ms", (uint32)_questGreetingLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
-    LOG_INFO("server.loading", " ");
+    LOG_INFO("server.loading", ">> Loaded {} quest greeting locale strings in {} ms", (uint32)_questGreetingLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadQuestOfferRewardLocale()
@@ -6413,7 +6232,7 @@ void ObjectMgr::LoadQuestOfferRewardLocale()
         AddLocaleString(fields[2].Get<std::string>(), locale, data.RewardText);
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Quest Offer Reward Locale Strings in {} ms", _questOfferRewardLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} Quest Offer Reward locale strings in {} ms", _questOfferRewardLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadQuestRequestItemsLocale()
@@ -6442,7 +6261,7 @@ void ObjectMgr::LoadQuestRequestItemsLocale()
         AddLocaleString(fields[2].Get<std::string>(), locale, data.CompletionText);
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Quest Request Items Locale Strings in {} ms", _questRequestItemsLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} Quest Request Items locale strings in {} ms", _questRequestItemsLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadTavernAreaTriggers()
@@ -6451,7 +6270,7 @@ void ObjectMgr::LoadTavernAreaTriggers()
 
     _tavernAreaTriggerStore.clear();                          // need for reload case
 
-    QueryResult result = WorldDatabase.Query("SELECT id, faction FROM areatrigger_tavern");
+    QueryResult result = WorldDatabase.Query("SELECT id FROM areatrigger_tavern");
 
     if (!result)
     {
@@ -6477,12 +6296,10 @@ void ObjectMgr::LoadTavernAreaTriggers()
             continue;
         }
 
-        uint32 faction         = fields[1].Get<uint32>();
-
-        _tavernAreaTriggerStore.emplace(Trigger_ID, faction);
+        _tavernAreaTriggerStore.insert(Trigger_ID);
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Tavern Triggers in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} tavern triggers in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -6495,7 +6312,7 @@ void ObjectMgr::LoadAreaTriggerScripts()
 
     if (!result)
     {
-        LOG_WARN("server.loading", ">> Loaded 0 Areatrigger Scripts. DB Table `areatrigger_scripts` Is Empty.");
+        LOG_WARN("server.loading", ">> Loaded 0 areatrigger scripts. DB table `areatrigger_scripts` is empty.");
         LOG_INFO("server.loading", " ");
         return;
     }
@@ -6520,7 +6337,7 @@ void ObjectMgr::LoadAreaTriggerScripts()
         _areaTriggerScriptStore[Trigger_ID] = GetScriptId(scriptName);
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Areatrigger Scripts in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} areatrigger scripts in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -6672,7 +6489,7 @@ void ObjectMgr::LoadAreaTriggers()
         _areaTriggerStore[at.entry] = at;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Area Trigger Definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} area trigger definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -6733,7 +6550,7 @@ void ObjectMgr::LoadAreaTriggerTeleports()
         _areaTriggerTeleportStore[Trigger_ID] = at;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Area Trigger Teleport Definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} area trigger teleport definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -6898,7 +6715,7 @@ void ObjectMgr::LoadAccessRequirements()
         _accessRequirementStore[mapid][difficulty] = ar;
     } while (access_template_result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Rows From dungeon_access_template And {} Rows From dungeon_access_requirements in {} ms", count, countProgressionRequirements, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} rows from dungeon_access_template and {} rows from dungeon_access_requirements in {} ms", count, countProgressionRequirements, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -7083,7 +6900,7 @@ void ObjectMgr::LoadGameObjectLocales()
         AddLocaleString(fields[3].Get<std::string>(), locale, data.CastBarCaption);
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Gameobject Locale Strings in {} ms", (uint32)_gameObjectLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} Gameobject Locale strings in {} ms", (uint32)_gameObjectLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 inline void CheckGOLockId(GameObjectTemplate const* goInfo, uint32 dataN, uint32 N)
@@ -7191,10 +7008,6 @@ void ObjectMgr::LoadGameObjectTemplate()
         got.IsForQuests = false;
 
         // Checks
-        if (!got.AIName.empty() && !sGameObjectAIRegistry->HasItem(got.AIName))
-        {
-            LOG_ERROR("sql.sql", "GameObject (Entry: {}) has non-registered `AIName` '{}' set, removing", got.entry, got.AIName);
-        }
 
         switch (got.type)
         {
@@ -7330,7 +7143,7 @@ void ObjectMgr::LoadGameObjectTemplate()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Game Object Templates in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} game object templates in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -7409,7 +7222,7 @@ void ObjectMgr::LoadGameObjectTemplateAddons()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Game Object Template Addons in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} game object template addons in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -7437,7 +7250,7 @@ void ObjectMgr::LoadExplorationBaseXP()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} BaseXP Definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} BaseXP definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -7481,7 +7294,7 @@ void ObjectMgr::LoadPetNames()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Pet Name Parts in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} pet name parts in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -7496,21 +7309,8 @@ void ObjectMgr::LoadPetNumber()
         _hiPetNumber = fields[0].Get<uint32>() + 1;
     }
 
-    LOG_INFO("server.loading", ">> Loaded The Max Pet Number: {} in {} ms", _hiPetNumber - 1, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded the max pet number: {} in {} ms", _hiPetNumber - 1, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
-}
-
-std::string ObjectMgr::GeneratePetNameLocale(uint32 entry, LocaleConstant locale)
-{
-    std::vector<std::string>& list0 = _petHalfLocaleName0[std::make_pair(entry, locale)];
-    std::vector<std::string>& list1 = _petHalfLocaleName1[std::make_pair(entry, locale)];
-
-    if (list0.empty() || list1.empty())
-    {
-       return GeneratePetName(entry);
-    }
-
-    return *(list0.begin() + urand(0, list0.size() - 1)) + *(list1.begin() + urand(0, list1.size() - 1));
 }
 
 std::string ObjectMgr::GeneratePetName(uint32 entry)
@@ -7621,7 +7421,7 @@ void ObjectMgr::LoadReputationRewardRate()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Reputation Reward Rate in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} reputation_reward_rate in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -7695,7 +7495,7 @@ void ObjectMgr::LoadReputationOnKill()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Creature Award Reputation Definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} creature award reputation definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -7806,7 +7606,7 @@ void ObjectMgr::LoadReputationSpilloverTemplate()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Reputation Spillover Template in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} reputation_spillover_template in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -7854,19 +7654,12 @@ void ObjectMgr::LoadPointsOfInterest()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Points of Interest Definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} Points of Interest definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
 void ObjectMgr::LoadQuestPOI()
 {
-    if (!sWorld->getBoolConfig(CONFIG_QUEST_POI_ENABLED))
-    {
-        LOG_INFO("server.loading", ">> Loaded 0 quest POI definitions. Disabled by config.");
-        LOG_INFO("server.loading", " ");
-        return;
-    }
-
     uint32 oldMSTime = getMSTime();
 
     _questPOIStore.clear();                              // need for reload case
@@ -7937,7 +7730,7 @@ void ObjectMgr::LoadQuestPOI()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Quest POI definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} quest POI definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -8004,7 +7797,7 @@ void ObjectMgr::LoadNPCSpellClickSpells()
         }
     }
 
-    LOG_INFO("server.loading", ">> Loaded {} Spellclick Definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} spellclick definitions in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -8021,7 +7814,7 @@ void ObjectMgr::DeleteCreatureData(ObjectGuid::LowType guid)
 void ObjectMgr::DeleteGOData(ObjectGuid::LowType guid)
 {
     // remove mapid*cellid -> guid_set map
-    GameObjectData const* data = GetGameObjectData(guid);
+    GameObjectData const* data = GetGOData(guid);
     if (data)
         RemoveGameobjectFromGrid(guid, data);
 
@@ -8069,7 +7862,7 @@ void ObjectMgr::LoadQuestRelationsHelper(QuestRelations& map, std::string const&
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Quest Relations From {} in {} ms", count, table, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} quest relations from {} in {} ms", count, table, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -8204,81 +7997,6 @@ void ObjectMgr::AddReservedPlayerName(std::string const& name)
     }
 }
 
-void ObjectMgr::LoadProfanityPlayersNames()
-{
-    uint32 oldMSTime = getMSTime();
-
-    _profanityNamesStore.clear();                                // need for reload case
-
-    QueryResult result = CharacterDatabase.Query("SELECT name FROM profanity_name");
-
-    if (!result)
-    {
-        LOG_WARN("server.loading", ">> Loaded 0 profanity player names. DB table `profanity_name` is empty!");
-        LOG_INFO("server.loading", " ");
-        return;
-    }
-
-    uint32 count = 0;
-
-    Field* fields;
-    do
-    {
-        fields = result->Fetch();
-        std::string name = fields[0].Get<std::string>();
-
-        std::wstring wstr;
-        if (!Utf8toWStr (name, wstr))
-        {
-            LOG_ERROR("sql.sql", "Table `profanity_name` have invalid name: {}", name);
-            continue;
-        }
-
-        wstrToLower(wstr);
-
-        _profanityNamesStore.insert(wstr);
-        ++count;
-    } while (result->NextRow());
-
-    LOG_INFO("server.loading", ">> Loaded {} profanity player names in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
-    LOG_INFO("server.loading", " ");
-}
-
-bool ObjectMgr::IsProfanityName(std::string_view name) const
-{
-    // pussywizard
-    if (name.size() >= 2 && (name[name.size() - 2] == 'G' || name[name.size() - 2] == 'g') && (name[name.size() - 1] == 'M' || name[name.size() - 1] == 'm'))
-        return true;
-
-    std::wstring wstr;
-    if (!Utf8toWStr (name, wstr))
-        return false;
-
-    wstrToLower(wstr);
-
-    return _profanityNamesStore.find(wstr) != _profanityNamesStore.end();
-}
-
-void ObjectMgr::AddProfanityPlayerName(std::string const& name)
-{
-    if (!IsProfanityName(name))
-    {
-        std::wstring wstr;
-        if (!Utf8toWStr(name, wstr))
-        {
-            LOG_ERROR("server", "Could not add invalid name to profanity player names: {}", name);
-            return;
-        }
-        wstrToLower(wstr);
-
-        _profanityNamesStore.insert(wstr);
-
-        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_PROFANITY_PLAYER_NAME);
-        stmt->SetData(0, name);
-        CharacterDatabase.Execute(stmt);
-    }
-}
-
 enum LanguageType
 {
     LT_BASIC_LATIN    = 0x0000,
@@ -8355,59 +8073,24 @@ bool isValidString(std::wstring wstr, uint32 strictMask, bool numericOrSpace, bo
 uint8 ObjectMgr::CheckPlayerName(std::string_view name, bool create)
 {
     std::wstring wname;
-
-    // Check for invalid characters
     if (!Utf8toWStr(name, wname))
         return CHAR_NAME_INVALID_CHARACTER;
 
-    // Check for too long name
     if (wname.size() > MAX_PLAYER_NAME)
         return CHAR_NAME_TOO_LONG;
 
-    // Check for too short name
     uint32 minName = sWorld->getIntConfig(CONFIG_MIN_PLAYER_NAME);
     if (wname.size() < minName)
         return CHAR_NAME_TOO_SHORT;
 
-    // Check for mixed languages
     uint32 strictMask = sWorld->getIntConfig(CONFIG_STRICT_PLAYER_NAMES);
     if (!isValidString(wname, strictMask, false, create))
         return CHAR_NAME_MIXED_LANGUAGES;
 
-    // Check for three consecutive letters
     wstrToLower(wname);
     for (size_t i = 2; i < wname.size(); ++i)
         if (wname[i] == wname[i - 1] && wname[i] == wname[i - 2])
             return CHAR_NAME_THREE_CONSECUTIVE;
-
-    // Check Reserved Name from Database
-    if (sObjectMgr->IsReservedName(name))
-    {
-        return CHAR_NAME_RESERVED;
-    }
-
-    if (sObjectMgr->IsProfanityName(name))
-    {
-        return CHAR_NAME_PROFANE;
-    }
-
-    // Check for Reserved Name from DBC
-    if (sWorld->getBoolConfig(CONFIG_STRICT_NAMES_RESERVED))
-    {
-        if (ReservedNames(wname))
-        {
-            return CHAR_NAME_RESERVED;
-        }
-    }
-
-    // Check for Profanity
-    if (sWorld->getBoolConfig(CONFIG_STRICT_NAMES_PROFANITY))
-    {
-        if (ProfanityNames(wname))
-        {
-            return CHAR_NAME_PROFANE;
-        }
-    }
 
     return CHAR_NAME_SUCCESS;
 }
@@ -8424,24 +8107,6 @@ bool ObjectMgr::IsValidCharterName(std::string_view name)
     uint32 minName = sWorld->getIntConfig(CONFIG_MIN_CHARTER_NAME);
     if (wname.size() < minName)
         return false;
-
-    // Check for Reserved Name from DBC
-    if (sWorld->getBoolConfig(CONFIG_STRICT_NAMES_RESERVED))
-    {
-        if (ReservedNames(wname))
-        {
-            return false;
-        }
-    }
-
-    // Check for Profanity
-    if (sWorld->getBoolConfig(CONFIG_STRICT_NAMES_PROFANITY))
-    {
-        if (ProfanityNames(wname))
-        {
-            return false;
-        }
-    }
 
     uint32 strictMask = sWorld->getIntConfig(CONFIG_STRICT_CHARTER_NAMES);
 
@@ -8478,24 +8143,6 @@ PetNameInvalidReason ObjectMgr::CheckPetName(std::string_view name)
     uint32 strictMask = sWorld->getIntConfig(CONFIG_STRICT_PET_NAMES);
     if (!isValidString(wname, strictMask, false))
         return PET_NAME_MIXED_LANGUAGES;
-
-    // Check for Reserved Name from DBC
-    if (sWorld->getBoolConfig(CONFIG_STRICT_NAMES_RESERVED))
-    {
-        if (ReservedNames(wname))
-        {
-            return PET_NAME_RESERVED;
-        }
-    }
-
-    // Check for Profanity
-    if (sWorld->getBoolConfig(CONFIG_STRICT_NAMES_PROFANITY))
-    {
-        if (ProfanityNames(wname))
-        {
-            return PET_NAME_PROFANE;
-        }
-    }
 
     return PET_NAME_SUCCESS;
 }
@@ -8600,7 +8247,7 @@ bool ObjectMgr::LoadAcoreStrings()
             AddLocaleString(fields[i + 1].Get<std::string>(), LocaleConstant(i), data.Content);
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Acore Strings in {} ms", (uint32)_acoreStringStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} acore strings in {} ms", (uint32)_acoreStringStore.size(), GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 
     return true;
@@ -8957,134 +8604,174 @@ void ObjectMgr::LoadMailLevelRewards()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Level Dependent Mail Rewards in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} level dependent mail rewards in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
-void ObjectMgr::AddSpellToTrainer(uint32 entry, uint32 spell, uint32 spellCost, uint32 reqSkill, uint32 reqSkillValue, uint32 reqLevel, uint32 reqSpell)
-{
-    if (entry >= ACORE_TRAINER_START_REF)
-        return;
-
-    CreatureTemplate const* cInfo = GetCreatureTemplate(entry);
-    if (!cInfo)
-    {
-        LOG_ERROR("sql.sql", "Table `npc_trainer` contains an entry for a non-existing creature template (Entry: {}), ignoring", entry);
-        return;
-    }
-
-    if (!(cInfo->npcflag & UNIT_NPC_FLAG_TRAINER))
-    {
-        LOG_ERROR("sql.sql", "Table `npc_trainer` contains an entry for a creature template (Entry: {}) without trainer flag, ignoring", entry);
-        return;
-    }
-
-    SpellInfo const* spellinfo = sSpellMgr->GetSpellInfo(spell);
-    if (!spellinfo)
-    {
-        LOG_ERROR("sql.sql", "Table `npc_trainer` contains an entry (Entry: {}) for a non-existing spell (Spell: {}), ignoring", entry, spell);
-        return;
-    }
-
-    if (!SpellMgr::ComputeIsSpellValid(spellinfo))
-    {
-        LOG_ERROR("sql.sql", "Table `npc_trainer` contains an entry (Entry: {}) for a broken spell (Spell: {}), ignoring", entry, spell);
-        return;
-    }
-
-    if (GetTalentSpellCost(spell))
-    {
-        LOG_ERROR("sql.sql", "Table `npc_trainer` contains an entry (Entry: {}) for a non-existing spell (Spell: {}) which is a talent, ignoring", entry, spell);
-        return;
-    }
-
-    if (reqSpell && !sSpellMgr->GetSpellInfo(reqSpell))
-    {
-        LOG_ERROR("sql.sql", "Table `npc_trainer` contains an entry (Entry: {}) for a non-existing reqSpell (Spell: {}), ignoring", entry, reqSpell);
-        return;
-    }
-
-    TrainerSpellData& data = _cacheTrainerSpellStore[entry];
-
-    TrainerSpell& trainerSpell = data.spellList[spell];
-    trainerSpell.spell         = spell;
-    trainerSpell.spellCost     = spellCost;
-    trainerSpell.reqSkill      = reqSkill;
-    trainerSpell.reqSkillValue = reqSkillValue;
-    trainerSpell.reqLevel      = reqLevel;
-    trainerSpell.reqSpell      = reqSpell;
-
-    if (!trainerSpell.reqLevel)
-        trainerSpell.reqLevel = spellinfo->SpellLevel;
-
-    // calculate learned spell for profession case when stored cast-spell
-    trainerSpell.learnedSpell[0] = spell;
-    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
-    {
-        if (spellinfo->Effects[i].Effect != SPELL_EFFECT_LEARN_SPELL)
-            continue;
-        if (trainerSpell.learnedSpell[0] == spell)
-            trainerSpell.learnedSpell[0] = 0;
-        // player must be able to cast spell on himself
-        if (spellinfo->Effects[i].TargetA.GetTarget() != 0 && spellinfo->Effects[i].TargetA.GetTarget() != TARGET_UNIT_TARGET_ALLY
-                && spellinfo->Effects[i].TargetA.GetTarget() != TARGET_UNIT_TARGET_ANY && spellinfo->Effects[i].TargetA.GetTarget() != TARGET_UNIT_CASTER)
-        {
-            LOG_ERROR("sql.sql", "Table `npc_trainer` has spell {} for trainer entry {} with learn effect which has incorrect target type, ignoring learn effect!", spell, entry);
-            continue;
-        }
-
-        trainerSpell.learnedSpell[i] = spellinfo->Effects[i].TriggerSpell;
-
-        if (trainerSpell.learnedSpell[i])
-        {
-            SpellInfo const* learnedSpellInfo = sSpellMgr->GetSpellInfo(trainerSpell.learnedSpell[i]);
-            if (learnedSpellInfo && learnedSpellInfo->IsProfession())
-                data.trainerType = 2;
-        }
-    }
-
-    return;
-}
-
-void ObjectMgr::LoadTrainerSpell()
+void ObjectMgr::LoadTrainers()
 {
     uint32 oldMSTime = getMSTime();
 
     // For reload case
-    _cacheTrainerSpellStore.clear();
+    _trainers.clear();
 
-    QueryResult result = WorldDatabase.Query("SELECT b.ID, a.SpellID, a.MoneyCost, a.ReqSkillLine, a.ReqSkillRank, a.ReqLevel, a.ReqSpell FROM npc_trainer AS a "
-                         "INNER JOIN npc_trainer AS b ON a.ID = -(b.SpellID) "
-                         "UNION SELECT * FROM npc_trainer WHERE SpellID > 0");
+    std::unordered_map<int32, std::vector<Trainer::Spell>> spellsByTrainer;
+    if (QueryResult trainerSpellsResult = WorldDatabase.Query("SELECT TrainerId, SpellId, MoneyCost, ReqSkillLine, ReqSkillRank, ReqAbility1, ReqAbility2, ReqAbility3, ReqLevel FROM trainer_spell")){
+        do {
+            Field* fields = trainerSpellsResult->Fetch();
+            Trainer::Spell spell;
+            uint32         trainerId = fields[0].Get<uint32>();
+            spell.SpellId            = fields[1].Get<uint32>();
+            spell.MoneyCost          = fields[2].Get<uint32>();
+            spell.ReqSkillLine       = fields[3].Get<uint32>();
+            spell.ReqSkillRank       = fields[4].Get<uint32>();
+            spell.ReqAbility[0]      = fields[5].Get<uint32>();
+            spell.ReqAbility[1]      = fields[6].Get<uint32>();
+            spell.ReqAbility[2]      = fields[7].Get<uint32>();
+            spell.ReqLevel           = fields[8].Get<uint8>();
 
-    if (!result)
-    {
-        LOG_WARN("server.loading", ">> Loaded 0 Trainers. DB table `npc_trainer` is empty!");
-        LOG_INFO("server.loading", " ");
-        return;
+            SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spell.SpellId);
+            if (!spellInfo)
+            {
+                LOG_ERROR("sql.sql", "Table `trainer_spell` references non-existing spell (SpellId: %u) for TrainerId %u, ignoring", spell.SpellId, trainerId);
+                continue;
+            }
+
+            if (GetTalentSpellCost(spell.SpellId))
+            {
+                LOG_ERROR("sql.sql", "Table `trainer_spell` references non-existing spell (SpellId: %u) which is a talent, for TrainerId %u, ignoring", spell.SpellId, trainerId);
+                continue;
+            }
+
+            if (spell.ReqSkillLine && !sSkillLineStore.LookupEntry(spell.ReqSkillLine))
+            {
+                LOG_ERROR("sql.sql", "Table `trainer_spell` references non-existing skill (ReqSkillLine: %u) for TrainerId %u and SpellId %u, ignoring", spell.ReqSkillLine, spell.SpellId, trainerId);
+                continue;
+            }
+
+            bool allReqValid = true;
+            for (std::size_t i = 0; i < spell.ReqAbility.size(); ++i)
+            {
+                uint32 requiredSpell = spell.ReqAbility[i];
+                if (requiredSpell && !sSpellMgr->GetSpellInfo(requiredSpell))
+                {
+                    LOG_ERROR("sql.sql", "Table `trainer_spell` references non-existing spell (ReqAbility %d : %u) for TrainerId %u and SpellId %u, ignoring", i + 1, requiredSpell, trainerId, spell.SpellId);
+                    allReqValid = false;
+                }
+            }
+
+            if (!allReqValid)
+                continue;
+
+            spellsByTrainer[trainerId].push_back(spell);
+        } while (trainerSpellsResult->NextRow());
     }
 
-    uint32 count = 0;
-
-    do
+    if (QueryResult trainersResult = WorldDatabase.Query("SELECT Id, Type, Requirement, Greeting FROM trainer"))
     {
-        Field* fields = result->Fetch();
+        do
+        {
+            Field* fields = trainersResult->Fetch();
 
-        uint32 entry         = fields[0].Get<uint32>();
-        uint32 spell         = fields[1].Get<uint32>();
-        uint32 spellCost     = fields[2].Get<uint32>();
-        uint32 reqSkill      = fields[3].Get<uint16>();
-        uint32 reqSkillValue = fields[4].Get<uint16>();
-        uint32 reqLevel      = fields[5].Get<uint8>();
-        uint32 reqSpell      = fields[6].Get<uint32>();
+            uint32                      trainerId   = fields[0].Get<uint32>();
+            Trainer::Type               trainerType = Trainer::Type(fields[1].Get<uint8>());
+            uint32                      requirement = fields[2].Get<uint32>();
+            std::string                 greeting    = fields[3].Get<std::string>();
+            std::vector<Trainer::Spell> spells;
+            auto                        spellsItr = spellsByTrainer.find(trainerId);
+            if (spellsItr != spellsByTrainer.end())
+            {
+                spells = std::move(spellsItr->second);
+                spellsByTrainer.erase(spellsItr);
+            }
+            switch (trainerType)
+            {
+                case Trainer::Type::Class:
+                case Trainer::Type::Pet:
+                    if (requirement && !sChrClassesStore.LookupEntry(requirement))
+                    {
+                        LOG_ERROR("sql.sql", "Table `trainer` references non-existing class requirement %u for TrainerId %u, ignoring", requirement, trainerId);
+                        continue;
+                    }
+                    break;
+                case Trainer::Type::Mount:
+                    if (requirement && !sChrRacesStore.LookupEntry(requirement))
+                    {
+                        LOG_ERROR("sql.sql", "Table `trainer` references non-existing race requirement %u for TrainerId %u, ignoring", requirement, trainerId);
+                        continue;
+                    }
+                    break;
+                case Trainer::Type::Tradeskill:
+                    if (requirement && !sSpellMgr->GetSpellInfo(requirement))
+                    {
+                        LOG_ERROR("sql.sql", "Table `trainer` references non-existing spell requirement %u for TrainerId %u, ignoring", requirement, trainerId);
+                        continue;
+                    }
+                    break;
+                default:
+                    break;
+            }
+            _trainers.emplace(std::piecewise_construct, std::forward_as_tuple(trainerId), std::forward_as_tuple(trainerId, trainerType, requirement, std::move(greeting), std::move(spells)));
+        } while (trainersResult->NextRow());
+    }
 
-        AddSpellToTrainer(entry, spell, spellCost, reqSkill, reqSkillValue, reqLevel, reqSpell);
+    for (auto const& unusedSpells : spellsByTrainer)
+    {
+        for (Trainer::Spell const& unusedSpell : unusedSpells.second)
+        {
+            LOG_ERROR("sql.sql", "Table `trainer_spell` references non-existing trainer (TrainerId: %u) for SpellId %u, ignoring", unusedSpells.first, unusedSpell.SpellId);
+        }
+    }
 
-        ++count;
-    } while (result->NextRow());
+    if (QueryResult trainerLocalesResult = WorldDatabase.Query("SELECT Id, locale, Greeting_lang FROM trainer_locale"))
+    {
+        do
+        {
+            Field*      fields     = trainerLocalesResult->Fetch();
+            uint32      trainerId  = fields[0].Get<uint32>();
+            std::string localeName = fields[1].Get<std::string>();
 
-    LOG_INFO("server.loading", ">> Loaded {} Trainers in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
-    LOG_INFO("server.loading", " ");
+            LocaleConstant locale = GetLocaleByName(localeName);
+            if (locale == LOCALE_enUS)
+                continue;
+
+            if (Trainer::Trainer* trainer = Acore::Containers::MapGetValuePtr(_trainers, trainerId))
+                trainer->AddGreetingLocale(locale, fields[2].Get<std::string>());
+            else
+                LOG_ERROR("sql.sql", "Table `trainer_locale` references non-existing trainer (TrainerId: %u) for locale %s, ignoring", trainerId, localeName.c_str());
+        } while (trainerLocalesResult->NextRow());
+    }
+
+    LOG_INFO("server.loading", ">> Loaded %d Trainers in %u ms", _trainers.size(), GetMSTimeDiffToNow(oldMSTime));
+}
+
+void ObjectMgr::LoadCreatureDefaultTrainers()
+{
+    uint32 oldMSTime = getMSTime();
+
+    _creatureDefaultTrainers.clear();
+
+    if (QueryResult result = WorldDatabase.Query("SELECT CreatureId, TrainerId FROM creature_default_trainer"))
+    {
+        do
+        {
+            Field* fields     = result->Fetch();
+            uint32 creatureId = fields[0].Get<uint32>();
+            uint32 trainerId  = fields[1].Get<uint32>();
+
+            if (!GetCreatureTemplate(creatureId))
+            {
+                LOG_ERROR("sql.sql", "Table `creature_default_trainer` references non-existing creature template (CreatureId: %u), ignoring", creatureId);
+                continue;
+            }
+        
+
+            _creatureDefaultTrainers[creatureId] = trainerId;
+
+        } while (result->NextRow());
+    }
+
+    LOG_INFO("server.loading", ">> Loaded %d default trainers in %u ms", _creatureDefaultTrainers.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 int ObjectMgr::LoadReferenceVendor(int32 vendor, int32 item, std::set<uint32>* skip_vendors)
@@ -9124,6 +8811,15 @@ int ObjectMgr::LoadReferenceVendor(int32 vendor, int32 item, std::set<uint32>* s
     } while (result->NextRow());
 
     return count;
+}
+
+Trainer::Trainer const* ObjectMgr::GetTrainer(uint32 creatureId) const
+{
+    auto itr = _creatureDefaultTrainers.find(creatureId);
+    if (itr != _creatureDefaultTrainers.end())
+        return Acore::Containers::MapGetValuePtr(_trainers, itr->second);
+
+    return nullptr;
 }
 
 void ObjectMgr::LoadVendors()
@@ -9565,7 +9261,7 @@ void ObjectMgr::LoadBroadcastTexts()
         _broadcastTextStore[bct.Id] = bct;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Broadcast Texts in {} ms", _broadcastTextStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} Broadcast texts in {} ms", _broadcastTextStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadBroadcastTextLocales()
@@ -9663,7 +9359,7 @@ void ObjectMgr::LoadCreatureClassLevelStats()
 
         for (uint8 i = 0; i < MAX_EXPANSIONS; ++i)
         {
-            stats.BaseHealth[i] = fields[2 + i].Get<uint32>();
+            stats.BaseHealth[i] = fields[2 + i].Get<uint16>();
 
             if (stats.BaseHealth[i] == 0)
             {
@@ -9693,11 +9389,11 @@ void ObjectMgr::LoadCreatureClassLevelStats()
             }
         }
 
-        stats.BaseMana = fields[5].Get<uint32>();
-        stats.BaseArmor = fields[6].Get<uint32>();
+        stats.BaseMana = fields[5].Get<uint16>();
+        stats.BaseArmor = fields[6].Get<uint16>();
 
-        stats.AttackPower = fields[7].Get<uint32>();
-        stats.RangedAttackPower = fields[8].Get<uint32>();
+        stats.AttackPower = fields[7].Get<uint16>();
+        stats.RangedAttackPower = fields[8].Get<uint16>();
 
         _creatureBaseStatsStore[MAKE_PAIR16(Level, Class)] = stats;
 
@@ -9714,7 +9410,7 @@ void ObjectMgr::LoadCreatureClassLevelStats()
         }
     }
 
-    LOG_INFO("server.loading", ">> Loaded {} Creature Base Stats in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} creature base stats in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -10017,7 +9713,7 @@ void ObjectMgr::LoadGameObjectQuestItems()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Gameobject Quest Items in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} gameobject quest items in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -10047,7 +9743,7 @@ void ObjectMgr::LoadCreatureQuestItems()
         ++count;
     } while (result->NextRow());
 
-    LOG_INFO("server.loading", ">> Loaded {} Creature Quest Items in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
+    LOG_INFO("server.loading", ">> Loaded {} creature quest items in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
     LOG_INFO("server.loading", " ");
 }
 
@@ -10082,7 +9778,6 @@ void ObjectMgr::LoadQuestMoneyRewards()
     } while (result->NextRow());
 
     LOG_INFO("server.loading", ">> Loaded {} Quest Money Rewards in {} ms", count, GetMSTimeDiffToNow(oldMSTime));
-    LOG_INFO("server.loading", " ");
 }
 
 uint32 ObjectMgr::GetQuestMoneyReward(uint8 level, uint32 questMoneyDifficulty) const
@@ -10169,7 +9864,7 @@ void ObjectMgr::SendServerMail(Player* player, uint32 id, uint32 reqLevel, uint3
 {
     if (active)
     {
-        if (player->GetLevel() < reqLevel)
+        if (player->getLevel() < reqLevel)
             return;
 
         if (player->GetTotalPlayedTime() < reqPlayTime)
@@ -10180,8 +9875,8 @@ void ObjectMgr::SendServerMail(Player* player, uint32 id, uint32 reqLevel, uint3
         MailSender sender(MAIL_NORMAL, player->GetGUID().GetCounter(), MAIL_STATIONERY_GM);
         MailDraft draft(subject, body);
 
-        draft.AddMoney(player->GetTeamId() == TEAM_ALLIANCE ? rewardMoneyA : rewardMoneyH);
-        if (Item* mailItem = Item::CreateItem(player->GetTeamId() == TEAM_ALLIANCE ? rewardItemA : rewardItemH, player->GetTeamId() == TEAM_ALLIANCE ? rewardItemCountA : rewardItemCountH))
+        draft.AddMoney(player->GetTeamId() == TEAM_ALLIANCE ? rewardMoneyH : rewardMoneyA);
+        if (Item* mailItem = Item::CreateItem(player->GetTeamId() == TEAM_ALLIANCE ? rewardItemH : rewardItemA, player->GetTeamId() == TEAM_ALLIANCE ? rewardItemCountH : rewardItemCountA))
         {
             mailItem->SaveToDB(trans);
             draft.AddItem(mailItem);

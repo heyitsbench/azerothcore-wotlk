@@ -40,7 +40,7 @@ public:
         static ChatCommandTable achievementCommandTable =
         {
             { "add",      HandleAchievementAddCommand,      SEC_GAMEMASTER,    Console::No },
-            { "checkall", HandleAchievementCheckAllCommand, SEC_ADMINISTRATOR, Console::Yes }
+            { "checkall", HandleAchievementCheckAllCommand, SEC_ADMINISTRATOR, Console::No }
         };
         static ChatCommandTable commandTable =
         {
@@ -63,33 +63,17 @@ public:
         return true;
     }
 
-    static bool HandleAchievementCheckAllCommand(ChatHandler* handler, Optional<PlayerIdentifier> player)
+    static bool HandleAchievementCheckAllCommand(ChatHandler* handler)
     {
-        if (!player)
+        Player* target = handler->getSelectedPlayer();
+        if (!target)
         {
-            player = PlayerIdentifier::FromTarget(handler);
-        }
-
-        if (!player)
-        {
-            handler->SendSysMessage(LANG_PLAYER_NOT_FOUND);
+            handler->SendSysMessage(LANG_NO_CHAR_SELECTED);
             handler->SetSentErrorMessage(true);
             return false;
         }
 
-        if (player->IsConnected())
-        {
-            if (Player* target = player->GetConnectedPlayer())
-                target->CheckAllAchievementCriteria();
-        }
-        else
-        {
-            auto* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ADD_AT_LOGIN_FLAG);
-            stmt->SetData(0, uint16(AT_LOGIN_CHECK_ACHIEVS));
-            stmt->SetData(1, player->GetGUID().GetCounter());
-            CharacterDatabase.Execute(stmt);
-        }
-
+        target->CheckAllAchievementCriteria();
         return true;
     }
 };

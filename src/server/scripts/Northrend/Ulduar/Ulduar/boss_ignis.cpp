@@ -224,7 +224,7 @@ public:
             }
         }
 
-        void JustEngagedWith(Unit*  /*who*/) override
+        void EnterCombat(Unit*  /*who*/) override
         {
             me->setActive(true);
 
@@ -247,9 +247,9 @@ public:
             lastShatterMSTime = 0;
             events.Reset();
             events.ScheduleEvent(EVENT_ACTIVATE_CONSTRUCT, RAID_MODE(40000, 30000));
-            events.ScheduleEvent(EVENT_SPELL_SCORCH, 10s);
-            events.ScheduleEvent(EVENT_SPELL_FLAME_JETS, 32s);
-            events.ScheduleEvent(EVENT_GRAB, 25s);
+            events.ScheduleEvent(EVENT_SPELL_SCORCH, 10000);
+            events.ScheduleEvent(EVENT_SPELL_FLAME_JETS, 32000);
+            events.ScheduleEvent(EVENT_GRAB, 25000);
 
             Talk(SAY_AGGRO);
             DoZoneInCombat();
@@ -354,8 +354,8 @@ public:
                     me->DisableRotate(true);
                     me->SendMovementFlagUpdate();
                     me->CastSpell(me->GetVictim(), S_SCORCH, false);
-                    events.Repeat(20s);
-                    events.RescheduleEvent(EVENT_ENABLE_ROTATE, 3s);
+                    events.RepeatEvent(20000);
+                    events.RescheduleEvent(EVENT_ENABLE_ROTATE, 3001);
                     break;
                 case EVENT_ENABLE_ROTATE:
                     me->SetControlled(false, UNIT_STATE_ROOT);
@@ -364,7 +364,7 @@ public:
                 case EVENT_SPELL_FLAME_JETS:
                     Talk(EMOTE_JETS);
                     me->CastSpell(me->GetVictim(), S_FLAME_JETS, false);
-                    events.Repeat(25s);
+                    events.RepeatEvent(25000);
                     break;
                 case EVENT_GRAB:
                     {
@@ -406,8 +406,8 @@ public:
                             }
                         }
 
-                        events.Repeat(24s);
-                        events.DelayEvents(6s);
+                        events.RepeatEvent(24000); // +6000 below
+                        events.DelayEvents(6000);
                     }
                     break;
             }
@@ -435,7 +435,10 @@ public:
 
         void HandleEffectPeriodic(AuraEffect const* aurEff)
         {
-            if (aurEff->GetTotalTicks() >= 0 && aurEff->GetTickNumber() == uint32(aurEff->GetTotalTicks()))
+            float dmgRatio;
+            int ticks = aurEff->GetTotalTicks(dmgRatio);
+
+            if (ticks >= 0 && aurEff->GetTickNumber() == uint32(ticks))
                 if (Unit* c = GetCaster())
                     if (Creature* s = c->SummonCreature(NPC_SCORCHED_GROUND, c->GetPositionX() + 20.0f * cos(c->GetOrientation()), c->GetPositionY() + 20.0f * std::sin(c->GetOrientation()), 361.0f, 0.0f, TEMPSUMMON_TIMED_DESPAWN, 30000))
                     {
