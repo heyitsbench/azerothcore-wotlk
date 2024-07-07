@@ -13,9 +13,9 @@
 9457 - AttributesEx2/B,3/C, EffectDieSides_1, ImplicitTargetA_1, DefenseType, EffectChainAmplitude_123, SchoolMask, EffectBonusMultiplier_1
 10211 - AttributesEx3/C
 10212 - AttributesEx3/C
-10732 - 
-11687 - 
-11688 - 
+10732 - Category, Attributes, AttributesEx, AttributesEx2/B, AttributesEx3/C, FacingCasterFlags, InterruptFlags, ChannelInterruptFlags, ImplicitTargetA_123, EffectAuraPeriod_123, SpellVisualID_1, EffectChainAmplitude_123, SchoolMask
+11687 - MaxLevel, BaseLevel, SpellLevel, EffectRealPointsPerLevel_1, EffectChainAmplitude_123
+11688 - MaxLevel, BaseLevel, SpellLevel, EffectRealPointsPerLevel_1, EffectChainAmplitude_123
 11689 - 
 20252 - 
 20253 - 
