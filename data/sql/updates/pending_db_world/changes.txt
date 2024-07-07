@@ -6,13 +6,13 @@
 4511 - AuraInterruptFlags
 5143 - AttributesEx3/C
 5144 - AttributesEx3/C
-5145 - 
-7922 - 
-8416 - 
-8417 - 
-9457 - 
-10211 - 
-10212 - 
+5145 - AttributesEx3/C
+7922 - Attributes
+8416 - AttributesEx3/C
+8417 - AttributesEx3/C
+9457 - AttributesEx2/B,3/C, EffectDieSides_1, ImplicitTargetA_1, DefenseType, EffectChainAmplitude_123, SchoolMask, EffectBonusMultiplier_1
+10211 - AttributesEx3/C
+10212 - AttributesEx3/C
 10732 - 
 11687 - 
 11688 - 
