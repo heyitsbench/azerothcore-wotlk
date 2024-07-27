@@ -1761,11 +1761,6 @@ bool WorldObject::CanSeeOrDetect(WorldObject const* obj, bool ignoreStealth, boo
         }
     }
 
-    // pussywizard: arena spectator
-    if (obj->GetTypeId() == TYPEID_PLAYER)
-        if (((Player const*)obj)->IsSpectator() && ((Player const*)obj)->FindMap()->IsBattleArena())
-            return false;
-
     bool corpseVisibility = false;
     if (distanceCheck)
     {
@@ -1856,11 +1851,6 @@ bool WorldObject::CanSeeOrDetect(WorldObject const* obj, bool ignoreStealth, boo
 
     if (obj->IsInvisibleDueToDespawn())
         return false;
-
-    // pussywizard: arena spectator
-    if (this->GetTypeId() == TYPEID_PLAYER)
-        if (((Player const*)this)->IsSpectator() && ((Player const*)this)->FindMap()->IsBattleArena() && (obj->m_invisibility.GetFlags() || obj->m_stealth.GetFlags()))
-            return false;
 
     if (!CanDetect(obj, ignoreStealth, !distanceCheck, checkAlert))
     {

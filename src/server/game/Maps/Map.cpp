@@ -3284,8 +3284,6 @@ void BattlegroundMap::RemovePlayerFromMap(Player* player, bool remove)
     if (Battleground* bg = GetBG())
     {
         bg->RemovePlayerAtLeave(player);
-        if (IsBattleArena())
-            bg->RemoveSpectator(player);
     }
     if (IsBattleArena())
         player->RemoveAura(100102);

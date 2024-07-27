@@ -2512,11 +2512,10 @@ public:
     // cooldowns
     [[nodiscard]] virtual bool HasSpellCooldown(uint32 /*spell_id*/) const { return false; }
     [[nodiscard]] virtual bool HasSpellItemCooldown(uint32 /*spell_id*/, uint32 /*itemid*/) const { return false; }
-    virtual void AddSpellCooldown(uint32 /*spell_id*/, uint32 /*itemid*/, uint32 /*end_time*/, bool needSendToClient = false, bool forceSendToSpectator = false)
+    virtual void AddSpellCooldown(uint32 /*spell_id*/, uint32 /*itemid*/, uint32 /*end_time*/, bool needSendToClient = false)
     {
         // workaround for unused parameters
         (void)needSendToClient;
-        (void)forceSendToSpectator;
     }
 
     [[nodiscard]] bool CanApplyResilience() const { return m_applyResilience; }

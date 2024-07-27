@@ -16,7 +16,6 @@
  */
 
 #include "Spell.h"
-#include "ArenaSpectator.h"
 #include "BattlefieldMgr.h"
 #include "Battleground.h"
 #include "BattlegroundIC.h"
@@ -3720,12 +3719,6 @@ void Spell::cancel(bool bySelf)
         case SPELL_STATE_PREPARING:
             CancelGlobalCooldown();
             SendCastResult(SPELL_FAILED_INTERRUPTED);
-
-            if (m_caster->GetTypeId() == TYPEID_PLAYER)
-            {
-                if (m_caster->ToPlayer()->NeedSendSpectatorData())
-                    ArenaSpectator::SendCommand_Spell(m_caster->FindMap(), m_caster->GetGUID(), "SPE", m_spellInfo->Id, bySelf ? 99998 : 99999);
-            }
             [[fallthrough]];
         case SPELL_STATE_DELAYED:
             SendInterrupted(SPELL_FAILED_INTERRUPTED);
@@ -3741,9 +3734,6 @@ void Spell::cancel(bool bySelf)
                 SendChannelUpdate(0);
                 SendInterrupted(SPELL_FAILED_INTERRUPTED);
             }
-
-            if (m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->ToPlayer()->NeedSendSpectatorData())
-                ArenaSpectator::SendCommand_Spell(m_caster->FindMap(), m_caster->GetGUID(), "SPE", m_spellInfo->Id, bySelf ? 99998 : 99999);
 
             // spell is canceled-take mods and clear list
             if (Player* player = m_caster->GetSpellModOwner())
@@ -4763,9 +4753,6 @@ void Spell::SendSpellStart()
     }
 
     m_caster->SendMessageToSet(&data, true);
-
-    if (!m_spellInfo->IsChanneled() && m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->ToPlayer()->NeedSendSpectatorData())
-        ArenaSpectator::SendCommand_Spell(m_caster->FindMap(), m_caster->GetGUID(), "SPE", m_spellInfo->Id, m_timer);
 }
 
 void Spell::SendSpellGo()
@@ -5190,9 +5177,6 @@ void Spell::SendChannelStart(uint32 duration)
     data << uint32(duration);
 
     m_caster->SendMessageToSet(&data, true);
-
-    if (m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->ToPlayer()->NeedSendSpectatorData())
-        ArenaSpectator::SendCommand_Spell(m_caster->FindMap(), m_caster->GetGUID(), "SPE", m_spellInfo->Id, -((int32)duration));
 
     m_timer = duration;
     if (channelTarget)
@@ -5626,11 +5610,6 @@ SpellCastResult Spell::CheckCast(bool strict)
     // check death state
     if (!m_caster->IsAlive() && !m_spellInfo->HasAttribute(SPELL_ATTR0_PASSIVE) && !(m_spellInfo->HasAttribute(SPELL_ATTR0_ALLOW_CAST_WHILE_DEAD) || (IsTriggered() && !m_triggeredByAuraSpell)))
         return SPELL_FAILED_CASTER_DEAD;
-
-    // Spectator check
-    if (m_caster->GetTypeId() == TYPEID_PLAYER)
-        if (((Player const*)m_caster)->IsSpectator() && m_spellInfo->Id != SPECTATOR_SPELL_BINDSIGHT)
-            return SPELL_FAILED_NOT_HERE;
 
     SpellCastResult res = SPELL_CAST_OK;
 

@@ -16,7 +16,6 @@
  */
 
 #include "Pet.h"
-#include "ArenaSpectator.h"
 #include "Common.h"
 #include "DatabaseEnv.h"
 #include "GameTime.h"
@@ -232,7 +231,7 @@ bool Pet::LoadPetFromDB(Player* owner, uint32 petEntry, uint32 petnumber, bool c
         return false;
 
     // we are loading pet at that moment
-    if (owner->IsSpectator() || owner->GetPet() || !owner->IsInWorld() || !owner->FindMap())
+    if (owner->GetPet() || !owner->IsInWorld() || !owner->FindMap())
         return false;
 
     bool forceLoadFromDB = false;

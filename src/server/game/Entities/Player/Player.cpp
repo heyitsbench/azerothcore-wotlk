@@ -18,7 +18,6 @@
 #include "Player.h"
 #include "AccountMgr.h"
 #include "AchievementMgr.h"
-#include "ArenaSpectator.h"
 #include "ArenaTeam.h"
 #include "ArenaTeamMgr.h"
 #include "Battlefield.h"
@@ -328,7 +327,6 @@ Player::Player(WorldSession* session): Unit(true), m_mover(this)
     m_summon_x = 0.0f;
     m_summon_y = 0.0f;
     m_summon_z = 0.0f;
-    m_summon_asSpectator = false;
 
     //m_mover = this;
     m_movedByPlayer.Initialize(this);
@@ -392,8 +390,6 @@ Player::Player(WorldSession* session): Unit(true), m_mover(this)
     m_MountBlockId = 0;
     m_realDodge = 0.0f;
     m_realParry = 0.0f;
-    m_pendingSpectatorForBG = 0;
-    m_pendingSpectatorInviteInstanceId = 0;
 
     m_charmUpdateTimer = 0;
 
@@ -1057,9 +1053,6 @@ void Player::setDeathState(DeathState s, bool /*despawn = false*/)
 
     Unit::setDeathState(s);
 
-    if (NeedSendSpectatorData())
-        ArenaSpectator::SendCommand_UInt32Value(FindMap(), GetGUID(), "STA", IsAlive() ? 1 : 0);
-
     // restore resurrection spell id for player after aura remove
     if (s == DeathState::JustDied && cur && ressSpellId)
         SetUInt32Value(PLAYER_SELF_RES_SPELL, ressSpellId);
@@ -1352,13 +1345,6 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     if (!InBattleground() && mEntry->IsBattlegroundOrArena())
         return false;
 
-    // pussywizard: arena spectator, prevent teleporting from arena to instance/etc
-    if (GetMapId() != mapid && IsSpectator() && mEntry->Instanceable())
-    {
-        SendTransferAborted(mapid, TRANSFER_ABORT_MAP_NOT_ALLOWED);
-        return false;
-    }
-
     // client without expansion support
     if (GetSession()->Expansion() < mEntry->Expansion())
     {
@@ -1515,7 +1501,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
             CombatStop();
 
             // remove arena spell coldowns/buffs now to also remove pet's cooldowns before it's temporarily unsummoned
-            if (mEntry->IsBattleArena() && (HasPendingSpectatorForBG(0) || !HasPendingSpectatorForBG(GetBattlegroundId())))
+            if (mEntry->IsBattleArena())
             {
                 // KEEP THIS ORDER!
                 RemoveArenaAuras();
@@ -9002,12 +8988,6 @@ Pet* Player::SummonPet(uint32 entry, float x, float y, float z, float ang, PetTy
     if (duration > 0s)
         pet->SetDuration(duration);
 
-    if (NeedSendSpectatorData() && pet->GetCreatureTemplate()->family)
-    {
-        ArenaSpectator::SendCommand_UInt32Value(FindMap(), GetGUID(), "PHP", (uint32)pet->GetHealthPct());
-        ArenaSpectator::SendCommand_UInt32Value(FindMap(), GetGUID(), "PET", pet->GetCreatureTemplate()->family);
-    }
-
     return pet;
 }
 
@@ -9106,12 +9086,6 @@ void Player::RemovePet(Pet* pet, PetSaveMode mode, bool returnreagent)
 
             if (GetGroup())
                 SetGroupUpdateFlag(GROUP_UPDATE_PET);
-        }
-
-        if (NeedSendSpectatorData() && pet->GetCreatureTemplate()->family)
-        {
-            ArenaSpectator::SendCommand_UInt32Value(FindMap(), GetGUID(), "PHP", 0);
-            ArenaSpectator::SendCommand_UInt32Value(FindMap(), GetGUID(), "PET", 0);
         }
     }
 }
@@ -10951,7 +10925,7 @@ void Player::AddSpellAndCategoryCooldowns(SpellInfo const* spellInfo, uint32 ite
     // category spells
     if (cat && catrec > 0)
     {
-        _AddSpellCooldown(spellInfo->Id, 0, itemId, recTime, true, true);
+        _AddSpellCooldown(spellInfo->Id, 0, itemId, recTime, true);
         if (needsCooldownPacket)
         {
             WorldPacket data;
@@ -11005,7 +10979,7 @@ void Player::AddSpellAndCategoryCooldowns(SpellInfo const* spellInfo, uint32 ite
         // self spell cooldown
         if (recTime > 0)
         {
-            _AddSpellCooldown(spellInfo->Id, 0, itemId, recTime, true, true);
+            _AddSpellCooldown(spellInfo->Id, 0, itemId, recTime, true);
 
             if (needsCooldownPacket)
             {
@@ -11017,31 +10991,21 @@ void Player::AddSpellAndCategoryCooldowns(SpellInfo const* spellInfo, uint32 ite
     }
 }
 
-void Player::_AddSpellCooldown(uint32 spellid, uint16 categoryId, uint32 itemid, uint32 end_time, bool needSendToClient, bool forceSendToSpectator)
+void Player::_AddSpellCooldown(uint32 spellid, uint16 categoryId, uint32 itemid, uint32 end_time, bool needSendToClient)
 {
     SpellCooldown sc;
     sc.end = GameTime::GetGameTimeMS().count() + end_time;
     sc.category = categoryId;
     sc.itemid = itemid;
     sc.maxduration = end_time;
-    sc.sendToSpectator = false;
     sc.needSendToClient = needSendToClient;
-
-    if (end_time >= SPECTATOR_COOLDOWN_MIN * IN_MILLISECONDS && end_time <= SPECTATOR_COOLDOWN_MAX * IN_MILLISECONDS)
-    {
-        if (NeedSendSpectatorData() && forceSendToSpectator && (itemid || HasActiveSpell(spellid)))
-        {
-            sc.sendToSpectator = true;
-            ArenaSpectator::SendCommand_Cooldown(FindMap(), GetGUID(), "ACD", spellid, end_time / IN_MILLISECONDS, end_time / IN_MILLISECONDS);
-        }
-    }
 
     m_spellCooldowns[spellid] = std::move(sc);
 }
 
-void Player::AddSpellCooldown(uint32 spellid, uint32 itemid, uint32 end_time, bool needSendToClient, bool forceSendToSpectator)
+void Player::AddSpellCooldown(uint32 spellid, uint32 itemid, uint32 end_time, bool needSendToClient)
 {
-    _AddSpellCooldown(spellid, 0, itemid, end_time, needSendToClient, forceSendToSpectator);
+    _AddSpellCooldown(spellid, 0, itemid, end_time, needSendToClient);
 }
 
 void Player::ModifySpellCooldown(uint32 spellId, int32 cooldown)
@@ -11508,9 +11472,6 @@ Player* Player::GetSelectedPlayer() const
 void Player::SetSelection(ObjectGuid guid)
 {
     SetGuidValue(UNIT_FIELD_TARGET, guid);
-
-    if (NeedSendSpectatorData())
-        ArenaSpectator::SendCommand_GUID(FindMap(), GetGUID(), "TRG", guid);
 }
 
 void Player::SetGroup(Group* group, int8 subgroup)
@@ -11760,7 +11721,7 @@ void Player::ApplyEquipCooldown(Item* pItem)
         if (spellInfo && spellInfo->HasAttribute(SPELL_ATTR0_NOT_IN_COMBAT_ONLY_PEACEFUL))
             continue;
 
-        AddSpellCooldown(spellData.SpellId, pItem->GetEntry(), 30 * IN_MILLISECONDS, true, true);
+        AddSpellCooldown(spellData.SpellId, pItem->GetEntry(), 30 * IN_MILLISECONDS, true);
 
         WorldPacket data(SMSG_ITEM_COOLDOWN, 12);
         data << pItem->GetGUID();
@@ -14179,7 +14140,7 @@ void Player::UnsummonPetTemporaryIfAny()
 
 void Player::ResummonPetTemporaryUnSummonedIfAny()
 {
-    if (!m_temporaryUnsummonedPetNumber || IsSpectator())
+    if (!m_temporaryUnsummonedPetNumber)
         return;
 
     // not resummon in not appropriate state
@@ -14602,9 +14563,6 @@ void Player::SendClearCooldown(uint32 spell_id, Unit* target)
     data << uint32(spell_id);
     data << target->GetGUID();
     SendDirectMessage(&data);
-
-    if (target == this && NeedSendSpectatorData())
-        ArenaSpectator::SendCommand_UInt32Value(FindMap(), GetGUID(), "RCD", spell_id);
 }
 
 void Player::ResetMap()
@@ -15300,63 +15258,6 @@ void Player::SendDuelCountdown(uint32 counter)
     WorldPacket data(SMSG_DUEL_COUNTDOWN, 4);
     data << uint32(counter);                                // seconds
     GetSession()->SendPacket(&data);
-}
-
-void Player::SetIsSpectator(bool on)
-{
-    if (on)
-    {
-        AddAura(SPECTATOR_SPELL_SPEED, this);
-        m_ExtraFlags |= PLAYER_EXTRA_SPECTATOR_ON;
-        AddUnitState(UNIT_STATE_ISOLATED);
-        //SetFaction(1100);
-        SetUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
-        if (HasByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_FFA_PVP))
-        {
-            RemoveByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_FFA_PVP);
-            sScriptMgr->OnFfaPvpStateUpdate(this, false);
-        }
-        ResetContestedPvP();
-        SetDisplayId(23691);
-    }
-    else
-    {
-        RemoveAurasDueToSpell(SPECTATOR_SPELL_SPEED);
-        if (IsSpectator())
-            ClearUnitState(UNIT_STATE_ISOLATED);
-        m_ExtraFlags &= ~PLAYER_EXTRA_SPECTATOR_ON;
-        RemoveUnitFlag(UNIT_FLAG_NON_ATTACKABLE);
-        RestoreDisplayId();
-
-        if (!IsGameMaster())
-        {
-            //SetFactionForRace(getRace());
-
-            // restore FFA PvP Server state
-            // Xinef: it will be removed if necessery in UpdateArea called in WorldPortOpcode
-            if (sWorld->IsFFAPvPRealm())
-            {
-                if (!HasByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_FFA_PVP))
-                {
-                    SetByteFlag(UNIT_FIELD_BYTES_2, 1, UNIT_BYTE2_FLAG_FFA_PVP);
-                    sScriptMgr->OnFfaPvpStateUpdate(this, true);
-
-                }
-            }
-        }
-    }
-}
-
-bool Player::NeedSendSpectatorData() const
-{
-    if (FindMap() && FindMap()->IsBattleArena() && !IsSpectator())
-    {
-        Battleground* bg = ((BattlegroundMap*)FindMap())->GetBG();
-        if (bg && bg->HaveSpectators() && bg->GetStatus() == STATUS_IN_PROGRESS && !bg->GetPlayers().empty())
-            if (bg->GetPlayers().find(GetGUID()) != bg->GetPlayers().end())
-                return true;
-    }
-    return false;
 }
 
 void Player::PrepareCharmAISpells()
@@ -16264,19 +16165,13 @@ std::string Player::GetPlayerName()
     return "|Hplayer:" + name + "|h" + color + name + "|h|r";
 }
 
-void Player::SetSummonPoint(uint32 mapid, float x, float y, float z, uint32 delay /*= 0*/, bool asSpectator /*= false*/)
+void Player::SetSummonPoint(uint32 mapid, float x, float y, float z, uint32 delay /*= 0*/)
 {
     m_summon_expire = GameTime::GetGameTime().count() + (delay ? delay : MAX_PLAYER_SUMMON_DELAY);
     m_summon_mapid = mapid;
     m_summon_x = x;
     m_summon_y = y;
     m_summon_z = z;
-    m_summon_asSpectator = asSpectator;
-}
-
-bool Player::IsSummonAsSpectator() const
-{
-    return m_summon_asSpectator && m_summon_expire >= GameTime::GetGameTime().count();
 }
 
 bool Player::HasSpellCooldown(uint32 spell_id) const

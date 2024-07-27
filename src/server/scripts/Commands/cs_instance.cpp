@@ -129,15 +129,14 @@ public:
 
     static bool HandleInstanceStatsCommand(ChatHandler* handler)
     {
-        uint32 dungeon = 0, battleground = 0, arena = 0, spectators = 0;
+        uint32 dungeon = 0, battleground = 0, arena = 0;
         sMapMgr->GetNumInstances(dungeon, battleground, arena);
         handler->PSendSysMessage("instances loaded: dungeons ({}), battlegrounds ({}), arenas ({})", dungeon, battleground, arena);
         dungeon = 0;
         battleground = 0;
         arena = 0;
-        spectators = 0;
-        sMapMgr->GetNumPlayersInInstances(dungeon, battleground, arena, spectators);
-        handler->SendErrorMessage("players in instances: dungeons ({}), battlegrounds ({}), arenas ({} + {} spect)", dungeon, battleground, arena, spectators);
+        sMapMgr->GetNumPlayersInInstances(dungeon, battleground, arena);
+        handler->SendErrorMessage("players in instances: dungeons ({}), battlegrounds ({}), arenas ({})", dungeon, battleground, arena);
         return false;
     }
 

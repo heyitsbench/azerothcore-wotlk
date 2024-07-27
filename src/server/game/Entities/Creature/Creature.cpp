@@ -1350,7 +1350,7 @@ void Creature::SetLootRecipient(Unit* unit, bool withGroup)
                 {
                     if (Player* groupMember = i->GetSource())
                     {
-                        if (groupMember->IsGameMaster() || groupMember->IsSpectator())
+                        if (groupMember->IsGameMaster())
                         {
                             continue;
                         }
@@ -2829,7 +2829,7 @@ void Creature::_AddCreatureSpellCooldown(uint32 spell_id, uint16 categoryId, uin
     m_CreatureSpellCooldowns[spell_id] = std::move(spellCooldown);
 }
 
-void Creature::AddSpellCooldown(uint32 spell_id, uint32 /*itemid*/, uint32 end_time, bool /*needSendToClient*/, bool /*forceSendToSpectator*/)
+void Creature::AddSpellCooldown(uint32 spell_id, uint32 /*itemid*/, uint32 end_time, bool /*needSendToClient*/)
 {
     SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spell_id);
     if (!spellInfo)

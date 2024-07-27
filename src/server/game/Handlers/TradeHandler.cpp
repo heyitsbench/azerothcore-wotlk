@@ -578,9 +578,6 @@ void WorldSession::HandleInitiateTradeOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    if (GetPlayer()->IsSpectator())
-        return;
-
     Player* pOther = ObjectAccessor::FindPlayer(ID);
 
     if (!pOther)

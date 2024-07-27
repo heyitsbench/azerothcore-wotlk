@@ -383,15 +383,7 @@ public:
     [[nodiscard]] uint32 GetFreeSlotsForTeam(TeamId teamId) const;
     [[nodiscard]] uint32 GetMaxFreeSlots() const;
 
-    typedef std::set<Player*> SpectatorList;
     typedef std::map<ObjectGuid, ObjectGuid> ToBeTeleportedMap;
-    void AddSpectator(Player* p) { m_Spectators.insert(p); }
-    void RemoveSpectator(Player* p) { m_Spectators.erase(p); }
-    bool HaveSpectators() { return !m_Spectators.empty(); }
-    [[nodiscard]] const SpectatorList& GetSpectators() const { return m_Spectators; }
-    void AddToBeTeleported(ObjectGuid spectator, ObjectGuid participant) { m_ToBeTeleported[spectator] = participant; }
-    void RemoveToBeTeleported(ObjectGuid spectator) { ToBeTeleportedMap::iterator itr = m_ToBeTeleported.find(spectator); if (itr != m_ToBeTeleported.end()) m_ToBeTeleported.erase(itr); }
-    void SpectatorsSendPacket(WorldPacket& data);
 
     [[nodiscard]] bool isArena() const        { return m_IsArena; }
     [[nodiscard]] bool isBattleground() const { return !m_IsArena; }
@@ -710,7 +702,6 @@ private:
     // Raid Group
     Group* m_BgRaids[PVP_TEAMS_COUNT];                   // 0 - alliance, 1 - horde
 
-    SpectatorList m_Spectators;
     ToBeTeleportedMap m_ToBeTeleported;
 
     // Players count by team

@@ -172,7 +172,7 @@ public:
                             {
                                 if (Player* player = itr->GetSource()->ToPlayer())
                                 {
-                                    if (!player->IsGameMaster() && !player->IsSpectator() && player->IsAlive())
+                                    if (!player->IsGameMaster() && player->IsAlive())
                                     {
                                         playerTargets.push_back(player);
                                     }

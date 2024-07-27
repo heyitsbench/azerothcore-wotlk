@@ -202,7 +202,6 @@ struct SpellCooldown
     uint16 category;
     uint32 itemid;
     uint32 maxduration;
-    bool sendToSpectator: 1;
     bool needSendToClient: 1;
 };
 
@@ -1094,9 +1093,7 @@ public:
     }
     bool TeleportToEntryPoint();
 
-    void SetSummonPoint(uint32 mapid, float x, float y, float z, uint32 delay = 0, bool asSpectator = false);
-    [[nodiscard]] bool IsSummonAsSpectator() const;
-    void SetSummonAsSpectator(bool on) { m_summon_asSpectator = on; }
+    void SetSummonPoint(uint32 mapid, float x, float y, float z, uint32 delay = 0);
     void SummonIfPossible(bool agree, ObjectGuid summoner_guid);
     [[nodiscard]] time_t GetSummonExpireTimer() const { return m_summon_expire; }
 
@@ -1771,8 +1768,8 @@ public:
     [[nodiscard]] bool HasSpellItemCooldown(uint32 spell_id, uint32 itemid) const override;
     [[nodiscard]] uint32 GetSpellCooldownDelay(uint32 spell_id) const;
     void AddSpellAndCategoryCooldowns(SpellInfo const* spellInfo, uint32 itemId, Spell* spell = nullptr, bool infinityCooldown = false);
-    void AddSpellCooldown(uint32 spell_id, uint32 itemid, uint32 end_time, bool needSendToClient = false, bool forceSendToSpectator = false) override;
-    void _AddSpellCooldown(uint32 spell_id, uint16 categoryId, uint32 itemid, uint32 end_time, bool needSendToClient = false, bool forceSendToSpectator = false);
+    void AddSpellCooldown(uint32 spell_id, uint32 itemid, uint32 end_time, bool needSendToClient = false) override;
+    void _AddSpellCooldown(uint32 spell_id, uint16 categoryId, uint32 itemid, uint32 end_time, bool needSendToClient = false);
     void ModifySpellCooldown(uint32 spellId, int32 cooldown);
     void SendCooldownEvent(SpellInfo const* spellInfo, uint32 itemId = 0, Spell* spell = nullptr, bool setCooldown = true);
     void ProhibitSpellSchool(SpellSchoolMask idSchoolMask, uint32 unTimeMs) override;
@@ -2549,21 +2546,6 @@ public:
     // OURS
     // saving
     void AdditionalSavingAddMask(uint8 mask) { m_additionalSaveTimer = 2000; m_additionalSaveMask |= mask; }
-    // arena spectator
-    [[nodiscard]] bool IsSpectator() const { return m_ExtraFlags & PLAYER_EXTRA_SPECTATOR_ON; }
-    void SetIsSpectator(bool on);
-    [[nodiscard]] bool NeedSendSpectatorData() const;
-    void SetPendingSpectatorForBG(uint32 bgInstanceId) { m_pendingSpectatorForBG = bgInstanceId; }
-    [[nodiscard]] bool HasPendingSpectatorForBG(uint32 bgInstanceId) const { return m_pendingSpectatorForBG == bgInstanceId; }
-    void SetPendingSpectatorInviteInstanceId(uint32 bgInstanceId) { m_pendingSpectatorInviteInstanceId = bgInstanceId; }
-    [[nodiscard]] uint32 GetPendingSpectatorInviteInstanceId() const { return m_pendingSpectatorInviteInstanceId; }
-    bool HasReceivedSpectatorResetFor(ObjectGuid guid) { return m_receivedSpectatorResetFor.find(guid) != m_receivedSpectatorResetFor.end(); }
-    void ClearReceivedSpectatorResetFor() { m_receivedSpectatorResetFor.clear(); }
-    void AddReceivedSpectatorResetFor(ObjectGuid guid) { m_receivedSpectatorResetFor.insert(guid); }
-    void RemoveReceivedSpectatorResetFor(ObjectGuid guid) { m_receivedSpectatorResetFor.erase(guid); }
-    uint32 m_pendingSpectatorForBG;
-    uint32 m_pendingSpectatorInviteInstanceId;
-    GuidSet m_receivedSpectatorResetFor;
 
     // Dancing Rune weapon
     void setRuneWeaponGUID(ObjectGuid guid) { m_drwGUID = guid; };
@@ -2871,7 +2853,6 @@ public:
     float  m_summon_x;
     float  m_summon_y;
     float  m_summon_z;
-    bool   m_summon_asSpectator;
 
     DeclinedName* m_declinedname;
     Runes* m_runes;

@@ -144,7 +144,7 @@ public:
 
     /* statistics */
     void GetNumInstances(uint32& dungeons, uint32& battlegrounds, uint32& arenas);
-    void GetNumPlayersInInstances(uint32& dungeons, uint32& battlegrounds, uint32& arenas, uint32& spectators);
+    void GetNumPlayersInInstances(uint32& dungeons, uint32& battlegrounds, uint32& arenas);
 
     // Instance ID management
     void InitInstanceIds();

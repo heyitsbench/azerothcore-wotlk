@@ -146,22 +146,6 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
         }
     }
 
-    // pussywizard:
-    switch (type)
-    {
-        case CHAT_MSG_SAY:
-        case CHAT_MSG_YELL:
-        case CHAT_MSG_EMOTE:
-        case CHAT_MSG_TEXT_EMOTE:
-        case CHAT_MSG_AFK:
-        case CHAT_MSG_DND:
-        if (sender->IsSpectator())
-        {
-            recvData.rfinish();
-            return;
-        }
-    }
-
     if (sender->HasAura(1852) && type != CHAT_MSG_WHISPER)
     {
         SendNotification(GetAcoreString(LANG_GM_SILENCE), sender->GetName().c_str());
@@ -677,9 +661,6 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleEmoteOpcode(WorldPackets::Chat::EmoteClient& packet)
 {
-    if (GetPlayer()->IsSpectator())
-        return;
-
     uint32 emoteId = packet.EmoteID;
 
     // restrict to the only emotes hardcoded in client
@@ -738,9 +719,6 @@ void WorldSession::HandleTextEmoteOpcode(WorldPacket& recvData)
         SendNotification(GetAcoreString(LANG_WAIT_BEFORE_SPEAKING), timeStr.c_str());
         return;
     }
-
-    if (GetPlayer()->IsSpectator())
-        return;
 
     uint32 text_emote, emoteNum;
     ObjectGuid guid;

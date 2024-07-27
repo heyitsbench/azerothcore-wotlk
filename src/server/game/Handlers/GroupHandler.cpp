@@ -87,12 +87,6 @@ void WorldSession::HandleGroupInviteOpcode(WorldPacket& recvData)
     if (!sScriptMgr->CanGroupInvite(invitingPlayer, membername))
         return;
 
-    if (invitingPlayer->IsSpectator() || invitedPlayer->IsSpectator())
-    {
-        SendPartyResult(PARTY_OP_INVITE, membername, ERR_INVITE_RESTRICTED);
-        return;
-    }
-
     // restrict invite to GMs
     if (!sWorld->getBoolConfig(CONFIG_ALLOW_GM_GROUP) && !invitingPlayer->IsGameMaster() && invitedPlayer->IsGameMaster())
     {
@@ -229,12 +223,6 @@ void WorldSession::HandleGroupAcceptOpcode(WorldPacket& recvData)
     // Remove player from invitees in any case
     group->RemoveInvite(GetPlayer());
 
-    if (GetPlayer()->IsSpectator())
-    {
-        SendPartyResult(PARTY_OP_INVITE, "", ERR_INVITE_RESTRICTED);
-        return;
-    }
-
     if (!sScriptMgr->CanGroupAccept(GetPlayer(), group))
         return;
 
@@ -258,7 +246,7 @@ void WorldSession::HandleGroupAcceptOpcode(WorldPacket& recvData)
     if (!group->IsCreated())
     {
         // This can happen if the leader is zoning. To be removed once delayed actions for zoning are implemented
-        if (!leader || leader->IsSpectator())
+        if (!leader)
         {
             group->RemoveAllInvites();
             return;

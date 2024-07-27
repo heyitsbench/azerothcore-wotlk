@@ -15,7 +15,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ArenaSpectator.h"
 #include "CellImpl.h"
 #include "Common.h"
 #include "GameTime.h"
@@ -285,12 +284,6 @@ void AuraApplication::ClientUpdate(bool remove)
     WorldPacket data(SMSG_AURA_UPDATE);
     data << GetTarget()->GetPackGUID();
     BuildUpdatePacket(data, remove);
-
-    if (GetSlot() < MAX_AURAS)
-        if (Player const* plr = GetTarget()->ToPlayer())
-            if (Aura* aura = GetBase())
-                if (plr->NeedSendSpectatorData() && ArenaSpectator::ShouldSendAura(aura, GetEffectMask(), GetTarget()->GetGUID(), remove))
-                    ArenaSpectator::SendCommand_Aura(plr->FindMap(), plr->GetGUID(), "AUR", aura->GetCasterGUID(), aura->GetSpellInfo()->Id, aura->GetSpellInfo()->IsPositive(), aura->GetSpellInfo()->Dispel, aura->GetDuration(), aura->GetMaxDuration(), (aura->GetCharges() > 1 ? aura->GetCharges() : aura->GetStackAmount()), remove);
 
     _target->SendMessageToSet(&data, true);
 }

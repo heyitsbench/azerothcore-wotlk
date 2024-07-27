@@ -352,7 +352,7 @@ void MapMgr::GetNumInstances(uint32& dungeons, uint32& battlegrounds, uint32& ar
     }
 }
 
-void MapMgr::GetNumPlayersInInstances(uint32& dungeons, uint32& battlegrounds, uint32& arenas, uint32& spectators)
+void MapMgr::GetNumPlayersInInstances(uint32& dungeons, uint32& battlegrounds, uint32& arenas)
 {
     for (MapMapType::iterator itr = i_maps.begin(); itr != i_maps.end(); ++itr)
     {
@@ -366,13 +366,8 @@ void MapMgr::GetNumPlayersInInstances(uint32& dungeons, uint32& battlegrounds, u
             else if (mitr->second->IsBattleground()) battlegrounds += ((InstanceMap*)mitr->second)->GetPlayers().getSize();
             else if (mitr->second->IsBattleArena())
             {
-                uint32 spect = 0;
-                if (BattlegroundMap* bgmap = mitr->second->ToBattlegroundMap())
-                    if (Battleground* bg = bgmap->GetBG())
-                        spect = bg->GetSpectators().size();
 
-                arenas += ((InstanceMap*)mitr->second)->GetPlayers().getSize() - spect;
-                spectators += spect;
+                arenas += ((InstanceMap*)mitr->second)->GetPlayers().getSize();
             }
         }
     }

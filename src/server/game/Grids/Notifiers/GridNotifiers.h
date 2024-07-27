@@ -1356,7 +1356,7 @@ namespace Acore
             if (_reqAlive && !u->IsAlive())
                 return false;
 
-            if (_disallowGM && (u->IsGameMaster() || u->IsSpectator()))
+            if (_disallowGM && (u->IsGameMaster()))
                 return false;
 
             if (!_obj->IsWithinDistInMap(u, _range))

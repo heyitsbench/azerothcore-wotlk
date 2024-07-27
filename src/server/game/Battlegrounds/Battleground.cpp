@@ -16,7 +16,6 @@
  */
 
 #include "Battleground.h"
-#include "ArenaSpectator.h"
 #include "ArenaTeam.h"
 #include "BattlegroundBE.h"
 #include "BattlegroundDS.h"
@@ -580,31 +579,7 @@ inline void Battleground::_ProcessJoin(uint32 diff)
                     player->UpdateObjectVisibility(true);
                 }
 
-            for (SpectatorList::const_iterator itr = m_Spectators.begin(); itr != m_Spectators.end(); ++itr)
-                ArenaSpectator::HandleResetCommand(*itr);
-
             CheckWinConditions();
-
-            // pussywizard: arena spectator stuff
-            if (GetStatus() == STATUS_IN_PROGRESS)
-            {
-                for (ToBeTeleportedMap::const_iterator itr = m_ToBeTeleported.begin(); itr != m_ToBeTeleported.end(); ++itr)
-                    if (Player* p = ObjectAccessor::FindConnectedPlayer(itr->first))
-                        if (Player* t = ObjectAccessor::FindPlayer(itr->second))
-                        {
-                            if (!t->FindMap() || t->FindMap() != GetBgMap())
-                                continue;
-
-                            p->SetSummonPoint(t->GetMapId(), t->GetPositionX(), t->GetPositionY(), t->GetPositionZ(), 15, true);
-
-                            WorldPacket data(SMSG_SUMMON_REQUEST, 8 + 4 + 4);
-                            data << t->GetGUID();
-                            data << uint32(t->GetZoneId());
-                            data << uint32(15 * IN_MILLISECONDS);
-                            p->GetSession()->SendPacket(&data);
-                        }
-                m_ToBeTeleported.clear();
-            }
         }
         else
         {
@@ -1293,15 +1268,9 @@ bool Battleground::HasFreeSlots() const
     return false;
 }
 
-void Battleground::SpectatorsSendPacket(WorldPacket& data)
-{
-    for (SpectatorList::const_iterator itr = m_Spectators.begin(); itr != m_Spectators.end(); ++itr)
-        (*itr)->GetSession()->SendPacket(&data);
-}
-
 void Battleground::ReadyMarkerClicked(Player* p)
 {
-    if (!isArena() || GetStatus() >= STATUS_IN_PROGRESS || GetStartDelayTime() <= BG_START_DELAY_15S || (m_Events & BG_STARTING_EVENT_3) || p->IsSpectator())
+    if (!isArena() || GetStatus() >= STATUS_IN_PROGRESS || GetStartDelayTime() <= BG_START_DELAY_15S || (m_Events & BG_STARTING_EVENT_3))
         return;
     readyMarkerClickedSet.insert(p->GetGUID());
     uint32 count = readyMarkerClickedSet.size();

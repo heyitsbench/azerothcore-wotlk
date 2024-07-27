@@ -17,7 +17,6 @@
 
 #include "Unit.h"
 #include "AccountMgr.h"
-#include "ArenaSpectator.h"
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
 #include "Battleground.h"
@@ -9981,14 +9980,6 @@ void Unit::setPowerType(Powers new_powertype)
             SetPower(POWER_HAPPINESS, uint32(std::ceil(GetCreatePowers(POWER_HAPPINESS) * powerMultiplier)));
             break;
     }
-
-    if (Player const* player = ToPlayer())
-        if (player->NeedSendSpectatorData())
-        {
-            ArenaSpectator::SendCommand_UInt32Value(FindMap(), GetGUID(), "PWT", new_powertype);
-            ArenaSpectator::SendCommand_UInt32Value(FindMap(), GetGUID(), "MPW", new_powertype == POWER_RAGE || new_powertype == POWER_RUNIC_POWER ? GetMaxPower(new_powertype) / 10 : GetMaxPower(new_powertype));
-            ArenaSpectator::SendCommand_UInt32Value(FindMap(), GetGUID(), "CPW", new_powertype == POWER_RAGE || new_powertype == POWER_RUNIC_POWER ? GetPower(new_powertype) / 10 : GetPower(new_powertype));
-        }
 }
 
 FactionTemplateEntry const* Unit::GetFactionTemplateEntry() const
@@ -13849,7 +13840,7 @@ bool Unit::_IsValidAttackTarget(Unit const* target, SpellInfo const* bySpell, Wo
 
     if (Player const* playerAttacker = ToPlayer())
     {
-        if (playerAttacker->HasPlayerFlag(PLAYER_FLAGS_UBER) || playerAttacker->IsSpectator())
+        if (playerAttacker->HasPlayerFlag(PLAYER_FLAGS_UBER))
             return false;
     }
     // check flags
@@ -15440,8 +15431,6 @@ void Unit::SetHealth(uint32 val)
     if (GetTypeId() == TYPEID_PLAYER)
     {
         Player* player = ToPlayer();
-        if (player->NeedSendSpectatorData())
-            ArenaSpectator::SendCommand_UInt32Value(FindMap(), GetGUID(), "CHP", val);
 
         if (player->GetGroup())
             player->SetGroupUpdateFlag(GROUP_UPDATE_FLAG_CUR_HP);
@@ -15452,13 +15441,8 @@ void Unit::SetHealth(uint32 val)
         {
             if (Unit* owner = GetOwner())
                 if (Player* player = owner->ToPlayer())
-                {
-                    if (player->NeedSendSpectatorData() && pet->GetCreatureTemplate()->family)
-                        ArenaSpectator::SendCommand_UInt32Value(player->FindMap(), player->GetGUID(), "PHP", (uint32)pet->GetHealthPct());
-
                     if (player->GetGroup())
                         player->SetGroupUpdateFlag(GROUP_UPDATE_FLAG_PET_CUR_HP);
-                }
         }
     }
 }
@@ -15475,8 +15459,6 @@ void Unit::SetMaxHealth(uint32 val)
     if (GetTypeId() == TYPEID_PLAYER)
     {
         Player* player = ToPlayer();
-        if (player->NeedSendSpectatorData())
-            ArenaSpectator::SendCommand_UInt32Value(FindMap(), GetGUID(), "MHP", val);
 
         if (player->GetGroup())
             player->SetGroupUpdateFlag(GROUP_UPDATE_FLAG_MAX_HP);
@@ -15487,13 +15469,8 @@ void Unit::SetMaxHealth(uint32 val)
         {
             if (Unit* owner = GetOwner())
                 if (Player* player = owner->ToPlayer())
-                {
-                    if (player->NeedSendSpectatorData() && pet->GetCreatureTemplate()->family)
-                        ArenaSpectator::SendCommand_UInt32Value(player->FindMap(), player->GetGUID(), "PHP", (uint32)pet->GetHealthPct());
-
                     if (player->GetGroup())
                         player->SetGroupUpdateFlag(GROUP_UPDATE_FLAG_PET_MAX_HP);
-                }
         }
     }
 
@@ -15537,10 +15514,6 @@ void Unit::SetPower(Powers power, uint32 val, bool withPowerUpdate /*= true*/, b
     if (GetTypeId() == TYPEID_PLAYER)
     {
         Player* player = ToPlayer();
-        if (getPowerType() == power && player->NeedSendSpectatorData())
-        {
-            ArenaSpectator::SendCommand_UInt32Value(FindMap(), GetGUID(), "CPW", power == POWER_RAGE || power == POWER_RUNIC_POWER ? val / 10 : val);
-        }
 
         if (player->GetGroup())
         {
@@ -15575,8 +15548,6 @@ void Unit::SetMaxPower(Powers power, uint32 val)
     if (GetTypeId() == TYPEID_PLAYER)
     {
         Player* player = ToPlayer();
-        if (getPowerType() == power && player->NeedSendSpectatorData())
-            ArenaSpectator::SendCommand_UInt32Value(FindMap(), GetGUID(), "MPW", power == POWER_RAGE || power == POWER_RUNIC_POWER ? val / 10 : val);
 
         if (player->GetGroup())
             player->SetGroupUpdateFlag(GROUP_UPDATE_FLAG_MAX_POWER);
@@ -21230,11 +21201,6 @@ void Unit::PatchValuesUpdate(ByteBuffer& valuesUpdateBuf, BuildValuesCachePosPoi
             if (ft1 && ft2 && !ft1->IsFriendlyTo(*ft2))
                 // Allow targetting opposite faction in party when enabled in config
                 valuesUpdateBuf.put(posPointers.UnitFieldBytes2Pos, (m_uint32Values[UNIT_FIELD_BYTES_2] & ((UNIT_BYTE2_FLAG_SANCTUARY /*| UNIT_BYTE2_FLAG_AURAS | UNIT_BYTE2_FLAG_UNK5*/) << 8))); // this flag is at uint8 offset 1 !!
-        }// pussywizard / Callmephil
-        else if (target->IsSpectator() && target->FindMap() && target->FindMap()->IsBattleArena() &&
-                    (this->GetTypeId() == TYPEID_PLAYER || this->GetTypeId() == TYPEID_UNIT || this->GetTypeId() == TYPEID_DYNAMICOBJECT))
-        {
-                valuesUpdateBuf.put(posPointers.UnitFieldBytes2Pos, (m_uint32Values[UNIT_FIELD_BYTES_2] & 0xFFFFF2FF)); // clear UNIT_BYTE2_FLAG_PVP, UNIT_BYTE2_FLAG_FFA_PVP, UNIT_BYTE2_FLAG_SANCTUARY
         }
     }
 
@@ -21248,11 +21214,6 @@ void Unit::PatchValuesUpdate(ByteBuffer& valuesUpdateBuf, BuildValuesCachePosPoi
             if (ft1 && ft2 && !ft1->IsFriendlyTo(*ft2))
                 // pretend that all other HOSTILE players have own faction, to allow follow, heal, rezz (trade wont work)
                 valuesUpdateBuf.put(posPointers.UnitFieldFactionTemplatePos, uint32(target->GetFaction()));
-        }// pussywizard / Callmephil
-        else if (target->IsSpectator() && target->FindMap() && target->FindMap()->IsBattleArena() &&
-                    (this->GetTypeId() == TYPEID_PLAYER || this->GetTypeId() == TYPEID_UNIT || this->GetTypeId() == TYPEID_DYNAMICOBJECT))
-        {
-            valuesUpdateBuf.put(posPointers.UnitFieldFactionTemplatePos, uint32(target->GetFaction()));
         }
     }
 

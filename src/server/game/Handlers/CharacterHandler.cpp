@@ -1077,9 +1077,6 @@ void WorldSession::HandlePlayerLoginFromDB(LoginQueryHolder const& holder)
     if (pCurrChar->HasPlayerFlag(PLAYER_FLAGS_IN_PVP))
         pCurrChar->UpdatePvP(true, true);
 
-    // pussywizard: on login it's not possible to go back to arena as a spectator, HandleMoveWorldportAckOpcode is not sent, so call it here
-    pCurrChar->SetIsSpectator(false);
-
     // xinef: do this after everything is loaded
     pCurrChar->ContinueTaxiFlight();
 

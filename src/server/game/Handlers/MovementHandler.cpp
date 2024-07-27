@@ -15,7 +15,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ArenaSpectator.h"
 #include "Battleground.h"
 #include "BattlegroundMgr.h"
 #include "CellImpl.h"
@@ -150,29 +149,6 @@ void WorldSession::HandleMoveWorldportAck()
         {
             if (_player->IsInvitedForBattlegroundInstance()) // GMs are not invited, so they are not added to participants
                 bg->AddPlayer(_player);
-        }
-    }
-
-    // pussywizard: arena spectator stuff
-    {
-        if (newMap->IsBattleArena() && ((BattlegroundMap*)newMap)->GetBG() && _player->HasPendingSpectatorForBG(((BattlegroundMap*)newMap)->GetInstanceId()))
-        {
-            _player->ClearReceivedSpectatorResetFor();
-            _player->SetIsSpectator(true);
-            ArenaSpectator::SendCommand(_player, "%sENABLE", SPECTATOR_ADDON_PREFIX);
-            ((BattlegroundMap*)newMap)->GetBG()->AddSpectator(_player);
-            ArenaSpectator::HandleResetCommand(_player);
-        }
-        else
-            _player->SetIsSpectator(false);
-
-        GetPlayer()->SetPendingSpectatorForBG(0);
-
-        if (uint32 inviteInstanceId = _player->GetPendingSpectatorInviteInstanceId())
-        {
-            if (Battleground* tbg = sBattlegroundMgr->GetBattleground(inviteInstanceId, BATTLEGROUND_TYPE_NONE))
-                tbg->RemoveToBeTeleported(_player->GetGUID());
-            _player->SetPendingSpectatorInviteInstanceId(0);
         }
     }
 
@@ -835,17 +811,6 @@ void WorldSession::HandleSummonResponseOpcode(WorldPacket& recvData)
     recvData >> summoner_guid;
     recvData >> agree;
 
-    if (agree && _player->IsSummonAsSpectator())
-    {
-        ChatHandler chc(this);
-        if (Player* summoner = ObjectAccessor::FindPlayer(summoner_guid))
-            ArenaSpectator::HandleSpectatorSpectateCommand(&chc, summoner->GetName().c_str());
-        else
-            chc.PSendSysMessage("Requested player not found.");
-
-        agree = false;
-    }
-    _player->SetSummonAsSpectator(false);
     _player->SummonIfPossible(agree, summoner_guid);
 }
 

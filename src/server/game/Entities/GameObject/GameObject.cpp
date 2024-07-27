@@ -2660,7 +2660,7 @@ void GameObject::SetLootRecipient(Map* map)
     {
         if (Player* groupMember = i->GetSource())
         {
-            if (groupMember->IsGameMaster() || groupMember->IsSpectator())
+            if (groupMember->IsGameMaster())
             {
                 continue;
             }

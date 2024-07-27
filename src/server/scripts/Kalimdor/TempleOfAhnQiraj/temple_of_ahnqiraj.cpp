@@ -245,7 +245,7 @@ struct npc_obsidian_eradicator : public ScriptedAI
             {
                 me->GetMap()->DoForAllPlayers([&](Player* player)
                 {
-                    if (player->IsAlive() && !player->IsGameMaster() && !player->IsSpectator() && player->GetPower(POWER_MANA) > 0)
+                    if (player->IsAlive() && !player->IsGameMaster() && player->GetPower(POWER_MANA) > 0)
                     {
                         _targetGUIDs.push_back(player->GetGUID());
                     }
@@ -369,7 +369,7 @@ struct npc_obsidian_nullifier : public ScriptedAI
             {
                 me->GetMap()->DoForAllPlayers([&](Player* player)
                 {
-                    if (player->IsAlive() && !player->IsGameMaster() && !player->IsSpectator() && player->GetPower(POWER_MANA) > 0)
+                    if (player->IsAlive() && !player->IsGameMaster() && player->GetPower(POWER_MANA) > 0)
                     {
                         _targetGUIDs.push_back(player->GetGUID());
                     }
