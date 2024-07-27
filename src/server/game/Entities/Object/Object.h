@@ -419,8 +419,6 @@ public:
     void GetContactPoint(WorldObject const* obj, float& x, float& y, float& z, float distance2d = CONTACT_DISTANCE) const;
     void GetChargeContactPoint(WorldObject const* obj, float& x, float& y, float& z, float distance2d = CONTACT_DISTANCE) const;
 
-    [[nodiscard]] float GetObjectSize() const;
-
     [[nodiscard]] virtual float GetCombatReach() const { return 0.0f; } // overridden (only) in Unit
     void UpdateGroundPositionZ(float x, float y, float& z) const;
     void UpdateAllowedPositionZ(float x, float y, float& z, float* groundZ = nullptr) const;
@@ -463,7 +461,7 @@ public:
     bool IsWithinDist2d(const Position* pos, float dist) const;
     // use only if you will sure about placing both object at same map
     bool IsWithinDist(WorldObject const* obj, float dist2compare, bool is3D = true, bool useBoundingRadius = true) const;
-    bool IsWithinDistInMap(WorldObject const* obj, float dist2compare, bool is3D = true, bool useBoundingRadius = true) const;
+    bool IsWithinDistInMap(WorldObject const* obj, float dist2compare, bool is3D = true, bool incOwnRadius = true, bool incTargetRadius = true) const;
     [[nodiscard]] bool IsWithinLOS(float x, float y, float z, VMAP::ModelIgnoreFlags ignoreFlags = VMAP::ModelIgnoreFlags::Nothing, LineOfSightChecks checks = LINEOFSIGHT_ALL_CHECKS) const;
     [[nodiscard]] bool IsWithinLOSInMap(WorldObject const* obj, VMAP::ModelIgnoreFlags ignoreFlags = VMAP::ModelIgnoreFlags::Nothing, LineOfSightChecks checks = LINEOFSIGHT_ALL_CHECKS, Optional<float> collisionHeight = { }, Optional<float> combatReach = { }) const;
     [[nodiscard]] Position GetHitSpherePointFor(Position const& dest, Optional<float> collisionHeight = { }, Optional<float> combatReach = { }) const;
@@ -608,8 +606,8 @@ public:
     [[nodiscard]] float GetMinHeightInWater() const;
 
     [[nodiscard]] virtual float GetCollisionHeight() const { return 0.0f; }
-    [[nodiscard]] virtual float GetCollisionWidth() const { return GetObjectSize(); }
-    [[nodiscard]] virtual float GetCollisionRadius() const { return GetObjectSize() / 2; }
+    [[nodiscard]] virtual float GetCollisionWidth() const { return GetCombatReach(); }
+    [[nodiscard]] virtual float GetCollisionRadius() const { return GetCombatReach() / 2; }
 
     void AddAllowedLooter(ObjectGuid guid);
     void ResetAllowedLooters();
@@ -664,7 +662,7 @@ private:
     uint16 m_notifyflags;
     uint16 m_executed_notifies;
 
-    virtual bool _IsWithinDist(WorldObject const* obj, float dist2compare, bool is3D, bool useBoundingRadius = true) const;
+    virtual bool _IsWithinDist(WorldObject const* obj, float dist2compare, bool is3D, bool incOwnRadius = true, bool incTargetRadius = true) const;
 
     bool CanNeverSee(WorldObject const* obj) const;
     virtual bool CanAlwaysSee(WorldObject const* /*obj*/) const { return false; }

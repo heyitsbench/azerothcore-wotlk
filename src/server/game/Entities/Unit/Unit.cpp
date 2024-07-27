@@ -721,7 +721,7 @@ bool Unit::GetRandomContactPoint(Unit const* obj, float& x, float& y, float& z, 
 {
     float combat_reach = GetCombatReach();
     if (combat_reach < 0.1f) // sometimes bugged for players
-        combat_reach = DEFAULT_COMBAT_REACH;
+        combat_reach = DEFAULT_PLAYER_COMBAT_REACH;
 
     uint32 attacker_number = getAttackers().size();
     if (attacker_number > 0)
@@ -2718,7 +2718,7 @@ bool Unit::GetMeleeAttackPoint(Unit* attacker, Position& pos)
     float absAngle = currentAngle + angularRadius * direction;
 
     float x, y, z;
-    float distance = meleeReach - GetObjectSize();
+    float distance = meleeReach - GetCombatReach();
     GetNearPoint(attacker, x, y, z, distance, 0.0f, absAngle);
 
     if (!GetMap()->CanReachPositionAndGetValidCoords(this, x, y, z, true, true))
@@ -21340,11 +21340,11 @@ bool Unit::IsInCombatWith(Unit const* who) const
 float Unit::GetCollisionWidth() const
 {
     if (GetTypeId() == TYPEID_PLAYER)
-        return GetObjectSize();
+        return GetCombatReach();
 
     float scaleMod = GetObjectScale(); // 99% sure about this
-    float objectSize = GetObjectSize();
-    float defaultSize = DEFAULT_WORLD_OBJECT_SIZE * scaleMod;
+    float objectSize = GetCombatReach();
+    float defaultSize = DEFAULT_PLAYER_BOUNDING_RADIUS * scaleMod;
 
     //! Dismounting case - use basic default model data
     CreatureDisplayInfoEntry const* displayInfo = sCreatureDisplayInfoStore.AssertEntry(GetNativeDisplayId());

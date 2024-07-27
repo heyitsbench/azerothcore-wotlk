@@ -97,7 +97,7 @@ public:
                     case 1:
                         if (player)
                         {
-                            player->GetClosePoint(x, y, z, me->GetObjectSize());
+                            player->GetClosePoint(x, y, z, me->GetCombatReach());
                         }
                         z += 2.5f;
                         x -= 2.0f;

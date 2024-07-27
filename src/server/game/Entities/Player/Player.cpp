@@ -5629,7 +5629,7 @@ void Player::SendMessageToSetInRange(WorldPacket const* data, float dist, bool s
     if (self)
         SendDirectMessage(data);
 
-    dist += GetObjectSize();
+    dist += GetCombatReach();
     if (includeMargin)
         dist += VISIBILITY_COMPENSATION; // pussywizard: to ensure everyone receives all important packets
 

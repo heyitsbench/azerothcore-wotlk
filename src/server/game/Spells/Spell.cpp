@@ -1374,8 +1374,8 @@ void Spell::SelectImplicitCasterDestTargets(SpellEffIndex effIndex, SpellImplici
                 float dis = (float)rand_norm() * (max_dis - min_dis) + min_dis;
                 float x, y, z, angle;
                 angle = (float)rand_norm() * static_cast<float>(M_PI * 35.0f / 180.0f) - static_cast<float>(M_PI * 17.5f / 180.0f);
-                //m_caster->GetClosePoint(x, y, z, DEFAULT_WORLD_OBJECT_SIZE, dis, angle); this contains extra code that breaks fishing
-                m_caster->GetNearPoint(m_caster, x, y, z, DEFAULT_WORLD_OBJECT_SIZE, dis, m_caster->GetOrientation() + angle);
+                //m_caster->GetClosePoint(x, y, z, DEFAULT_PLAYER_BOUNDING_RADIUS, dis, angle); this contains extra code that breaks fishing
+                m_caster->GetNearPoint(m_caster, x, y, z, DEFAULT_PLAYER_BOUNDING_RADIUS, dis, m_caster->GetOrientation() + angle);
 
                 float ground = m_caster->GetMapHeight(x, y, z, true);
                 float liquidLevel = VMAP_INVALID_HEIGHT_VALUE;
@@ -1903,7 +1903,7 @@ void Spell::SelectImplicitTrajTargets(SpellEffIndex effIndex, SpellImplicitTarge
             if (m_caster == *itr || m_caster->IsOnVehicle(unitTarget) || (unitTarget)->GetVehicle())//(*itr)->IsOnVehicle(m_caster))
                 continue;
 
-        const float size = std::max((*itr)->GetObjectSize() * 0.7f, 1.0f); // 1/sqrt(3)
+        const float size = std::max((*itr)->GetCombatReach() * 0.7f, 1.0f); // 1/sqrt(3)
         /// @todo: all calculation should be based on src instead of m_caster
         const float objDist2d = std::fabs(m_targets.GetSrcPos()->GetExactDist2d(*itr) * cos(m_targets.GetSrcPos()->GetRelativeAngle(*itr)));
         const float dz = std::fabs((*itr)->GetPositionZ() - m_targets.GetSrcPos()->m_positionZ);
@@ -1997,7 +1997,7 @@ void Spell::SelectImplicitTrajTargets(SpellEffIndex effIndex, SpellImplicitTarge
         if (itr != targets.end())
         {
             float distSq = (*itr)->GetExactDistSq(x, y, z);
-            float sizeSq = (*itr)->GetObjectSize();
+            float sizeSq = (*itr)->GetCombatReach();
             sizeSq *= sizeSq;
             LOG_DEBUG("spells", "Spell::SelectTrajTargets: Initial {} {} {} {} {}", x, y, z, distSq, sizeSq);
             if (distSq > sizeSq)
@@ -9007,15 +9007,20 @@ namespace Acore
 
     bool WorldObjectSpellAreaTargetCheck::operator()(WorldObject* target)
     {
-        if (target->GetTypeId() == TYPEID_GAMEOBJECT)
+        if (target->ToGameObject())
         {
-            if (!target->ToGameObject()->IsInRange(_position->GetPositionX(), _position->GetPositionY(), _position->GetPositionZ(), _range))
+            // isInRange including the dimension of the GO
+            bool isInRange = target->ToGameObject()->IsInRange(_position->GetPositionX(), _position->GetPositionY(), _position->GetPositionZ(), _range);
+            if (!isInRange)
                 return false;
         }
-        else if (!target->IsWithinDist3d(_position, _range))
-            return false;
-        else if (target->GetTypeId() == TYPEID_UNIT && target->ToCreature()->IsAvoidingAOE()) // pussywizard
-            return false;
+        else
+        {
+            bool isInsideCylinder = target->IsWithinDist2d(_position, _range) && std::abs(target->GetPositionZ() - _position->GetPositionZ()) <= _range;
+            if (!isInsideCylinder)
+                return false;
+        }
+
         return WorldObjectSpellTargetCheck::operator ()(target);
     }
 
@@ -9034,7 +9039,7 @@ namespace Acore
         }
         else if (_spellInfo->HasAttribute(SPELL_ATTR0_CU_CONE_LINE))
         {
-            if (!_caster->HasInLine(target, _caster->GetObjectSize() + target->GetObjectSize()))
+            if (!_caster->HasInLine(target, _caster->GetCombatReach() + target->GetCombatReach()))
                 return false;
         }
         else
@@ -9054,7 +9059,7 @@ namespace Acore
     bool WorldObjectSpellTrajTargetCheck::operator()(WorldObject* target)
     {
         // return all targets on missile trajectory (0 - size of a missile)
-        if (!_caster->HasInLine(target, target->GetObjectSize()))
+        if (!_caster->HasInLine(target, target->GetCombatReach()))
             return false;
         return WorldObjectSpellAreaTargetCheck::operator ()(target);
     }

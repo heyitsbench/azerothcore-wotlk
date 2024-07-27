@@ -415,10 +415,9 @@ private:
     void UpdatePackedRotation();
 
     //! Object distance/size - overridden from Object::_IsWithinDist. Needs to take in account proper GO size.
-    bool _IsWithinDist(WorldObject const* obj, float dist2compare, bool /*is3D*/, bool /*useBoundingRadius = true*/) const override
+    bool _IsWithinDist(WorldObject const* obj, float dist2compare, bool /*is3D*/, bool /*incOwnRadius*/, bool /*incTargetRadius*/) const override
     {
         //! Following check does check 3d distance
-        dist2compare += obj->GetObjectSize();
         return IsInRange(obj->GetPositionX(), obj->GetPositionY(), obj->GetPositionZ(), dist2compare);
     }
     GameObjectAI* m_AI;

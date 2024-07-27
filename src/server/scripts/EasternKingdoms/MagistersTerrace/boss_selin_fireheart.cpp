@@ -144,7 +144,7 @@ struct boss_selin_fireheart : public ScriptedAI
         {
             Talk(SAY_ENERGY);
             float x, y, z;
-            crystal->GetClosePoint(x, y, z, me->GetObjectSize(), CONTACT_DISTANCE);
+            crystal->GetClosePoint(x, y, z, me->GetCombatReach(), CONTACT_DISTANCE);
             CrystalGUID = crystal->GetGUID();
             me->GetMotionMaster()->MovePoint(2, x, y, z);
         }

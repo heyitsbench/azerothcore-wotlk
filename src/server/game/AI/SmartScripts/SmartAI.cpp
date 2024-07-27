@@ -1135,7 +1135,7 @@ void SmartAI::MoveAway(float distance)
                 me->GetMotionMaster()->Clear(false);
 
             float x, y, z;
-            me->GetClosePoint(x, y, z, me->GetObjectSize(), distance, M_PI);
+            me->GetClosePoint(x, y, z, me->GetCombatReach(), distance, M_PI);
             if (me->GetVictim()->IsWithinLOS(x, y, z))
                 me->GetMotionMaster()->MovePoint(SMART_RANDOM_POINT, x, y, z);
         }

@@ -727,7 +727,7 @@ public:
                         if (Creature* deathbringer = ObjectAccessor::GetCreature(*me, _instance->GetGuidData(DATA_DEATHBRINGER_SAURFANG)))
                         {
                             float x, y, z;
-                            deathbringer->GetClosePoint(x, y, z, deathbringer->GetObjectSize());
+                            deathbringer->GetClosePoint(x, y, z, deathbringer->GetCombatReach());
                             me->SetWalk(true);
                             me->GetMotionMaster()->MovePoint(POINT_CORPSE, x, y, z);
                         }

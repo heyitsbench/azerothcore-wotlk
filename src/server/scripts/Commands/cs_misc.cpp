@@ -982,7 +982,7 @@ public:
 
             // before GM
             float x, y, z;
-            handler->GetSession()->GetPlayer()->GetClosePoint(x, y, z, targetPlayer->GetObjectSize());
+            handler->GetSession()->GetPlayer()->GetClosePoint(x, y, z, targetPlayer->GetCombatReach());
             targetPlayer->TeleportTo(handler->GetSession()->GetPlayer()->GetMapId(), x, y, z, targetPlayer->GetOrientation(), 0, handler->GetSession()->GetPlayer());
         }
         else
@@ -1107,7 +1107,7 @@ public:
 
             // before GM
             float x, y, z;
-            handler->GetSession()->GetPlayer()->GetClosePoint(x, y, z, player->GetObjectSize());
+            handler->GetSession()->GetPlayer()->GetClosePoint(x, y, z, player->GetCombatReach());
             player->TeleportTo(handler->GetSession()->GetPlayer()->GetMapId(), x, y, z, player->GetOrientation(), 0, handler->GetSession()->GetPlayer());
         }
 

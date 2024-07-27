@@ -2821,7 +2821,7 @@ void UnitAura::FillTargetMap(std::map<Unit*, uint8>& targets, Unit* caster)
                     case SPELL_EFFECT_APPLY_AREA_AURA_RAID:
                         {
                             targetList.push_back(GetUnitOwner());
-                            Acore::AnyGroupedUnitInObjectRangeCheck u_check(GetUnitOwner(), GetUnitOwner(), radius, GetSpellInfo()->Effects[effIndex].Effect == SPELL_EFFECT_APPLY_AREA_AURA_RAID);
+                            Acore::AnyGroupedUnitInObjectRangeCheck u_check(GetUnitOwner(), GetUnitOwner(), radius, GetSpellInfo()->Effects[effIndex].Effect == SPELL_EFFECT_APPLY_AREA_AURA_RAID, false, true);
                             Acore::UnitListSearcher<Acore::AnyGroupedUnitInObjectRangeCheck> searcher(GetUnitOwner(), targetList, u_check);
                             Cell::VisitAllObjects(GetUnitOwner(), searcher, radius);
                             break;
@@ -2829,14 +2829,14 @@ void UnitAura::FillTargetMap(std::map<Unit*, uint8>& targets, Unit* caster)
                     case SPELL_EFFECT_APPLY_AREA_AURA_FRIEND:
                         {
                             targetList.push_back(GetUnitOwner());
-                            Acore::AnyFriendlyUnitInObjectRangeCheck u_check(GetUnitOwner(), GetUnitOwner(), radius);
+                            Acore::AnyFriendlyUnitInObjectRangeCheck u_check(GetUnitOwner(), GetUnitOwner(), radius, false, true);
                             Acore::UnitListSearcher<Acore::AnyFriendlyUnitInObjectRangeCheck> searcher(GetUnitOwner(), targetList, u_check);
                             Cell::VisitAllObjects(GetUnitOwner(), searcher, radius);
                             break;
                         }
                     case SPELL_EFFECT_APPLY_AREA_AURA_ENEMY:
                         {
-                            Acore::AnyAoETargetUnitInObjectRangeCheck u_check(GetUnitOwner(), GetUnitOwner(), radius); // No GetCharmer in searcher
+                            Acore::AnyAoETargetUnitInObjectRangeCheck u_check(GetUnitOwner(), GetUnitOwner(), radius, m_spellInfo, false, true); // No GetCharmer in searcher
                             Acore::UnitListSearcher<Acore::AnyAoETargetUnitInObjectRangeCheck> searcher(GetUnitOwner(), targetList, u_check);
                             Cell::VisitAllObjects(GetUnitOwner(), searcher, radius);
                             break;
@@ -2898,7 +2898,7 @@ void DynObjAura::FillTargetMap(std::map<Unit*, uint8>& targets, Unit* /*caster*/
         UnitList targetList;
         if (spellInfo->Effects[effIndex].TargetB.GetTarget() == TARGET_DEST_DYNOBJ_ALLY || spellInfo->Effects[effIndex].TargetB.GetTarget() == TARGET_UNIT_DEST_AREA_ALLY)
         {
-            Acore::AnyFriendlyUnitInObjectRangeCheck u_check(GetDynobjOwner(), dynObjOwnerCaster, radius);
+            Acore::AnyFriendlyUnitInObjectRangeCheck u_check(GetDynobjOwner(), dynObjOwnerCaster, radius, false, true);
             Acore::UnitListSearcher<Acore::AnyFriendlyUnitInObjectRangeCheck> searcher(GetDynobjOwner(), targetList, u_check);
             Cell::VisitAllObjects(GetDynobjOwner(), searcher, radius);
         }
@@ -2912,7 +2912,7 @@ void DynObjAura::FillTargetMap(std::map<Unit*, uint8>& targets, Unit* /*caster*/
         }
         else
         {
-            Acore::AnyAoETargetUnitInObjectRangeCheck u_check(GetDynobjOwner(), dynObjOwnerCaster, radius);
+            Acore::AnyAoETargetUnitInObjectRangeCheck u_check(GetDynobjOwner(), dynObjOwnerCaster, radius, nullptr, false, true);
             Acore::UnitListSearcher<Acore::AnyAoETargetUnitInObjectRangeCheck> searcher(GetDynobjOwner(), targetList, u_check);
             Cell::VisitAllObjects(GetDynobjOwner(), searcher, radius);
         }

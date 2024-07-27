@@ -602,7 +602,7 @@ public:
             if (caster->GetTypeId() == TYPEID_PLAYER && spell->Id == SPELL_POISON && !Tapped)
             {
                 Tapped = true;
-                caster->GetClosePoint(x, y, z, me->GetObjectSize());
+                caster->GetClosePoint(x, y, z, me->GetCombatReach());
                 Talk(SAY_1);
                 events.ScheduleEvent(EVENT_WALK_TO_MUTTON, 0);
             }

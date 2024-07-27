@@ -2655,7 +2655,7 @@ bool Creature::CanCreatureAttack(Unit const* victim, bool skipDistCheck) const
         return true;
 
     // xinef: added size factor for huge npcs
-    float dist = std::min<float>(GetMap()->GetVisibilityRange() + GetObjectSize() * 2, 150.0f);
+    float dist = std::min<float>(GetMap()->GetVisibilityRange() + GetCombatReach() * 2, 150.0f);
 
     if (Unit* unit = GetCharmerOrOwner())
         return victim->IsWithinDist(unit, dist);
@@ -3455,7 +3455,7 @@ void Creature::SetObjectScale(float scale)
 {
     Unit::SetObjectScale(scale);
 
-    float combatReach = DEFAULT_WORLD_OBJECT_SIZE;
+    float combatReach = DEFAULT_PLAYER_BOUNDING_RADIUS;
 
     if (CreatureModelInfo const* minfo = sObjectMgr->GetCreatureModelInfo(GetDisplayId()))
     {
@@ -3465,7 +3465,7 @@ void Creature::SetObjectScale(float scale)
     }
 
     if (IsPet())
-        combatReach = DEFAULT_COMBAT_REACH;
+        combatReach = DEFAULT_PLAYER_COMBAT_REACH;
 
     SetFloatValue(UNIT_FIELD_COMBATREACH, combatReach * scale);
 }
@@ -3474,7 +3474,7 @@ void Creature::SetDisplayId(uint32 modelId, float displayScale /*= 1.f*/)
 {
     Unit::SetDisplayId(modelId, displayScale);
 
-    float combatReach = DEFAULT_WORLD_OBJECT_SIZE;
+    float combatReach = DEFAULT_PLAYER_BOUNDING_RADIUS;
 
     if (CreatureModelInfo const* minfo = sObjectMgr->GetCreatureModelInfo(modelId))
     {
@@ -3484,7 +3484,7 @@ void Creature::SetDisplayId(uint32 modelId, float displayScale /*= 1.f*/)
     }
 
     if (IsPet())
-        combatReach = DEFAULT_COMBAT_REACH;
+        combatReach = DEFAULT_PLAYER_COMBAT_REACH;
 
     SetObjectScale(displayScale);
 

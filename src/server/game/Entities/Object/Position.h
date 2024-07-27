@@ -225,6 +225,11 @@ struct Position
     }
 
     [[nodiscard]] bool IsWithinBox(const Position& center, float xradius, float yradius, float zradius) const;
+
+    /*
+    search using this relation: dist2d < radius && abs(dz) < height
+    */
+    bool IsWithinDoubleVerticalCylinder(Position const* center, float radius, float height) const;
     bool HasInArc(float arcangle, const Position* pos, float targetRadius = 0.0f) const;
     bool HasInLine(Position const* pos, float width) const;
     [[nodiscard]] std::string ToString() const;
