@@ -335,10 +335,15 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
             msg.erase(end, msg.end());
         }
 
-        // Validate hyperlinks
-        if (!ValidateHyperlinksAndMaybeKick(msg))
+        // Skip validation for playerbots module
+        auto playerbotsHyperlink = msg.find("Hfound:") != std::string::npos;
+        if (!playerbotsHyperlink)
         {
-            return;
+            // Validate hyperlinks
+            if (!ValidateHyperlinksAndMaybeKick(msg))
+            {
+                return;
+            }
         }
     }
 
@@ -415,6 +420,13 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 if (!senderIsPlayer && !sender->isAcceptWhispers() && !sender->IsInWhisperWhiteList(receiver->GetGUID()))
                     sender->AddWhisperWhiteList(receiver->GetGUID());
 
+                if (!sScriptMgr->OnPlayerCanUseChat(GetPlayer(), type, lang, msg, receiver))
+                {
+                    return;
+                }
+
+                sScriptMgr->OnPlayerChat(GetPlayer(), type, lang, msg, receiver);
+
                 GetPlayer()->Whisper(msg, Language(lang), receiver);
             }
             break;
@@ -459,6 +471,10 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                         sScriptMgr->OnPlayerChat(GetPlayer(), type, lang, msg, guild);
 
                         guild->BroadcastToGuild(this, false, msg, lang == LANG_ADDON ? LANG_ADDON : LANG_UNIVERSAL);
+                    }
+                    else
+                    {
+                        sScriptMgr->OnPlayerChat(GetPlayer(), type, lang, msg);
                     }
                 }
             }
