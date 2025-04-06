@@ -12401,6 +12401,8 @@ float Player::GetReputationPriceDiscount(Creature const* creature) const
 
 float Player::GetReputationPriceDiscount(FactionTemplateEntry const* factionTemplate) const
 {
+    if (HasSpell(69044)) // Best Deals Anywhere
+        return 0.8f;
     if (!factionTemplate || !factionTemplate->faction)
     {
         return 1.0f;
