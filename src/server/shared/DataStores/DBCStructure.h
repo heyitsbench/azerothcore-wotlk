@@ -986,6 +986,11 @@ struct FactionTemplateEntry
         return hostileMask == 0 && friendlyMask == 0;
     }
     [[nodiscard]] bool IsContestedGuardFaction() const { return (factionFlags & FACTION_TEMPLATE_FLAG_ATTACK_PVP_ACTIVE_PLAYERS) != 0; }
+<<<<<<< Updated upstream
+=======
+    [[nodiscard]] bool FactionRespondsToCallForHelp() const { return (factionFlags & FACTION_TEMPLATE_FLAG_RESPOND_TO_CALL_FOR_HELP) != 0; }
+    [[nodiscard]] bool FactionFleesFromCallForHelp() const { return (factionFlags & FACTION_TEMPLATE_FLAG_FLEE_FROM_CALL_FOR_HELP) != 0; }
+>>>>>>> Stashed changes
 };
 
 struct GameObjectArtKitEntry

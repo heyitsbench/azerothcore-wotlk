@@ -1154,12 +1154,17 @@ namespace Acore
             if (u == i_funit)
                 return;
 
-            if (!u->CanAssistTo(i_funit, i_enemy, false))
-                return;
-
             // too far
             if (!u->IsWithinDistInMap(i_funit, i_range))
                 return;
+
+            if (!u->CanAssistTo(i_funit, i_enemy, false))
+            {
+                if (u->FleesFromCallForHelp())
+                    u->GetMotionMaster()->MoveForwards(i_funit, 10.0f);
+
+                return;
+            }
 
             // only if see assisted creature's enemy
             if (!u->IsWithinLOSInMap(i_enemy))
@@ -1274,12 +1279,17 @@ namespace Acore
             if (u == i_funit)
                 return false;
 
-            if (!u->CanAssistTo(i_funit, i_enemy))
-                return false;
-
             // too far
             if (!i_funit->IsWithinDistInMap(u, i_range))
                 return false;
+
+            if (!u->CanAssistTo(i_funit, i_enemy))
+            {
+                if (u->FleesFromCallForHelp())
+                    u->GetMotionMaster()->MoveForwards(i_funit, 10.0f);
+
+                return false;
+            }
 
             // only if see assisted creature
             if (!i_funit->IsWithinLOSInMap(u))
@@ -1303,11 +1313,17 @@ namespace Acore
         {
             if (u == i_obj)
                 return false;
-            if (!u->CanAssistTo(i_obj, i_enemy))
-                return false;
 
             if (!i_obj->IsWithinDistInMap(u, i_range))
                 return false;
+
+            if (!u->CanAssistTo(i_obj, i_enemy))
+            {
+                if (u->FleesFromCallForHelp())
+                    u->GetMotionMaster()->MoveForwards(i_obj, 10.0f);
+
+                return false;
+            }
 
             if (!i_obj->IsWithinLOSInMap(u))
                 return false;
