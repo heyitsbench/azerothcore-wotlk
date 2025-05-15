@@ -32,16 +32,16 @@ using namespace Acore::ChatCommands;
 class voicechat_commandscript : public CommandScript
 {
 public:
-    voicechat_commandscript() : CommandScript("bf_commandscript") { }
+    voicechat_commandscript() : CommandScript("voicechat_commandscript") { }
 
     ChatCommandTable GetCommands() const override
     {
         static ChatCommandTable voicechatcommandTable =
         {
-            { "disconnect",  HandleVoiceChatDisconnectCommand,  SEC_ADMINISTRATOR, Console::No },
-            { "disable",   HandleVoiceChatDisableCommand,    SEC_ADMINISTRATOR, Console::No },
-            { "enable", HandleVoiceChatEnableCommand, SEC_ADMINISTRATOR, Console::No },
-            { "stats",  HandleVoiceChatStatsCommand,  SEC_ADMINISTRATOR, Console::No },
+            { "disconnect", HandleVoiceChatDisconnectCommand, SEC_ADMINISTRATOR, Console::No },
+            { "disable",    HandleVoiceChatDisableCommand,    SEC_ADMINISTRATOR, Console::No },
+            { "enable",     HandleVoiceChatEnableCommand,     SEC_ADMINISTRATOR, Console::No },
+            { "stats",      HandleVoiceChatStatsCommand,      SEC_ADMINISTRATOR, Console::No },
         };
 
         static ChatCommandTable commandTable =
