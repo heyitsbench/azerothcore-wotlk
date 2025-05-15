@@ -170,6 +170,18 @@ class Channel
             if (state) flags |= MEMBER_FLAG_MUTED;
             else flags &= ~MEMBER_FLAG_MUTED;
         }
+        [[nodiscard]] bool IsMicMuted() const { return flags & MEMBER_FLAG_MIC_MUTED; }
+        void SetMicMuted(bool state)
+        {
+            if (state) flags |= MEMBER_FLAG_MIC_MUTED;
+            else flags &= ~MEMBER_FLAG_MIC_MUTED;
+        }
+        [[nodiscard]] bool IsVoiced() const { return flags & MEMBER_FLAG_VOICED; }
+        void SetVoiced(bool state)
+        {
+            if (state) flags |= MEMBER_FLAG_VOICED;
+            else flags &= ~MEMBER_FLAG_VOICED;
+        }
     private:
         bool _gmStatus = false;
     };
@@ -217,10 +229,16 @@ public:
     static void CleanOldChannelsInDB();
     void ToggleModeration(Player* p);
 
+    [[nodiscard]] bool IsOn(ObjectGuid who) const { return playersStore.find(who) != playersStore.end(); }
+    [[nodiscard]] bool IsBanned(ObjectGuid guid) const;
+
     // pussywizard:
     void AddWatching(Player* p);
     void RemoveWatching(Player* p);
 
+    bool IsVoiceEnabled() const { return HasFlag(CHANNEL_FLAG_VOICE); }
+    void ToggleVoice(Player* player = nullptr);
+    void AddVoiceChatMembersAfterCreate();
 private:
     // initial packet data (notify type and channel name)
     void MakeNotifyPacket(WorldPacket* data, uint8 notify_type);
@@ -268,9 +286,6 @@ private:
     void SendToAllWatching(WorldPacket* data);
 
     bool ShouldAnnouncePlayer(Player const* player) const;
-
-    [[nodiscard]] bool IsOn(ObjectGuid who) const { return playersStore.find(who) != playersStore.end(); }
-    [[nodiscard]] bool IsBanned(ObjectGuid guid) const;
 
     void UpdateChannelInDB() const;
     void UpdateChannelUseageInDB() const;
@@ -329,9 +344,16 @@ private:
     ObjectGuid _ownerGUID;
     std::string _name;
     std::string _password;
+    bool m_voice = false;
     ChannelRights _channelRights;
     PlayerContainer playersStore;
     BannedContainer bannedStore;
     PlayersWatchingContainer playersWatchingStore;
 };
 #endif
+
+
+// Missing ?
+//        // delete voice channel
+//        Team team = this == channelMgr(ALLIANCE) ? ALLIANCE : HORDE;
+//        sVoiceChatMgr.DeleteCustomVoiceChatChannel(channel->GetName(), team);
