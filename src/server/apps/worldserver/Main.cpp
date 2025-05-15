@@ -193,9 +193,6 @@ int main(int argc, char** argv)
     // If logs are supposed to be handled async then we need to pass the IoContext into the Log singleton
     sLog->Initialize(sConfigMgr->GetOption<bool>("Log.Async.Enable", false) ? ioContext.get() : nullptr);
 
-    // initialize VoiceChatMgr with the same ioContext
-    sVoiceChatMgr.Init(*ioContext);
-
     Acore::Banner::Show("worldserver-daemon",
         [](std::string_view text)
         {
@@ -322,6 +319,9 @@ int main(int argc, char** argv)
 
         sScriptMgr->OnAfterUnloadAllMaps();
     });
+
+    // initialize VoiceChatMgr with the same ioContext
+    sVoiceChatMgr.Init(*ioContext);
 
     // Start the Remote Access port (acceptor) if enabled
     std::unique_ptr<AsyncAcceptor> raAcceptor;
