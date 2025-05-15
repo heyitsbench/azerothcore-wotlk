@@ -220,16 +220,14 @@ void Channel::JoinChannel(Player* player, std::string const& pass)
         // only proof is https://www.youtube.com/watch?v=h5oH4ER2cJ0 where voice chat is auto enabled on new channel
         if (!IsVoiceEnabled())
         {
-            // if (player->GetSession()->IsVoiceChatEnabled())
+            if (player->GetSession()->IsVoiceChatEnabled())
             {
                 // toggle voice and update player flags
                 ToggleVoice(player);
             }
         }
         if (IsVoiceEnabled())
-        {
             sVoiceChatMgr.AddToCustomVoiceChatChannel(guid, this->GetName(), player->GetTeamId());
-        }
     }
 
     WorldPacket data;

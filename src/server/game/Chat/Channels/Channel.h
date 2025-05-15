@@ -351,9 +351,3 @@ private:
     PlayersWatchingContainer playersWatchingStore;
 };
 #endif
-
-
-// Missing ?
-//        // delete voice channel
-//        Team team = this == channelMgr(ALLIANCE) ? ALLIANCE : HORDE;
-//        sVoiceChatMgr.DeleteCustomVoiceChatChannel(channel->GetName(), team);

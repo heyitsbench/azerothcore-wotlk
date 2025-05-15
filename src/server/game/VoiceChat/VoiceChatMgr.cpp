@@ -415,7 +415,7 @@ void VoiceChatMgr::ProcessByteBufferException(
     VoiceChatServerPacket const &packet) {
   LOG_ERROR("sql.sql",
             "VoiceChatMgr::Update ByteBufferException occured while parsing a "
-            "packet (opcode: %{}).",
+            "packet (opcode: {}).",
             packet.GetOpcode());
 
   // if (sLog->HasLogLevelOrHigher(LOG_LVL_DEBUG))
@@ -427,9 +427,9 @@ void VoiceChatMgr::ProcessByteBufferException(
 
   LOG_ERROR(
       "sql.sql",
-      "Disconnecting voice server [address %s] for badly formatted packet.",
+      "Disconnecting voice server [address {}] for badly formatted packet.",
       GetVoiceServerConnectAddressString());
-  // DETAIL_LOG("Disconnecting voice server [address %s] for badly formatted
+  // DETAIL_LOG("Disconnecting voice server [address {}] for badly formatted
   // packet.",
   //    );
 
@@ -478,7 +478,7 @@ groupId, const std::string& name, TeamId team)
     if (IsVoiceChatChannelBeingCreated(type, groupId, name, newTeam))
         return;
 
-    LOG_ERROR("sql.sql", "VoiceChatMgr: CreateVoiceChannel type: %u, name: %s, team: %u, group: %u", type, name.c_str(), newTeam, groupId);
+    LOG_ERROR("sql.sql", "VoiceChatMgr: CreateVoiceChannel type: {}, name: {}, team: {}, group: {}", type, name.c_str(), newTeam, groupId);
     VoiceChatChannelRequest req;
     req.id = new_request_id++;
     req.type = type;
@@ -946,7 +946,7 @@ void VoiceChatMgr::VoiceChannelSlot(uint16 channel_id, uint8 slot_id)
     if (!m_socket)
         return;
 
-    LOG_ERROR("sql.sql", "VoiceChatMgr: Channel %u voice slot %u", (int)channel_id, (int)slot_id);
+    LOG_ERROR("sql.sql", "VoiceChatMgr: Channel {} voice slot {}", (int)channel_id, (int)slot_id);
 
     VoiceChatServerPacket data(VOICECHAT_CMSG_VOICE_MEMBER, 5);
     data << channel_id;
@@ -959,7 +959,7 @@ void VoiceChatMgr::DevoiceChannelSlot(uint16 channel_id, uint8 slot_id)
     if (!m_socket)
         return;
 
-      LOG_ERROR("sql.sql", "VoiceChatMgr: Channel %u devoice slot %u", (int)channel_id, (int)slot_id);
+      LOG_ERROR("sql.sql", "VoiceChatMgr: Channel {} devoice slot {}", (int)channel_id, (int)slot_id);
 
     VoiceChatServerPacket data(VOICECHAT_CMSG_DEVOICE_MEMBER, 5);
     data << channel_id;
@@ -985,7 +985,7 @@ void VoiceChatMgr::UnmuteChannelSlot(uint16 channel_id, uint8 slot_id)
     if (!m_socket)
         return;
 
-    LOG_ERROR("sql.sql", "VoiceChatMgr: Channel %u unmute slot %u", (int)channel_id, (int)slot_id);
+    LOG_ERROR("sql.sql", "VoiceChatMgr: Channel {} unmute slot {}", (int)channel_id, (int)slot_id);
 
     VoiceChatServerPacket data(VOICECHAT_CMSG_UNMUTE_MEMBER, 5);
     data << channel_id;
