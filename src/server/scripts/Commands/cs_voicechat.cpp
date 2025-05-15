@@ -72,7 +72,7 @@ public:
         }
         else if (reconnectAttempts > 0)
         {
-            handler->PSendSysMessage("Voice Chat server disconnected, reconnect enabled (%u attempts)", reconnectAttempts);
+            handler->PSendSysMessage("Voice Chat server disconnected, reconnect enabled ({} attempts)", reconnectAttempts);
         }
         return true;
     }
@@ -112,7 +112,7 @@ public:
         }
 
         VoiceChatStatistics stats = sVoiceChatMgr.GetStatistics();
-        handler->PSendSysMessage("Voice Chat: channels: %u, active users: %u, voice chat enabled: %u, microphone enabled: %u", stats.channels, stats.active_users, stats.totalVoiceChatEnabled, stats.totalVoiceMicEnabled);
+        handler->PSendSysMessage("Voice Chat: channels: {}, active users: {}, voice chat enabled: {}, microphone enabled: {}", stats.channels, stats.active_users, stats.totalVoiceChatEnabled, stats.totalVoiceMicEnabled);
         return true;
     }
 

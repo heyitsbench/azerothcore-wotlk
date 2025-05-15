@@ -327,7 +327,7 @@ void WorldSession::HandleAddVoiceIgnoreOpcode(WorldPacket& recvData)
 
     CharacterDatabase.EscapeString(IgnoreName);
 
-    LOG_ERROR("sql.sql", "WORLD: %s asked to Ignore: '%s'",
+    LOG_ERROR("sql.sql", "WORLD: {} asked to Ignore: '{}'",
         GetPlayer()->GetName(), IgnoreName.c_str());
 
 
@@ -335,7 +335,7 @@ void WorldSession::HandleAddVoiceIgnoreOpcode(WorldPacket& recvData)
     if (!ignoreGUID)
         return;
 
-    // CharacterDatabase.AsyncQuery(&WorldSession::HandleAddMutedOpcodeCallBack, GetAccountId(), "SELECT guid FROM characters WHERE name = '%s'", IgnoreName.c_str());
+    // CharacterDatabase.AsyncQuery(&WorldSession::HandleAddMutedOpcodeCallBack, GetAccountId(), "SELECT guid FROM characters WHERE name = '{}'", IgnoreName.c_str());
     // _queryProcessor.AddCallback(CharacterDatabase.AsyncQuery(stmt).WithPreparedCallback(std::bind(&WorldSession::HandleAddMutedOpcodeCallBack, this, std::placeholders::_1)));
 
     Player* player = ObjectAccessor::FindPlayer(ignoreGUID);
