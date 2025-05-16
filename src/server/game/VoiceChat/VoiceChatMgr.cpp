@@ -88,29 +88,45 @@ void VoiceChatMgr::VoiceSocketThread() {
   }
 }
 
+void VoiceChatMgr::LoadConfigs() {
+  enabled = sWorld->getBoolConfig(CONFIG_VOICE_CHAT_ENABLED);
+
+  server_address_string = sConfigMgr->GetOption<std::string>("VoiceChat.ServerAddress", "127.0.0.1");
+  server_address = inet_addr(server_address_string.c_str());
+  server_port = sWorld->getIntConfig(CONFIG_VOICE_CHAT_SERVER_PORT);
+
+  std::string voice_address_string = sConfigMgr->GetOption<std::string>("VoiceChat.VoiceAddress", "127.0.0.1");
+  voice_address = inet_addr(voice_address_string.c_str());
+  voice_port = sWorld->getIntConfig(CONFIG_VOICE_CHAT_VOICE_PORT);
+
+  maxConnectAttempts = sWorld->getIntConfig(CONFIG_VOICE_CHAT_MAX_CONNECT_ATTEMPTS);
+}
+
 void VoiceChatMgr::Init(Acore::Asio::IoContext &ioContext) {
+  LoadConfigs();
+
   next_ping = std::chrono::system_clock::now() + std::chrono::seconds(5);
   last_pong = std::chrono::system_clock::now();
   lastUpdate = std::chrono::system_clock::now();
   curReconnectAttempts = 0;
 
-  state = sWorld->getBoolConfig(CONFIG_VOICE_CHAT_ENABLED) ? VOICECHAT_NOT_CONNECTED : VOICECHAT_DISCONNECTED;
+  state = enabled ? VOICECHAT_NOT_CONNECTED : VOICECHAT_DISCONNECTED;
 
   // Attempt an asynchronous connection to the voice server
   LOG_ERROR("sql.sql", "Connecting to voice server at {}:{}",
-            sConfigMgr->GetOption<std::string>("VoiceChat.ServerAddress", "127.0.0.1"), sWorld->getIntConfig(CONFIG_VOICE_CHAT_SERVER_PORT));
-  new AsyncConnector<VoiceChatSocket>(ioContext, sConfigMgr->GetOption<std::string>("VoiceChat.ServerAddress", "127.0.0.1"),
-      sWorld->getIntConfig(CONFIG_VOICE_CHAT_SERVER_PORT), false);
+            server_address_string, server_port);
+  new AsyncConnector<VoiceChatSocket>(ioContext, server_address_string,
+                                      server_port, false);
 
   // FIX: Store the connector
   _connector = std::make_unique<AsyncConnector<VoiceChatSocket>>(
-      ioContext, sConfigMgr->GetOption<std::string>("VoiceChat.ServerAddress", "127.0.0.1"), sWorld->getIntConfig(CONFIG_VOICE_CHAT_SERVER_PORT), false);
+      ioContext, server_address_string, server_port, false);
 
   // Optionally store a reference to ioContext in VoiceChatMgr if needed
 }
 
 void VoiceChatMgr::Update() {
-  if (!sWorld->getBoolConfig(CONFIG_VOICE_CHAT_ENABLED))
+  if (!enabled)
     return;
 
 // SPAM
@@ -173,9 +189,9 @@ void VoiceChatMgr::Update() {
     }
 
     if (state == VOICECHAT_RECONNECTING) {
-      if (sWorld->getIntConfig(CONFIG_VOICE_CHAT_MAX_CONNECT_ATTEMPTS) >= 0 &&
-          curReconnectAttempts >= sWorld->getIntConfig(CONFIG_VOICE_CHAT_MAX_CONNECT_ATTEMPTS)) {
-        if (sWorld->getIntConfig(CONFIG_VOICE_CHAT_MAX_CONNECT_ATTEMPTS) > 0)
+      if (maxConnectAttempts >= 0 &&
+          curReconnectAttempts >= maxConnectAttempts) {
+        if (maxConnectAttempts > 0)
           LOG_ERROR(
               "sql.sql",
               "VoiceChatMgr: Disconnected! Max reconnect attempts reached");
@@ -376,21 +392,21 @@ void VoiceChatMgr::SocketDisconnected() {
 }
 
 bool VoiceChatMgr::NeedConnect() {
-  return sWorld->getBoolConfig(CONFIG_VOICE_CHAT_ENABLED) && !m_socket && !m_requestSocket &&
+  return enabled && !m_socket && !m_requestSocket &&
          state == VOICECHAT_NOT_CONNECTED &&
          std::chrono::system_clock::now() > next_connect;
 }
 
 bool VoiceChatMgr::NeedReconnect() {
-  return sWorld->getBoolConfig(CONFIG_VOICE_CHAT_ENABLED) && !m_socket && !m_requestSocket &&
+  return enabled && !m_socket && !m_requestSocket &&
          state == VOICECHAT_RECONNECTING &&
          std::chrono::system_clock::now() > next_connect;
 }
 
 int32 VoiceChatMgr::GetReconnectAttempts() const {
-  if (sWorld->getIntConfig(CONFIG_VOICE_CHAT_MAX_CONNECT_ATTEMPTS) < 0 ||
-      (sWorld->getIntConfig(CONFIG_VOICE_CHAT_MAX_CONNECT_ATTEMPTS) > 0 && curReconnectAttempts < sWorld->getIntConfig(CONFIG_VOICE_CHAT_MAX_CONNECT_ATTEMPTS))) {
-    return sWorld->getIntConfig(CONFIG_VOICE_CHAT_MAX_CONNECT_ATTEMPTS);
+  if (maxConnectAttempts < 0 ||
+      (maxConnectAttempts > 0 && curReconnectAttempts < maxConnectAttempts)) {
+    return maxConnectAttempts;
   }
 
   return 0;
@@ -453,13 +469,13 @@ void VoiceChatMgr::ProcessByteBufferException(
 // enabled and connected to voice server
 bool VoiceChatMgr::CanUseVoiceChat()
 {
-    return (sWorld->getBoolConfig(CONFIG_VOICE_CHAT_ENABLED) && m_socket);
+    return (enabled && m_socket);
 }
 
 // enabled and is connected or trying to connect to voice server
 bool VoiceChatMgr::CanSeeVoiceChat()
 {
-    return (sWorld->getBoolConfig(CONFIG_VOICE_CHAT_ENABLED) && state != VOICECHAT_DISCONNECTED);
+    return (enabled && state != VOICECHAT_DISCONNECTED);
 }
 
 void VoiceChatMgr::CreateVoiceChatChannel(VoiceChatChannelTypes type, uint32
@@ -1135,15 +1151,17 @@ void VoiceChatMgr::DisableVoiceChat()
         SocketDisconnected();
     }
 
+    enabled = false;
     state = VOICECHAT_DISCONNECTED;
     SendVoiceChatStatus(false);
 }
 
 void VoiceChatMgr::EnableVoiceChat()
 {
-    if (sWorld->getBoolConfig(CONFIG_VOICE_CHAT_ENABLED))
+    if (enabled)
         return;
 
+    enabled = true;
     // Init(m_ioContext);
     SendVoiceChatStatus(true);
 }
@@ -1175,4 +1193,3 @@ VoiceChatStatistics VoiceChatMgr::GetStatistics()
 
     return stats;
 }
-
