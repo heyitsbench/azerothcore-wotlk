@@ -211,7 +211,7 @@ void WorldSession::HandleSetActiveVoiceChannelOpcode(WorldPacket & recvData)
             // group
             Group* grp = _player->GetGroup();
             if (grp && grp->isBGGroup())
-                // grp = _player->GetOriginalGroup();
+                grp = _player->GetOriginalGroup();
 
             if (grp)
             {
@@ -256,38 +256,38 @@ void WorldSession::HandleSetActiveVoiceChannelOpcode(WorldPacket & recvData)
         case VOICECHAT_CHANNEL_BG:
         {
             // bg
-            // if (_player->InBattleground())
-            // {
-            //     VoiceChatChannel* v_channel = sVoiceChatMgr.GetBattlegroundVoiceChatChannel(_player->GetBattleGroundId(), _player->GetBGTeam());
-            //     if (v_channel)
-            //     {
-            //         if (current_channel)
-            //         {
-            //             // if same channel, just update roster
-            //             if (v_channel == current_channel)
-            //             {
-            //                 v_channel->SendVoiceRosterUpdate();
-            //                 return;
-            //             }
-            //             else
-            //                 current_channel->DevoiceMember(_player->GetGUID());
-            //         }
+            if (_player->InBattleground())
+            {
+                VoiceChatChannel* v_channel = sVoiceChatMgr.GetBattlegroundVoiceChatChannel(_player->GetBattlegroundId(), _player->GetBgTeamId());
+                if (v_channel)
+                {
+                    if (current_channel)
+                    {
+                        // if same channel, just update roster
+                        if (v_channel == current_channel)
+                        {
+                            v_channel->SendVoiceRosterUpdate();
+                            return;
+                        }
+                        else
+                            current_channel->DevoiceMember(_player->GetGUID());
+                    }
 
-            //         v_channel->AddVoiceChatMember(_player->GetGUID());
-            //         if (v_channel->IsOn(_player->GetGUID()))
-            //         {
-            //             // change speaker icon from grey to color
-            //             v_channel->VoiceMember(_player->GetGUID());
-            //             // allow to speak depending on settings
-            //             if (IsMicEnabled())
-            //                 v_channel->UnmuteMember(_player->GetGUID());
-            //             else
-            //                 v_channel->MuteMember(_player->GetGUID());
+                    v_channel->AddVoiceChatMember(_player->GetGUID());
+                    if (v_channel->IsOn(_player->GetGUID()))
+                    {
+                        // change speaker icon from grey to color
+                        v_channel->VoiceMember(_player->GetGUID());
+                        // allow to speak depending on settings
+                        if (IsMicEnabled())
+                            v_channel->UnmuteMember(_player->GetGUID());
+                        else
+                            v_channel->MuteMember(_player->GetGUID());
 
-            //             SetCurrentVoiceChannelId(v_channel->GetChannelId());
-            //         }
-            //     }
-            // }
+                        SetCurrentVoiceChannelId(v_channel->GetChannelId());
+                    }
+                }
+            }
 
             break;
         }
@@ -407,8 +407,8 @@ void WorldSession::HandlePartySilenceOpcode(WorldPacket& recvData)
         else
             v_channel = sVoiceChatMgr.GetGroupVoiceChatChannel(grp->GetId());
     }
-    // else if (_player->InBattleground())
-        // v_channel = sVoiceChatMgr.GetBattlegroundVoiceChatChannel(_player->GetBattleGroundId(), _player->GetBGTeam());
+    else if (_player->InBattleground())
+        v_channel = sVoiceChatMgr.GetBattlegroundVoiceChatChannel(_player->GetBattlegroundId(), _player->GetBgTeamId());
 
     if (!v_channel)
         return;
@@ -448,7 +448,7 @@ void WorldSession::HandlePartyUnsilenceOpcode(WorldPacket& recvData)
             v_channel = sVoiceChatMgr.GetGroupVoiceChatChannel(grp->GetId());
     }
     else if (_player->InBattleground())
-        // v_channel = sVoiceChatMgr.GetBattlegroundVoiceChatChannel(_player->GetBattleGroundId(), _player->GetBGTeam());
+        v_channel = sVoiceChatMgr.GetBattlegroundVoiceChatChannel(_player->GetBattlegroundId(), _player->GetBgTeamId());
 
     if (!v_channel)
         return;

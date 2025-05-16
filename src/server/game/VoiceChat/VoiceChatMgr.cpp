@@ -1,7 +1,9 @@
 #include "VoiceChatMgr.h"
 #include "AsyncConnector.h"
+#include "BattlegroundMgr.h"
 #include "ChannelMgr.h"
-#include "Group.h"
+#include "Chat.h"
+#include "GroupMgr.h"
 #include "Log.h"
 #include "Player.h"
 #include "SharedDefines.h"
@@ -298,46 +300,45 @@ void VoiceChatMgr::HandleVoiceChatServerPacket(VoiceChatServerPacket &pck) {
         }
 
         if (request->groupid) {
-          // if (request->type == VOICECHAT_CHANNEL_GROUP || request->type ==
-          // VOICECHAT_CHANNEL_RAID)
-          // {
-          //     Group* grp = sObjectMgr->GetGroupById(request->groupid);
-          //     if (grp)
-          //     {
-          //         auto* v_channel = new
-          //         VoiceChatChannel(VoiceChatChannelTypes(request->type),
-          //         channel_id, grp->GetId());
-          //         m_VoiceChatChannels.insert(std::make_pair((uint32)channel_id,
-          //         v_channel)); v_channel->AddMembersAfterCreate();
-          //     }
-          // }
-          // else if (request->type == VOICECHAT_CHANNEL_BG)
-          // {
-          //     BattleGround* bg =
-          //     sBattleGroundMgr.GetBattleGround(request->groupid,
-          //     BATTLEGROUND_TYPE_NONE); if (bg)
-          //     {
-          //         // for BG use bg's instanceID as groupID
-          //         auto* v_channel = new
-          //         VoiceChatChannel(VoiceChatChannelTypes(request->type),
-          //         channel_id, request->groupid, "", request->team);
-          //         m_VoiceChatChannels.insert(std::make_pair((uint32)channel_id,
-          //         v_channel)); v_channel->AddMembersAfterCreate();
-          //     }
-          // }
+          if (request->type == VOICECHAT_CHANNEL_GROUP || request->type ==
+          VOICECHAT_CHANNEL_RAID)
+          {
+              Group* grp = sGroupMgr->GetGroupByGUID(request->groupid);
+              if (grp)
+              {
+                  auto* v_channel = new
+                  VoiceChatChannel(VoiceChatChannelTypes(request->type),
+                  channel_id, grp->GetId());
+                  m_VoiceChatChannels.insert(std::make_pair((uint32)channel_id,
+                  v_channel)); v_channel->AddMembersAfterCreate();
+              }
+          }
+          else if (request->type == VOICECHAT_CHANNEL_BG)
+          {
+              Battleground* bg = sBattlegroundMgr->GetBattleground(request->groupid,
+              BATTLEGROUND_TYPE_NONE); if (bg)
+              {
+                  // for BG use bg's instanceID as groupID
+                  auto* v_channel = new
+                  VoiceChatChannel(VoiceChatChannelTypes(request->type),
+                  channel_id, request->groupid, "", request->team);
+                  m_VoiceChatChannels.insert(std::make_pair((uint32)channel_id,
+                  v_channel)); v_channel->AddMembersAfterCreate();
+              }
+          }
         } else if (request->type == VOICECHAT_CHANNEL_CUSTOM) {
-          // if (ChannelMgr* cMgr = channelMgr(request->team))
-          // {
-          //     Channel* chan = cMgr->GetChannel(request->channel_name,
-          //     nullptr, false); if (chan)
-          //     {
-          //         auto* v_channel = new
-          //         VoiceChatChannel(VoiceChatChannelTypes(request->type),
-          //         channel_id, 0, request->channel_name, request->team);
-          //         m_VoiceChatChannels.insert(std::make_pair((uint32)channel_id,
-          //         v_channel)); v_channel->AddMembersAfterCreate();
-          //     }
-          // }
+          if (ChannelMgr* cMgr = ChannelMgr::forTeam(request->team))
+          {
+              Channel* chan = cMgr->GetChannel(request->channel_name,
+              nullptr, false); if (chan)
+              {
+                  auto* v_channel = new
+                  VoiceChatChannel(VoiceChatChannelTypes(request->type),
+                  channel_id, 0, request->channel_name, request->team);
+                  m_VoiceChatChannels.insert(std::make_pair((uint32)channel_id,
+                  v_channel)); v_channel->AddMembersAfterCreate();
+              }
+          }
         }
 
         request = m_requests.erase(request);
@@ -395,16 +396,16 @@ int32 VoiceChatMgr::GetReconnectAttempts() const {
   return 0;
 }
 
-// bool VoiceChatMgr::RequestNewSocket(VoiceChatServerSocket* socket)
-// {
-//     if (m_requestSocket)
-//         return false;
-//
-//     m_requestSocket = socket->shared_from_this();
-//     return true;
-// }
-//
-// // Add an incoming packet to the queue
+bool VoiceChatMgr::RequestNewSocket(VoiceChatSocket* socket)
+{
+    if (m_requestSocket)
+        return false;
+
+    m_requestSocket = socket->shared_from_this();
+    return true;
+}
+
+// Add an incoming packet to the queue
 void VoiceChatMgr::QueuePacket(
     std::unique_ptr<VoiceChatServerPacket> new_packet) {
   std::lock_guard<std::mutex> guard(m_recvQueueLock);
@@ -454,13 +455,13 @@ bool VoiceChatMgr::CanUseVoiceChat()
 {
     return (sWorld->getBoolConfig(CONFIG_VOICE_CHAT_ENABLED) && m_socket);
 }
-//
-// // enabled and is connected or trying to connect to voice server
+
+// enabled and is connected or trying to connect to voice server
 bool VoiceChatMgr::CanSeeVoiceChat()
 {
     return (sWorld->getBoolConfig(CONFIG_VOICE_CHAT_ENABLED) && state != VOICECHAT_DISCONNECTED);
 }
-//
+
 void VoiceChatMgr::CreateVoiceChatChannel(VoiceChatChannelTypes type, uint32
 groupId, const std::string& name, TeamId team)
 {
@@ -527,8 +528,8 @@ void VoiceChatMgr::DeleteVoiceChatChannel(VoiceChatChannel *channel) {
       m_socket->SendPacket(data);
   }
 }
-//
-// // check if channel request has already been created
+
+// check if channel request has already been created
 bool VoiceChatMgr::IsVoiceChatChannelBeingCreated(VoiceChatChannelTypes type,
 uint32 groupId, const std::string& name, TeamId team)
 {
@@ -547,7 +548,7 @@ uint32 groupId, const std::string& name, TeamId team)
     }
     return false;
 }
-//
+
 void VoiceChatMgr::CreateGroupVoiceChatChannel(uint32 groupId)
 {
     if (GetGroupVoiceChatChannel(groupId))
@@ -563,16 +564,16 @@ void VoiceChatMgr::CreateRaidVoiceChatChannel(uint32 groupId)
 
     CreateVoiceChatChannel(VOICECHAT_CHANNEL_RAID, groupId);
 }
-//
-// void VoiceChatMgr::CreateBattlegroundVoiceChatChannel(uint32 instanceId, Team
-// team)
-// {
-//     if (GetBattlegroundVoiceChatChannel(instanceId, team))
-//         return;
-//
-//     CreateVoiceChatChannel(VOICECHAT_CHANNEL_BG, instanceId, "", team);
-// }
-//
+
+void VoiceChatMgr::CreateBattlegroundVoiceChatChannel(uint32 instanceId, TeamId
+team)
+{
+    if (GetBattlegroundVoiceChatChannel(instanceId, team))
+        return;
+
+    CreateVoiceChatChannel(VOICECHAT_CHANNEL_BG, instanceId, "", team);
+}
+
 void VoiceChatMgr::CreateCustomVoiceChatChannel(const std::string& name, TeamId team)
 {
     if (GetCustomVoiceChatChannel(name, team))
@@ -602,32 +603,32 @@ void VoiceChatMgr::DeleteRaidVoiceChatChannel(uint32 groupId)
         DeleteVoiceChatChannel(channel);
     }
 }
-//
-// void VoiceChatMgr::DeleteBattlegroundVoiceChatChannel(uint32 instanceId, Team
-// team)
-// {
-//     if (!instanceId)
-//         return;
-//
-//     if (VoiceChatChannel* channel =
-//     GetBattlegroundVoiceChatChannel(instanceId, team))
-//     {
-//         DeleteVoiceChatChannel(channel);
-//     }
-// }
-//
-// void VoiceChatMgr::DeleteCustomVoiceChatChannel(const std::string& name, Team
-// team)
-// {
-//     if (name.empty())
-//         return;
-//
-//     if (VoiceChatChannel* v_channel = GetCustomVoiceChatChannel(name, team))
-//     {
-//         DeleteVoiceChatChannel(v_channel);
-//     }
-// }
-//
+
+void VoiceChatMgr::DeleteBattlegroundVoiceChatChannel(uint32 instanceId, TeamId
+team)
+{
+    if (!instanceId)
+        return;
+
+    if (VoiceChatChannel* channel =
+    GetBattlegroundVoiceChatChannel(instanceId, team))
+    {
+        DeleteVoiceChatChannel(channel);
+    }
+}
+
+void VoiceChatMgr::DeleteCustomVoiceChatChannel(const std::string& name, TeamId
+team)
+{
+    if (name.empty())
+        return;
+
+    if (VoiceChatChannel* v_channel = GetCustomVoiceChatChannel(name, team))
+    {
+        DeleteVoiceChatChannel(v_channel);
+    }
+}
+
 void VoiceChatMgr::ConvertToRaidChannel(uint32 groupId)
 {
     if (VoiceChatChannel* chn = GetGroupVoiceChatChannel(groupId))
@@ -668,22 +669,22 @@ VoiceChatChannel* VoiceChatMgr::GetRaidVoiceChatChannel(uint32 group_id)
 
     return nullptr;
 }
-//
-// VoiceChatChannel* VoiceChatMgr::GetBattlegroundVoiceChatChannel(uint32
-// instanceId, Team team)
-// {
-//     for (auto& channel : m_VoiceChatChannels)
-//     {
-//         // for BG use bg's instanceID as groupID
-//         VoiceChatChannel* chn = channel.second;
-//         if (chn->GetType() == VOICECHAT_CHANNEL_BG && chn->GetGroupId() ==
-//         instanceId && chn->GetTeam() == team)
-//             return chn;
-//     }
-//
-//     return nullptr;
-// }
-//
+
+VoiceChatChannel* VoiceChatMgr::GetBattlegroundVoiceChatChannel(uint32
+instanceId, TeamId team)
+{
+    for (auto& channel : m_VoiceChatChannels)
+    {
+        // for BG use bg's instanceID as groupID
+        VoiceChatChannel* chn = channel.second;
+        if (chn->GetType() == VOICECHAT_CHANNEL_BG && chn->GetGroupId() ==
+        instanceId && chn->GetTeam() == team)
+            return chn;
+    }
+
+    return nullptr;
+}
+
 VoiceChatChannel* VoiceChatMgr::GetCustomVoiceChatChannel(const std::string& name, TeamId team)
 {
     for (auto& channels : m_VoiceChatChannels)
@@ -728,55 +729,55 @@ std::vector<VoiceChatChannel*> VoiceChatMgr::GetPossibleVoiceChatChannels(Object
 
     return channel_list;
 }
-//
+
 // create group/raid/bg channels after (re)connect to voice server
 void VoiceChatMgr::RestoreVoiceChatChannels() {
   // Replace Messager with EventEmitter
-  // sWorld.GetEventEmitter() += [](World* world)
-  // {
-  // world->ExecuteForAllSessions([](auto& data)
-  // {
-  // const WorldSession& sess = data;
-  // if (sess.IsVoiceChatEnabled())
-  // {
-  // if (Player* plr = sess.GetPlayer())
-  // {
-  // if (Group* grp = plr->GetGroup())
-  // {
-  // if (!grp->IsBattleGroup())
-  // {
-  // if (grp->IsRaidGroup())
-  // sVoiceChatMgr.AddToRaidVoiceChatChannel(plr->GetObjectGuid(),
-  // grp->GetId());
-  // else
-  // sVoiceChatMgr.AddToGroupVoiceChatChannel(plr->GetObjectGuid(),
-  // grp->GetId());
-  // }
-  // else
-  // {
-  // sVoiceChatMgr.AddToBattlegroundVoiceChatChannel(plr->GetObjectGuid());
-  // }
-  // }
-  // if (Group* grp = plr->GetOriginalGroup())
-  // {
-  // if (!grp->IsBattleGroup())
-  // {
-  // if (grp->IsRaidGroup())
-  // sVoiceChatMgr.AddToRaidVoiceChatChannel(plr->GetObjectGuid(),
-  // grp->GetId());
-  // else
-  // sVoiceChatMgr.AddToGroupVoiceChatChannel(plr->GetObjectGuid(),
-  // grp->GetId());
-  // }
-  // else
-  // {
-  // sVoiceChatMgr.AddToBattlegroundVoiceChatChannel(plr->GetObjectGuid());
-  // }
-  // }
-  // }
-  // }
-  // });
-  // };
+    sVoiceChatMgr.GetEventEmitter() += [](VoiceChatMgr* world)
+        {
+            ChatHandler(nullptr).DoForAllValidSessions([](Player* player)
+                {
+                    const WorldSession* sess = player->GetSession();
+                    if (sess->IsVoiceChatEnabled())
+                    {
+                        if (player)
+                        {
+                            if (Group* grp = player->GetGroup())
+                            {
+                                if (!grp->isBGGroup())
+                                {
+                                    if (grp->isRaidGroup())
+                                        sVoiceChatMgr.AddToRaidVoiceChatChannel(player->GetGUID(),
+                                            grp->GetId());
+                                    else
+                                        sVoiceChatMgr.AddToGroupVoiceChatChannel(player->GetGUID(),
+                                            grp->GetId());
+                                }
+                                else
+                                {
+                                    sVoiceChatMgr.AddToBattlegroundVoiceChatChannel(player->GetGUID());
+                                }
+                            }
+                            if (Group* grp = player->GetOriginalGroup())
+                            {
+                                if (!grp->isBGGroup())
+                                {
+                                    if (grp->isRaidGroup())
+                                        sVoiceChatMgr.AddToRaidVoiceChatChannel(player->GetGUID(),
+                                            grp->GetId());
+                                    else
+                                        sVoiceChatMgr.AddToGroupVoiceChatChannel(player->GetGUID(),
+                                            grp->GetId());
+                                }
+                                else
+                                {
+                                    sVoiceChatMgr.AddToBattlegroundVoiceChatChannel(player->GetGUID());
+                                }
+                            }
+                        }
+                    }
+                });
+        };
 }
 
 void VoiceChatMgr::DeleteAllChannels() {
@@ -785,16 +786,14 @@ void VoiceChatMgr::DeleteAllChannels() {
   }
   m_VoiceChatChannels.clear();
 }
-//
-// // if cross faction channels are enabled, team is always ALLIANCE
+// if cross faction channels are enabled, team is always ALLIANCE
 TeamId VoiceChatMgr::GetCustomChannelTeam(TeamId team)
 {
-    // if (sWorld.getConfig(CONFIG_BOOL_ALLOW_TWO_SIDE_INTERACTION_CHANNEL))
+    if (sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_CHANNEL))
         return TEAM_ALLIANCE;
-    // else
-        // return team;
+    else
+        return team;
 }
-//
 void VoiceChatMgr::AddToGroupVoiceChatChannel(ObjectGuid guid, uint32
 groupId)
 {
@@ -825,28 +824,28 @@ void VoiceChatMgr::AddToRaidVoiceChatChannel(ObjectGuid guid, uint32 groupId)
 
     v_channel->AddVoiceChatMember(guid);
 }
-//
-// void VoiceChatMgr::AddToBattlegroundVoiceChatChannel(ObjectGuid guid)
-// {
-//     Player* plr = sObjectMgr.GetPlayer(guid);
-//     if (!plr)
-//         return;
-//
-//     if (!plr->InBattleGround())
-//         return;
-//
-//     // for BG use bg's instanceID as groupID
-//     VoiceChatChannel* v_channel =
-//     GetBattlegroundVoiceChatChannel(plr->GetBattleGroundId(),
-//     plr->GetBGTeam()); if (!v_channel)
-//     {
-//         CreateBattlegroundVoiceChatChannel(plr->GetBattleGroundId(),
-//         plr->GetBGTeam()); return;
-//     }
-//
-//     v_channel->AddVoiceChatMember(guid);
-// }
-//
+
+void VoiceChatMgr::AddToBattlegroundVoiceChatChannel(ObjectGuid guid)
+{
+    Player* plr = ObjectAccessor::FindPlayer(guid);
+    if (!plr)
+        return;
+
+    if (!plr->InBattleground())
+        return;
+
+    // for BG use bg's instanceID as groupID
+    VoiceChatChannel* v_channel =
+    GetBattlegroundVoiceChatChannel(plr->GetBattlegroundId(),
+    plr->GetBgTeamId()); if (!v_channel)
+    {
+        CreateBattlegroundVoiceChatChannel(plr->GetBattlegroundId(),
+        plr->GetBgTeamId()); return;
+    }
+
+    v_channel->AddVoiceChatMember(guid);
+}
+
 void VoiceChatMgr::AddToCustomVoiceChatChannel(ObjectGuid guid, const std::string& name, TeamId team)
 {
     if (name.empty())
@@ -886,23 +885,23 @@ groupId)
     }
 }
 
-// void VoiceChatMgr::RemoveFromBattlegroundVoiceChatChannel(ObjectGuid guid)
-// {
-//     Player* plr = sObjectMgr.GetPlayer(guid);
-//     if (!plr)
-//         return;
+void VoiceChatMgr::RemoveFromBattlegroundVoiceChatChannel(ObjectGuid guid)
+{
+    Player* plr = ObjectAccessor::FindPlayer(guid);
+    if (!plr)
+        return;
 
-//     if (!plr->InBattleGround())
-//         return;
+    if (!plr->InBattleground())
+        return;
 
-//     if (VoiceChatChannel* v_channel =
-//     GetBattlegroundVoiceChatChannel(plr->GetBattleGroundId(),
-//     plr->GetBGTeam()))
-//     {
-//         v_channel->RemoveVoiceChatMember(guid);
-//     }
-// }
-//
+    if (VoiceChatChannel* v_channel =
+    GetBattlegroundVoiceChatChannel(plr->GetBattlegroundId(),
+    plr->GetBgTeamId()))
+    {
+        v_channel->RemoveVoiceChatMember(guid);
+    }
+}
+
 
 void VoiceChatMgr::RemoveFromCustomVoiceChatChannel(ObjectGuid guid, const std::string& name, TeamId team)
 {
@@ -917,8 +916,11 @@ void VoiceChatMgr::RemoveFromCustomVoiceChatChannel(ObjectGuid guid, const std::
 //
 void VoiceChatMgr::EnableChannelSlot(uint16 channel_id, uint8 slot_id)
 {
-    if(!m_socket)
+    if (!m_socket)
+    {
+        LOG_ERROR("sql.sql", "fug");
         return;
+    }
 
     LOG_ERROR("sql.sql", "VoiceChatMgr: Channel {} activate slot {}", (int)channel_id, (int)slot_id);
 
@@ -966,7 +968,7 @@ void VoiceChatMgr::DevoiceChannelSlot(uint16 channel_id, uint8 slot_id)
     data << slot_id;
     m_socket->SendPacket(data);
 }
-//
+
 void VoiceChatMgr::MuteChannelSlot(uint16 channel_id, uint8 slot_id)
 {
     if (!m_socket)
@@ -979,7 +981,7 @@ void VoiceChatMgr::MuteChannelSlot(uint16 channel_id, uint8 slot_id)
     data << slot_id;
     m_socket->SendPacket(data);
 }
-//
+
 void VoiceChatMgr::UnmuteChannelSlot(uint16 channel_id, uint8 slot_id)
 {
     if (!m_socket)
@@ -992,7 +994,7 @@ void VoiceChatMgr::UnmuteChannelSlot(uint16 channel_id, uint8 slot_id)
     data << slot_id;
     m_socket->SendPacket(data);
 }
-//
+
 void VoiceChatMgr::JoinAvailableVoiceChatChannels(WorldSession* session)
 {
     if (!CanUseVoiceChat())
@@ -1014,7 +1016,7 @@ void VoiceChatMgr::JoinAvailableVoiceChatChannels(WorldSession* session)
             }
             else
             {
-                // AddToBattlegroundVoiceChatChannel(player->GetGUID());
+                AddToBattlegroundVoiceChatChannel(player->GetGUID());
             }
         }
         if (Group* grp = player->GetOriginalGroup())
@@ -1035,76 +1037,76 @@ void VoiceChatMgr::JoinAvailableVoiceChatChannels(WorldSession* session)
         }
     }
 }
-//
-// // Not used currently
-// void VoiceChatMgr::SendAvailableVoiceChatChannels(WorldSession* session)
-// {
-//     if (!CanUseVoiceChat())
-//         return;
-//
-//     // send available voice channels
-//     if (Player* player = session->GetPlayer())
-//     {
-//         if (Group* grp = player->GetGroup())
-//         {
-//             if (!grp->IsBattleGroup())
-//             {
-//                 if (grp->IsRaidGroup())
-//                 {
-//                     if (VoiceChatChannel* chn =
-//                     GetRaidVoiceChatChannel(grp->GetId()))
-//                     {
-//                         chn->SendAvailableVoiceChatChannel(session);
-//                     }
-//                 }
-//                 else
-//                 {
-//                     if (VoiceChatChannel* chn =
-//                     GetGroupVoiceChatChannel(grp->GetId()))
-//                     {
-//                         chn->SendAvailableVoiceChatChannel(session);
-//                     }
-//                 }
-//             }
-//             else
-//             {
-//                 if (VoiceChatChannel* chn =
-//                 GetBattlegroundVoiceChatChannel(player->GetBattleGroundId(),
-//                 player->GetBGTeam()))
-//                 {
-//                     chn->SendAvailableVoiceChatChannel(session);
-//                 }
-//             }
-//         }
-//         if (Group* grp = player->GetOriginalGroup())
-//         {
-//             if (grp->IsRaidGroup())
-//             {
-//                 if (VoiceChatChannel* chn =
-//                 GetRaidVoiceChatChannel(grp->GetId()))
-//                 {
-//                     chn->SendAvailableVoiceChatChannel(session);
-//                 }
-//             }
-//             else
-//             {
-//                 if (VoiceChatChannel* chn =
-//                 GetGroupVoiceChatChannel(grp->GetId()))
-//                 {
-//                     chn->SendAvailableVoiceChatChannel(session);
-//                 }
-//             }
-//         }
-//
-//         std::vector<VoiceChatChannel*> channel_list =
-//         GetPossibleVoiceChatChannels(player->GetObjectGuid()); for (auto
-//         channel : channel_list)
-//         {
-//             channel->SendAvailableVoiceChatChannel(session);
-//         }
-//     }
-// }
-//
+
+// Not used currently
+void VoiceChatMgr::SendAvailableVoiceChatChannels(WorldSession* session)
+{
+    if (!CanUseVoiceChat())
+        return;
+
+    // send available voice channels
+    if (Player* player = session->GetPlayer())
+    {
+        if (Group* grp = player->GetGroup())
+        {
+            if (!grp->isBGGroup())
+            {
+                if (grp->isRaidGroup())
+                {
+                    if (VoiceChatChannel* chn =
+                    GetRaidVoiceChatChannel(grp->GetId()))
+                    {
+                        chn->SendAvailableVoiceChatChannel(session);
+                    }
+                }
+                else
+                {
+                    if (VoiceChatChannel* chn =
+                    GetGroupVoiceChatChannel(grp->GetId()))
+                    {
+                        chn->SendAvailableVoiceChatChannel(session);
+                    }
+                }
+            }
+            else
+            {
+                if (VoiceChatChannel* chn =
+                GetBattlegroundVoiceChatChannel(player->GetBattlegroundId(),
+                player->GetBgTeamId()))
+                {
+                    chn->SendAvailableVoiceChatChannel(session);
+                }
+            }
+        }
+        if (Group* grp = player->GetOriginalGroup())
+        {
+            if (grp->isRaidGroup())
+            {
+                if (VoiceChatChannel* chn =
+                GetRaidVoiceChatChannel(grp->GetId()))
+                {
+                    chn->SendAvailableVoiceChatChannel(session);
+                }
+            }
+            else
+            {
+                if (VoiceChatChannel* chn =
+                GetGroupVoiceChatChannel(grp->GetId()))
+                {
+                    chn->SendAvailableVoiceChatChannel(session);
+                }
+            }
+        }
+
+        std::vector<VoiceChatChannel*> channel_list =
+        GetPossibleVoiceChatChannels(player->GetGUID()); for (auto
+        channel : channel_list)
+        {
+            channel->SendAvailableVoiceChatChannel(session);
+        }
+    }
+}
+
 void VoiceChatMgr::RemoveFromVoiceChatChannels(ObjectGuid guid)
 {
     for (const auto& channel : m_VoiceChatChannels)
@@ -1125,8 +1127,7 @@ void VoiceChatMgr::SendVoiceChatServiceMessage(Opcodes opcode) {
   sWorldSessionMgr->SendGlobalMessage(&data);
 }
 
-// // command handlers
-//
+// command handlers
 void VoiceChatMgr::DisableVoiceChat()
 {
     if (!m_voiceService.stopped() || (m_socket && m_socket->IsOpen()))
@@ -1137,7 +1138,7 @@ void VoiceChatMgr::DisableVoiceChat()
     state = VOICECHAT_DISCONNECTED;
     SendVoiceChatStatus(false);
 }
-//
+
 void VoiceChatMgr::EnableVoiceChat()
 {
     if (sWorld->getBoolConfig(CONFIG_VOICE_CHAT_ENABLED))
@@ -1146,7 +1147,7 @@ void VoiceChatMgr::EnableVoiceChat()
     // Init(m_ioContext);
     SendVoiceChatStatus(true);
 }
-//
+
 VoiceChatStatistics VoiceChatMgr::GetStatistics()
 {
     VoiceChatStatistics stats;
@@ -1162,16 +1163,16 @@ VoiceChatStatistics VoiceChatMgr::GetStatistics()
     stats.active_users = 0;
     stats.totalVoiceChatEnabled = 0;
     stats.totalVoiceMicEnabled = 0;
-    // sWorld.ExecuteForAllSessions([&](WorldSession const& session)
-    // {
-    //     if (session.IsVoiceChatEnabled())
-    //         stats.totalVoiceChatEnabled++;
-    //     if (session.IsMicEnabled())
-    //         stats.totalVoiceMicEnabled++;
-    //     if (session.GetCurrentVoiceChannelId())
-    //         stats.active_users++;
-    // });
+    ChatHandler(nullptr).DoForAllValidSessions([&](Player* player)
+    {
+        if (player->GetSession()->IsVoiceChatEnabled())
+            stats.totalVoiceChatEnabled++;
+        if (player->GetSession()->IsMicEnabled())
+            stats.totalVoiceMicEnabled++;
+        if (player->GetSession()->GetCurrentVoiceChannelId())
+            stats.active_users++;
+    });
 
     return stats;
 }
-//
+
