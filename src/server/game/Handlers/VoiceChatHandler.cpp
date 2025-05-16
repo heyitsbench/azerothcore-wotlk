@@ -166,13 +166,14 @@ void WorldSession::HandleSetActiveVoiceChannelOpcode(WorldPacket & recvData)
             recvData >> name;
             // custom channel
             auto cMgr = ChannelMgr(_player->GetTeamId());
+            if (&cMgr)
             {
                 Channel* chan = cMgr.GetChannel(name, nullptr, false);
                 if (!chan || !chan->IsOn(_player->GetGUID()) || chan->IsBanned(_player->GetGUID()) || !chan->IsVoiceEnabled())
                     return;
             }
-            // else
-                // return;
+            else
+                return;
 
             if (VoiceChatChannel* v_channel = sVoiceChatMgr.GetCustomVoiceChatChannel(name, _player->GetTeamId()))
             {

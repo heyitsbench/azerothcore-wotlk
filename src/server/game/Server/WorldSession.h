@@ -1026,8 +1026,6 @@ public:                                                 // opcodes handlers
     void HandleItemRefundInfoRequest(WorldPacket& recvData);
     void HandleItemRefund(WorldPacket& recvData);
 
-    // void HandleChannelVoiceOnOpcode(WorldPacket& recvData);
-    // void HandleVoiceSessionEnableOpcode(WorldPacket& recvData);
     void HandleSetActiveVoiceChannel(WorldPacket& recvData);
     void HandleSetTaxiBenchmarkOpcode(WorldPacket& recvData);
 

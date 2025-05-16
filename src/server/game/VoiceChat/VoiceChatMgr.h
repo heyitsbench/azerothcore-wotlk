@@ -45,9 +45,14 @@ public:
         m_requestSocket(nullptr),
         new_request_id(1),
         new_session_id(std::chrono::system_clock::now().time_since_epoch().count()),
+        server_address(0),
+        server_port(0),
+        voice_port(0),
         next_connect(std::chrono::system_clock::now()),
         next_ping(std::chrono::system_clock::now() + std::chrono::seconds(5)),
         last_pong(std::chrono::system_clock::now()),
+        enabled(false),
+        maxConnectAttempts(0),
         curReconnectAttempts(0),
         state(VOICECHAT_DISCONNECTED),
         lastUpdate(std::chrono::system_clock::now())
@@ -69,16 +74,16 @@ public:
     bool NeedReconnect();
     int32 GetReconnectAttempts() const;
 
-    bool IsEnabled() const { return sWorld->getBoolConfig(CONFIG_VOICE_CHAT_ENABLED); }
+    bool IsEnabled() const { return enabled; }
     bool CanUseVoiceChat();
     bool CanSeeVoiceChat();
 
     // configs
-    uint32 GetVoiceServerConnectAddress() const { return inet_addr(sConfigMgr->GetOption<std::string>("VoiceChat.ServerAddress", "127.0.0.1").c_str()); }
-    uint16 GetVoiceServerConnectPort() const { return sWorld->getIntConfig(CONFIG_VOICE_CHAT_SERVER_PORT); }
-    uint32 GetVoiceServerVoiceAddress() const { return inet_addr(sConfigMgr->GetOption<std::string>("VoiceChat.VoiceAddress", "127.0.0.1").c_str()); }
-    uint16 GetVoiceServerVoicePort() const { return sWorld->getIntConfig(CONFIG_VOICE_CHAT_VOICE_PORT); }
-    std::string GetVoiceServerConnectAddressString() { return sConfigMgr->GetOption<std::string>("VoiceChat.ServerAddress", "127.0.0.1"); }
+    uint32 GetVoiceServerConnectAddress() const { return server_address; }
+    uint16 GetVoiceServerConnectPort() const { return server_port; }
+    uint32 GetVoiceServerVoiceAddress() const { return voice_address; }
+    uint16 GetVoiceServerVoicePort() const { return voice_port; }
+    std::string GetVoiceServerConnectAddressString() { return server_address_string; }
 
     // manage voice channels
     void CreateVoiceChatChannel(VoiceChatChannelTypes type, uint32 groupId = 0, const std::string& name = "", TeamId team = TEAM_NEUTRAL);
@@ -164,11 +169,25 @@ private:
     uint32 new_request_id;
     uint64 new_session_id;
 
+    // configs
+    uint32 server_address;
+    uint16 server_port;
+    std::string server_address_string;
+
+    // voice server address and udp port for client
+    uint32 voice_address;
+    uint16 voice_port;
+
     // next connect attempt
     std::chrono::system_clock::time_point next_connect;
     std::chrono::system_clock::time_point next_ping;
     std::chrono::system_clock::time_point last_pong;
 
+    // enabled in config
+    bool enabled;
+
+    // how many attemps to reconnect
+    int8 maxConnectAttempts;
     // how many reconnect attempts have been made
     uint8 curReconnectAttempts;
 
