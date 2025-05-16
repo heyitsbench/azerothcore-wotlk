@@ -348,11 +348,11 @@ void VoiceChatChannel::RemoveVoiceChatMember(ObjectGuid guid)
         if (WorldSession* session = plr->GetSession())
         {
             uint32 channelId = GetChannelId();
-            // session->GetMessager().AddMessage([channel = channelId](WorldSession* sess)
-            // {
-                // if (sess->GetCurrentVoiceChannelId() == channel)
-                    // sess->SetCurrentVoiceChannelId(0);
-            // });
+            sVoiceChatMgr.GetEventEmitter() += [channelId, session](VoiceChatMgr* mgr)
+                {
+                    if (session->GetCurrentVoiceChannelId() == channelId)
+                        session->SetCurrentVoiceChannelId(0);
+                };
 
             if (session->GetCurrentVoiceChannelId() == channelId)
                 session->SetCurrentVoiceChannelId(0);
@@ -360,7 +360,7 @@ void VoiceChatChannel::RemoveVoiceChatMember(ObjectGuid guid)
             SendLeaveVoiceChatSession(session);
         }
 
-        //SendLeaveVoiceChatSession(guid);
+        SendLeaveVoiceChatSession(guid);
     }
 
     sVoiceChatMgr.DisableChannelSlot(m_channel_id, member->user_id);
@@ -409,33 +409,32 @@ void VoiceChatChannel::AddMembersAfterCreate()
         }
         case VOICECHAT_CHANNEL_BG:
         {
-            // if (BattleGround* bg = sBattleGroundMgr.GetBattleGround(GetGroupId(), BATTLEGROUND_TYPE_NONE))
-            // {
-            //     for (const auto& itr : bg->GetPlayers())
-            //     {
-            //         if (Player* bgMember = sObjectMgr.GetPlayer(itr.first, false))
-            //         {
-            //             if (bgMember->GetTeam() != GetTeam())
-            //                 continue;
+            if (Battleground* bg = sBattlegroundMgr->GetBattleground(GetGroupId(), BATTLEGROUND_TYPE_NONE))
+            {
+                for (const auto& itr : bg->GetPlayers())
+                {
+                    if (Player* bgMember = ObjectAccessor::FindPlayer(itr.first))
+                    {
+                        if (bgMember->GetTeamId() != GetTeam())
+                            continue;
 
-            //             if (WorldSession* session = bgMember->GetSession())
-            //             {
-            //                 if (session->IsVoiceChatEnabled())
-            //                 {
-            //                     AddVoiceChatMember(itr.first);
-            //                 }
-            //             }
-            //         }
-            //     }
-            // }
+                        if (WorldSession* session = bgMember->GetSession())
+                        {
+                            if (session->IsVoiceChatEnabled())
+                            {
+                                AddVoiceChatMember(itr.first);
+                            }
+                        }
+                    }
+                }
+            }
             break;
         }
         case VOICECHAT_CHANNEL_CUSTOM:
         {
-            // if (ChannelMgr* cMgr = channelMgr(GetTeam()))
-            auto cMgr = ChannelMgr(GetTeam());
+            if (ChannelMgr* cMgr = ChannelMgr::forTeam(GetTeam()))
             {
-                Channel* chan = cMgr.GetChannel(GetChannelName(), nullptr, false);
+                Channel* chan = cMgr->GetChannel(GetChannelName(), nullptr, false);
                 if (chan)
                 {
                     chan->AddVoiceChatMembersAfterCreate();
