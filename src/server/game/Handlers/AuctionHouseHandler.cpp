@@ -52,14 +52,16 @@ void WorldSession::HandleAuctionHelloOpcode(WorldPacket& recvData)
 //this void causes that auction window is opened
 void WorldSession::SendAuctionHello(ObjectGuid guid, Creature* unit)
 {
+    bool enabled = true;
+
     if (GetPlayer()->GetLevel() < sWorld->getIntConfig(CONFIG_AUCTION_LEVEL_REQ))
     {
         ChatHandler(this).SendNotification(LANG_AUCTION_REQ, sWorld->getIntConfig(CONFIG_AUCTION_LEVEL_REQ));
-        return;
+        enabled = false;
     }
 
     if (!sScriptMgr->CanSendAuctionHello(this, guid, unit))
-        return;
+        enabled = false;
 
     AuctionHouseEntry const* ahEntry = AuctionHouseMgr::GetAuctionHouseEntryFromFactionTemplate(unit->GetFaction());
     if (!ahEntry)
@@ -68,7 +70,7 @@ void WorldSession::SendAuctionHello(ObjectGuid guid, Creature* unit)
     WorldPacket data(MSG_AUCTION_HELLO, 12);
     data << guid;
     data << uint32(ahEntry->houseId);
-    data << uint8(1);                                       // 3.3.3: 1 - AH enabled, 0 - AH disabled
+    data << uint8(enabled); // 3.3.3: 1 - AH enabled, 0 - AH disabled
     SendPacket(&data);
 }
 
