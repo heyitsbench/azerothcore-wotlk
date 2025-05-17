@@ -98,7 +98,7 @@ void WorldSession::HandleChannelVoiceOnOpcode(WorldPacket& recvData)
 {
     LOG_DEBUG("network", "WORLD: CMSG_CHANNEL_VOICE_ON");
     // Enable Voice button in channel context menu
-    LOG_ERROR("sql.sq", "WORLD: Received CMSG_CHANNEL_VOICE_ON");
+    LOG_ERROR("sql.sql", "WORLD: Received CMSG_CHANNEL_VOICE_ON");
 
     if (!sVoiceChatMgr.CanUseVoiceChat())
         return;
@@ -142,7 +142,7 @@ void WorldSession::HandleSetActiveVoiceChannel(WorldPacket& recvData)
 
 void WorldSession::HandleSetActiveVoiceChannelOpcode(WorldPacket & recvData)
 {
-    LOG_ERROR("sql.sq", "WORLD: Received CMSG_SET_ACTIVE_VOICE_CHANNEL");
+    LOG_ERROR("sql.sql", "WORLD: Received CMSG_SET_ACTIVE_VOICE_CHANNEL");
 
     if (!sVoiceChatMgr.CanUseVoiceChat())
         return;
@@ -310,14 +310,14 @@ void WorldSession::HandleSetActiveVoiceChannelOpcode(WorldPacket & recvData)
 
 void WorldSession::HandleChannelVoiceOffOpcode(WorldPacket& recvData)
 {
-    LOG_ERROR("sql.sq", "WORLD: Received CMSG_CHANNEL_VOICE_OFF");
+    LOG_ERROR("sql.sql", "WORLD: Received CMSG_CHANNEL_VOICE_OFF");
 
     // todo check if possible to send with chat commands
 }
 
 void WorldSession::HandleAddVoiceIgnoreOpcode(WorldPacket& recvData)
 {
-    LOG_ERROR("sql.sq", "WORLD: Received opcode CMSG_ADD_VOICE_IGNORE");
+    LOG_ERROR("sql.sql", "WORLD: Received opcode CMSG_ADD_VOICE_IGNORE");
 
     std::string IgnoreName = GetAcoreString(LANG_FRIEND_IGNORE_UNKNOWN);
 
@@ -329,8 +329,7 @@ void WorldSession::HandleAddVoiceIgnoreOpcode(WorldPacket& recvData)
     CharacterDatabase.EscapeString(IgnoreName);
 
     LOG_ERROR("sql.sql", "WORLD: {} asked to Ignore: '{}'",
-        GetPlayer()->GetName(), IgnoreName.c_str());
-
+        _player->GetName(), IgnoreName.c_str());
 
     ObjectGuid ignoreGUID = sCharacterCache->GetCharacterGuidByName(IgnoreName);
     if (!ignoreGUID)
@@ -338,35 +337,34 @@ void WorldSession::HandleAddVoiceIgnoreOpcode(WorldPacket& recvData)
 
     // CharacterDatabase.AsyncQuery(&WorldSession::HandleAddMutedOpcodeCallBack, GetAccountId(), "SELECT guid FROM characters WHERE name = '{}'", IgnoreName.c_str());
     // _queryProcessor.AddCallback(CharacterDatabase.AsyncQuery(stmt).WithPreparedCallback(std::bind(&WorldSession::HandleAddMutedOpcodeCallBack, this, std::placeholders::_1)));
-
-    Player* player = ObjectAccessor::FindPlayer(ignoreGUID);
-    if (!player)
+    
+    if (!_player)
         return;
 
     FriendsResult ignoreResult = FRIEND_MUTE_NOT_FOUND;
-    if (ignoreGUID == player->GetGUID())
+    if (ignoreGUID == _player->GetGUID())
         ignoreResult = FRIEND_MUTE_SELF;
-    else if (player->GetSocial()->HasMute(ignoreGUID))
+    else if (_player->GetSocial()->HasMute(ignoreGUID))
         ignoreResult = FRIEND_MUTE_ALREADY;
     else
     {
         ignoreResult = FRIEND_MUTE_ADDED;
 
         // mute list full
-        if (!player->GetSocial()->AddToSocialList(ignoreGUID, SOCIAL_FLAG_MUTED))
+        if (!_player->GetSocial()->AddToSocialList(ignoreGUID, SOCIAL_FLAG_MUTED))
             ignoreResult = FRIEND_MUTE_FULL;
     }
 
-    sSocialMgr->SendFriendStatus(player, ignoreResult, ignoreGUID, false);
+    sSocialMgr->SendFriendStatus(_player, ignoreResult, ignoreGUID, false);
 
-    LOG_ERROR("sql.sq", "WORLD: Sent (SMSG_FRIEND_STATUS)");
+    LOG_ERROR("sql.sql", "WORLD: Sent (SMSG_FRIEND_STATUS)");
 }
 
 void WorldSession::HandleDelVoiceIgnoreOpcode(WorldPacket& recvData)
 {
     ObjectGuid ignoreGUID;
 
-    LOG_ERROR("sql.sq", "WORLD: Received opcode CMSG_DEL_VOICE_IGNORE");
+    LOG_ERROR("sql.sql", "WORLD: Received opcode CMSG_DEL_VOICE_IGNORE");
 
     recvData >> ignoreGUID;
 
@@ -374,12 +372,12 @@ void WorldSession::HandleDelVoiceIgnoreOpcode(WorldPacket& recvData)
 
     sSocialMgr->SendFriendStatus(GetPlayer(), FRIEND_MUTE_REMOVED, ignoreGUID, false);
 
-    LOG_ERROR("sql.sq", "WORLD: Sent motd (SMSG_FRIEND_STATUS)");
+    LOG_ERROR("sql.sql", "WORLD: Sent motd (SMSG_FRIEND_STATUS)");
 }
 
 void WorldSession::HandlePartySilenceOpcode(WorldPacket& recvData)
 {
-    LOG_ERROR("sql.sq", "WORLD: Received CMSG_PARTY_SILENCE");
+    LOG_ERROR("sql.sql", "WORLD: Received CMSG_PARTY_SILENCE");
 
     if (!sVoiceChatMgr.CanUseVoiceChat())
         return;
@@ -397,7 +395,7 @@ void WorldSession::HandlePartySilenceOpcode(WorldPacket& recvData)
     if (!grp->IsMember(ignoreGUID))
         return;
 
-    if (!grp->IsLeader(GetPlayer()->GetGUID()) && grp->IsMainAssistant(GetPlayer()->GetGUID()))
+    if (!grp->IsLeader(_player->GetGUID()) && grp->IsMainAssistant(_player->GetGUID()))
         return;
 
     VoiceChatChannel* v_channel = nullptr;
@@ -419,7 +417,7 @@ void WorldSession::HandlePartySilenceOpcode(WorldPacket& recvData)
 
 void WorldSession::HandlePartyUnsilenceOpcode(WorldPacket& recvData)
 {
-    LOG_ERROR("sql.sq", "WORLD: Received CMSG_PARTY_UNSILENCE");
+    LOG_ERROR("sql.sql", "WORLD: Received CMSG_PARTY_UNSILENCE");
 
     if (!sVoiceChatMgr.CanUseVoiceChat())
         return;
@@ -437,7 +435,7 @@ void WorldSession::HandlePartyUnsilenceOpcode(WorldPacket& recvData)
     if (!grp->IsMember(ignoreGUID))
         return;
 
-    if (!grp->IsLeader(GetPlayer()->GetGUID()) && !grp->IsMainAssistant(GetPlayer()->GetGUID()))
+    if (!grp->IsLeader(_player->GetGUID()) && !grp->IsMainAssistant(_player->GetGUID()))
         return;
 
     VoiceChatChannel* v_channel = nullptr;
@@ -459,7 +457,7 @@ void WorldSession::HandlePartyUnsilenceOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleChannelSilenceOpcode(WorldPacket& recvData)
 {
-    LOG_ERROR("sql.sq", "WORLD: Received CMSG_CHANNEL_SILENCE");
+    LOG_ERROR("sql.sql", "WORLD: Received CMSG_CHANNEL_SILENCE");
 
     if (!sVoiceChatMgr.CanUseVoiceChat())
         return;
@@ -477,9 +475,6 @@ void WorldSession::HandleChannelSilenceOpcode(WorldPacket& recvData)
         {
             ObjectGuid plrGuid = sCharacterCache->GetCharacterGuidByName(playerName);
             if (!plrGuid)
-                return;
-            Player* _player = ObjectAccessor::FindPlayer(plrGuid);
-            if (!_player)
                 return;
 
             if (VoiceChatChannel* v_channel = sVoiceChatMgr.GetCustomVoiceChatChannel(channelName, _player->GetTeamId()))
@@ -496,7 +491,7 @@ void WorldSession::HandleChannelSilenceOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleChannelUnsilenceOpcode(WorldPacket& recvData)
 {
-    LOG_ERROR("sql.sq", "WORLD: Received CMSG_CHANNEL_UNSILENCE");
+    LOG_ERROR("sql.sql", "WORLD: Received CMSG_CHANNEL_UNSILENCE");
 
     if (!sVoiceChatMgr.CanUseVoiceChat())
         return;
@@ -515,9 +510,6 @@ void WorldSession::HandleChannelUnsilenceOpcode(WorldPacket& recvData)
 
             ObjectGuid plrGuid = sCharacterCache->GetCharacterGuidByName(playerName);
             if (!plrGuid)
-                return;
-            Player* _player = ObjectAccessor::FindPlayer(plrGuid);
-            if (!_player)
                 return;
 
             if (VoiceChatChannel* v_channel = sVoiceChatMgr.GetCustomVoiceChatChannel(channelName, _player->GetTeamId()))

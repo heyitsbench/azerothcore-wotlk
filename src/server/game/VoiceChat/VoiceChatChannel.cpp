@@ -104,7 +104,7 @@ void VoiceChatChannel::SendAvailableVoiceChatChannel(WorldSession* session)
     if (!plr)
         return;
 
-    LOG_ERROR("sql.sq", "Sending SMSG_AVAILABLE_VOICE_CHANNEL for plr {}", plr->GetGUID().ToString());
+    LOG_ERROR("sql.sql", "Sending SMSG_AVAILABLE_VOICE_CHANNEL for plr {}", plr->GetGUID().ToString());
 
     WorldPacket data(SMSG_AVAILABLE_VOICE_CHANNEL);
     data << m_session_id;
@@ -213,7 +213,7 @@ void VoiceChatChannel::SendLeaveVoiceChatSession(WorldSession* session) const
     if (!plr)
         return;
 
-    LOG_ERROR("sql.sq", "Sending SMSG_VOICE_SESSION_LEAVE for plr {}", plr->GetGUID().ToString());
+    LOG_ERROR("sql.sql", "Sending SMSG_VOICE_SESSION_LEAVE for plr {}", plr->GetGUID().ToString());
 
     WorldPacket data(SMSG_VOICE_SESSION_LEAVE, 16);
     data << plr->GetGUID();
@@ -365,7 +365,7 @@ void VoiceChatChannel::RemoveVoiceChatMember(ObjectGuid guid)
 
     sVoiceChatMgr.DisableChannelSlot(m_channel_id, member->user_id);
 
-    LOG_ERROR("sql.sq", "user #{} removed from channel #{}", member->user_id, m_channel_id);
+    LOG_ERROR("sql.sql", "user #{} removed from channel #{}", member->user_id, m_channel_id);
 
     m_members.erase(member->user_id);
 
@@ -379,7 +379,7 @@ void VoiceChatChannel::AddMembersAfterCreate()
         return;
 
     // add all possible members to this channel
-    LOG_ERROR("sql.sq", "VoiceChat: Adding voice chat enabled members after create, channel #{}, type #{}", m_channel_id, m_type);
+    LOG_ERROR("sql.sql", "VoiceChat: Adding voice chat enabled members after create, channel #{}, type #{}", m_channel_id, m_type);
 
     // disable sending voice roster update while adding
     m_is_mass_adding = true;
@@ -467,7 +467,7 @@ void VoiceChatChannel::VoiceMember(ObjectGuid guid)
 
     sVoiceChatMgr.VoiceChannelSlot(m_channel_id, member->user_id);
 
-    LOG_ERROR("sql.sq", "user #{} voiced in channel #{}", member->user_id, m_channel_id);
+    LOG_ERROR("sql.sql", "user #{} voiced in channel #{}", member->user_id, m_channel_id);
 }
 
 void VoiceChatChannel::DevoiceMember(ObjectGuid guid)
@@ -491,7 +491,7 @@ void VoiceChatChannel::DevoiceMember(ObjectGuid guid)
 
     sVoiceChatMgr.DevoiceChannelSlot(m_channel_id, member->user_id);
 
-    LOG_ERROR("sql.sq", "user #{} devoiced in channel #{}", member->user_id, m_channel_id);
+    LOG_ERROR("sql.sql", "user #{} devoiced in channel #{}", member->user_id, m_channel_id);
 }
 
 void VoiceChatChannel::MuteMember(ObjectGuid guid)
@@ -512,7 +512,7 @@ void VoiceChatChannel::MuteMember(ObjectGuid guid)
 
     sVoiceChatMgr.MuteChannelSlot(m_channel_id, member->user_id);
 
-    LOG_ERROR("sql.sq", "user #{} muted in channel #{}", member->user_id, m_channel_id);
+    LOG_ERROR("sql.sql", "user #{} muted in channel #{}", member->user_id, m_channel_id);
 }
 
 void VoiceChatChannel::UnmuteMember(ObjectGuid guid)
@@ -535,7 +535,7 @@ void VoiceChatChannel::UnmuteMember(ObjectGuid guid)
     if (!member->IsForceMuted())
         sVoiceChatMgr.UnmuteChannelSlot(m_channel_id, member->user_id);
 
-    LOG_ERROR("sql.sq", "user #{} unmuted in channel #{}", member->user_id, m_channel_id);
+    LOG_ERROR("sql.sql", "user #{} unmuted in channel #{}", member->user_id, m_channel_id);
 }
 
 void VoiceChatChannel::ForceMuteMember(ObjectGuid guid)
@@ -557,7 +557,7 @@ void VoiceChatChannel::ForceMuteMember(ObjectGuid guid)
 
     sVoiceChatMgr.MuteChannelSlot(m_channel_id, member->user_id);
 
-    LOG_ERROR("sql.sq", "user #{} force muted in channel #{}", member->user_id, m_channel_id);
+    LOG_ERROR("sql.sql", "user #{} force muted in channel #{}", member->user_id, m_channel_id);
 }
 
 void VoiceChatChannel::ForceUnmuteMember(ObjectGuid guid)
@@ -585,5 +585,5 @@ void VoiceChatChannel::ForceUnmuteMember(ObjectGuid guid)
     if (micEnabled)
         sVoiceChatMgr.UnmuteChannelSlot(m_channel_id, member->user_id);
 
-    LOG_ERROR("sql.sq", "user #{} force unmuted in channel #{}", member->user_id, m_channel_id);
+    LOG_ERROR("sql.sql", "user #{} force unmuted in channel #{}", member->user_id, m_channel_id);
 }
