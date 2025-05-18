@@ -104,8 +104,9 @@ bool VoiceChatSocket::ProcessIncomingData() {
             header.size);
 
   if (header.size < 2 || header.size > 0x2800) {
-    // //actual error\nLOG_ERROR("sql.sql", "VoiceChatServerSocket::ProcessIncomingData: client sent
-    // malformed packet size = {} , cmd = {}", header->size, header->cmd);
+    // actual error
+    LOG_ERROR("sql.sql", "VoiceChatServerSocket::ProcessIncomingData: client sent "
+     "malformed packet size = {} , cmd = {}", header.size, header.cmd);
     CloseSocket();
     return false;
   }

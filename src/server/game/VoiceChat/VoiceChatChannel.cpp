@@ -279,7 +279,7 @@ void VoiceChatChannel::AddVoiceChatMember(ObjectGuid guid)
     Player* plr = ObjectAccessor::FindPlayer(guid);
     if (!plr)
     {
-        //actual error\n
+        //actual error
         LOG_ERROR("sql.sql", "could not add voice member, player not found!");
         return;
     }
@@ -335,7 +335,8 @@ void VoiceChatChannel::RemoveVoiceChatMember(ObjectGuid guid)
     VoiceChatMember* member = GetVoiceChatMember(guid);
     if (!member)
     {
-        //actual error\nLOG_ERROR("sql.sql", "error in remove voice member, member not found!");
+        //actual error
+        LOG_ERROR("sql.sql", "error in remove voice member, member not found!");
         return;
     }
 
@@ -454,7 +455,8 @@ void VoiceChatChannel::VoiceMember(ObjectGuid guid)
     VoiceChatMember* member = GetVoiceChatMember(guid);
     if (!member)
     {
-        //actual error\nLOG_ERROR("sql.sql", "error in voice voice member, member not found!");
+        //actual error
+        LOG_ERROR("sql.sql", "error in voice voice member, member not found!");
         return;
     }
 
@@ -475,7 +477,8 @@ void VoiceChatChannel::DevoiceMember(ObjectGuid guid)
     VoiceChatMember* member = GetVoiceChatMember(guid);
     if (!member)
     {
-        //actual error\nLOG_ERROR("sql.sql", "error in devoice voice member, member not found!");
+        //actual error
+        LOG_ERROR("sql.sql", "error in devoice voice member, member not found!");
         return;
     }
 
@@ -499,7 +502,8 @@ void VoiceChatChannel::MuteMember(ObjectGuid guid)
     VoiceChatMember* member = GetVoiceChatMember(guid);
     if (!member)
     {
-        //actual error\nLOG_ERROR("sql.sql", "error in mute voice member, member not found!");
+        //actual error
+        LOG_ERROR("sql.sql", "error in mute voice member, member not found!");
         return;
     }
 
@@ -520,7 +524,8 @@ void VoiceChatChannel::UnmuteMember(ObjectGuid guid)
     VoiceChatMember* member = GetVoiceChatMember(guid);
     if (!member)
     {
-        //actual error\nLOG_ERROR("sql.sql", "error in unmute voice member, member not found!");
+        //actual error
+        LOG_ERROR("sql.sql", "error in unmute voice member, member not found!");
         return;
     }
 
