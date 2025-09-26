@@ -715,7 +715,7 @@ public:
                         AddDoor(go);
                     break;
                 case GO_LADY_DEATHWHISPER_ELEVATOR:
-                    LadyDeathwisperElevatorGUID = go->GetGUID();
+                    LadyDeathwhisperElevatorGUID = go->GetGUID();
                     break;
                 case GO_THE_SKYBREAKER_H:
                 case GO_ORGRIMS_HAMMER_A:
@@ -1670,7 +1670,7 @@ public:
             {
                 DarkwhisperElevatorTimer = 3000;
                 if (GetBossState(DATA_LADY_DEATHWHISPER) == DONE)
-                    if (GameObject* elevator = instance->GetGameObject(LadyDeathwisperElevatorGUID))
+                    if (GameObject* elevator = instance->GetGameObject(LadyDeathwhisperElevatorGUID))
                         if (StaticTransport* trans = elevator->ToStaticTransport())
                         {
                             if (trans->GetGoState() == GO_STATE_READY && trans->GetPathProgress() == 0)
@@ -1913,7 +1913,7 @@ public:
 
         EventMap Events;
         ObjectGuid LadyDeathwhisperGUID;
-        ObjectGuid LadyDeathwisperElevatorGUID;
+        ObjectGuid LadyDeathwhisperElevatorGUID;
         ObjectGuid GunshipGUID;
         ObjectGuid EnemyGunshipGUID;
         ObjectGuid GunshipArmoryGUID;

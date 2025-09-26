@@ -103,7 +103,7 @@ enum Yells
     EMOTE_WEAKENED                              = 0,
 
     // ****** Out of Combat ******
-    // Random Wispers - No txt only sound
+    // Random Whispers - No txt only sound
     // The random sound is chosen by the client.
     RANDOM_SOUND_WHISPER                        = 8663,
 };
@@ -353,8 +353,8 @@ struct boss_cthun : public BossAI
 
     void Reset() override
     {
-        //One random wisper every 90 - 300 seconds
-        WisperTimer = 90000;
+        //One random whisper every 90 - 300 seconds
+        WhisperTimer = 90000;
 
         _fleshTentaclesKilled = 0;
 
@@ -442,8 +442,8 @@ struct boss_cthun : public BossAI
         //Check if we have a target
         if (!UpdateVictim())
         {
-            //No target so we'll use this section to do our random wispers instance wide
-            if (WisperTimer <= diff)
+            //No target so we'll use this section to do our random whispers instance wide
+            if (WhisperTimer <= diff)
             {
                 //Play random sound to the zone
                 me->GetMap()->DoForAllPlayers([&](Player* player)
@@ -452,9 +452,9 @@ struct boss_cthun : public BossAI
                 });
 
                 //One random wisper every 90 - 300 seconds
-                WisperTimer = urand(90000, 300000);
+                WhisperTimer = urand(90000, 300000);
             }
-            else WisperTimer -= diff;
+            else WhisperTimer -= diff;
 
             return;
         }
@@ -510,7 +510,7 @@ struct boss_cthun : public BossAI
 
     private:
         //Out of combat whisper timer
-        uint32 WisperTimer;
+        uint32 WhisperTimer;
 
         //Body Phase
         uint8 _fleshTentaclesKilled;
