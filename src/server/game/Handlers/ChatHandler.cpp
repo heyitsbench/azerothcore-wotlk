@@ -370,7 +370,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                     sender->Say(msg, Language(lang));
                 else if (type == CHAT_MSG_EMOTE)
                     sender->TextEmote(msg);
-                else if (type == CHAT_MSG_YELL)
+                else if (type == CHAT_MSG_YELL && !IsTrialAccount())
                     sender->Yell(msg, Language(lang));
             }
             break;
