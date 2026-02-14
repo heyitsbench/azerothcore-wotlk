@@ -1475,6 +1475,12 @@ void Guild::HandleInviteMember(WorldSession* session, std::string const& name)
         SendCommandResult(session, GUILD_COMMAND_INVITE, ERR_GUILD_PERMISSIONS);
         return;
     }
+    // Invited player cannot be a free trial character
+    if (pInvitee->GetSession()->IsTrialAccount())
+    {
+        SendCommandResult(session, GUILD_COMMAND_INVITE, ERR_GUILD_INTERNAL); // @todo: Identify error message/opcode
+        return;
+    }
 
     SendCommandResult(session, GUILD_COMMAND_INVITE, ERR_GUILD_COMMAND_SUCCESS, name);
 

@@ -70,6 +70,10 @@ void WorldSession::HandlePetitionBuyOpcode(WorldPacket& recvData)
         return;
     }
 
+    // Free trial accounts cannot create guilds (probably arena teams either)
+    if (IsTrialAccount())
+        return; // @todo: Identify error message/opcode
+
     // remove fake death
     if (GetPlayer()->HasUnitState(UNIT_STATE_DIED))
         GetPlayer()->RemoveAurasByType(SPELL_AURA_FEIGN_DEATH);

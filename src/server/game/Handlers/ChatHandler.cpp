@@ -33,6 +33,7 @@
 #include "Opcodes.h"
 #include "Player.h"
 #include "ScriptMgr.h"
+#include "SocialMgr.h"
 #include "SpellAuraEffects.h"
 #include "SpellAuras.h"
 #include "Util.h"
@@ -414,6 +415,10 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 // If player is a Gamemaster and doesn't accept whisper, we auto-whitelist every player that the Gamemaster is talking to
                 if (!senderIsPlayer && !sender->isAcceptWhispers() && !sender->IsInWhisperWhiteList(receiver->GetGUID()))
                     sender->AddWhisperWhiteList(receiver->GetGUID());
+
+                // Free trial accounts cannot whisper players who haven't added the trial as a friend
+                if (IsTrialAccount() && !GetPlayer()->GetSocial()->HasFriend(receiver->GetGUID()))
+                    return; // @todo: Identify error message/opcode
 
                 GetPlayer()->Whisper(msg, Language(lang), receiver);
             }

@@ -636,6 +636,12 @@ void WorldSession::HandleInitiateTradeOpcode(WorldPacket& recvPacket)
         return;
     }
 
+    if (IsTrialAccount() || pOther->GetSession()->IsTrialAccount())
+    {
+        SendTradeStatus(TRADE_STATUS_TRIAL_ACCOUNT);
+        return;
+    }
+
     if (!sScriptMgr->OnPlayerCanInitTrade(_player, pOther))
         return;
 
