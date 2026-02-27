@@ -1,8 +1,8 @@
-ALTER TABLE `creature_classlevelstats` ADD `Strength`  int(11) NOT NULL DEFAULT '0' AFTER `damage_exp2`;
-ALTER TABLE `creature_classlevelstats` ADD `Agility`   int(11) NOT NULL DEFAULT '0' AFTER `Strength`;
-ALTER TABLE `creature_classlevelstats` ADD `Stamina`   int(11) NOT NULL DEFAULT '0' AFTER `Agility`;
-ALTER TABLE `creature_classlevelstats` ADD `Intellect` int(11) NOT NULL DEFAULT '0' AFTER `Stamina`;
-ALTER TABLE `creature_classlevelstats` ADD `Spirit`    int(11) NOT NULL DEFAULT '0' AFTER `Intellect`;
+ALTER TABLE `creature_classlevelstats` ADD `Strength`  int NOT NULL DEFAULT '0' AFTER `damage_exp2`;
+ALTER TABLE `creature_classlevelstats` ADD `Agility`   int NOT NULL DEFAULT '0' AFTER `Strength`;
+ALTER TABLE `creature_classlevelstats` ADD `Stamina`   int NOT NULL DEFAULT '0' AFTER `Agility`;
+ALTER TABLE `creature_classlevelstats` ADD `Intellect` int NOT NULL DEFAULT '0' AFTER `Stamina`;
+ALTER TABLE `creature_classlevelstats` ADD `Spirit`    int NOT NULL DEFAULT '0' AFTER `Intellect`;
 
 UPDATE `creature_classlevelstats` SET `Strength` = 22,  `Agility` = 7,   `Stamina` = 22,  `Intellect` = 20,  `Spirit` = 20  WHERE `Level` = 1  AND `Class` = 1;
 UPDATE `creature_classlevelstats` SET `Strength` = 23,  `Agility` = 8,   `Stamina` = 23,  `Intellect` = 20,  `Spirit` = 20  WHERE `Level` = 2  AND `Class` = 1;
