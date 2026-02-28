@@ -83,6 +83,7 @@ public:
             BossAI::Reset();
             summons.DespawnAll();
             SummonHelpers();
+            instance->SetData(DATA_FRENZY_REMOVED, 1);
         }
 
         void JustEngagedWith(Unit* who) override
