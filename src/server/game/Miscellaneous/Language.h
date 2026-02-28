@@ -1161,8 +1161,29 @@ enum AcoreStrings
 
     LANG_CMD_QUEST_STATUS               = 5088,
     LANG_CMD_QUEST_UNAVAILABLE          = 5089,
+    LANG_CMD_QUEST_STATUS_DISABLED      = 5090,
+    LANG_CMD_QUEST_STATUS_ALREADY_DONE  = 5091,
+    LANG_CMD_QUEST_STATUS_CLASS         = 5092,
+    LANG_CMD_QUEST_STATUS_RACE          = 5093,
+    LANG_CMD_QUEST_STATUS_LOW_LEVEL     = 5094,
+    LANG_CMD_QUEST_STATUS_HIGH_LEVEL    = 5095,
+    LANG_CMD_QUEST_STATUS_SKILL         = 5096,
+    LANG_CMD_QUEST_STATUS_REPUTATION    = 5097,
+    LANG_CMD_QUEST_STATUS_PREV_QUEST    = 5098,
+    LANG_CMD_QUEST_STATUS_TIMED         = 5099,
+    LANG_CMD_QUEST_STATUS_EXCLUSIVE     = 5100,
+    LANG_CMD_QUEST_STATUS_NEXT_CHAIN    = 5101,
+    LANG_CMD_QUEST_STATUS_PREV_CHAIN    = 5102,
+    LANG_CMD_QUEST_STATUS_BREADCRUMB    = 5103,
+    LANG_CMD_QUEST_STATUS_DAY           = 5104,
+    LANG_CMD_QUEST_STATUS_WEEK          = 5105,
+    LANG_CMD_QUEST_STATUS_MONTH         = 5106,
+    LANG_CMD_QUEST_STATUS_SEASONAL      = 5107,
+    LANG_CMD_QUEST_STATUS_CONDITION     = 5108,
+    LANG_CMD_QUEST_STATUS_LOG_FULL      = 5109,
+    LANG_CMD_QUEST_STATUS_COND_DETAIL   = 5110,
 
-    // Room for more strings    5090-9999
+    // Room for more strings    5111-9999
 
     // Level requirement notifications
     LANG_SAY_REQ                        = 6604,
@@ -1326,6 +1347,8 @@ enum AcoreStrings
     LANG_BAN_IP_YOUBANNEDMESSAGE_WORLD            = 11017,
     LANG_BAN_IP_YOUPERMBANNEDMESSAGE_WORLD        = 11018,
 
+    LANG_LFG_COOLDOWN_CLEARED                     = 11019,
+
     LANG_MUTED_PLAYER                             = 30000, // Mute for player 2 hour
 
     // Instant Flight
@@ -1347,6 +1370,7 @@ enum AcoreStrings
     // 30087-30095 reserved for passive anticheat
 
     LANG_DEBUG_LFG_ON                             = 30096,
-    LANG_DEBUG_LFG_OFF                            = 30097
+    LANG_DEBUG_LFG_OFF                            = 30097,
+    LANG_DEBUG_LFG_CONF                           = 30098
 };
 #endif
