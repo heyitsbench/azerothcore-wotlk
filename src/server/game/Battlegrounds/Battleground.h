@@ -272,8 +272,7 @@ enum BGHonorMode
     BG_HONOR_MODE_NUM
 };
 
-#define ARENA_TIMELIMIT_POINTS_LOSS    -16
-#define ARENA_READY_MARKER_ENTRY 301337
+#define ARENA_TIMELIMIT_POINTS_LOSS -16
 
 /*
     This class is used to:
@@ -408,9 +407,6 @@ public:
     typedef std::map<ObjectGuid, Player*> BattlegroundPlayerMap;
     [[nodiscard]] BattlegroundPlayerMap const& GetPlayers() const { return m_Players; }
     [[nodiscard]] uint32 GetPlayersSize() const { return m_Players.size(); }
-
-    void ReadyMarkerClicked(Player* p); // pussywizard
-    GuidSet readyMarkerClickedSet; // pussywizard
 
     typedef std::unordered_map<ObjectGuid::LowType, BattlegroundScore*> BattlegroundScoreMap;
     typedef std::unordered_map<ObjectGuid, ArenaLogEntryData> ArenaLogEntryDataMap; // pussywizard
