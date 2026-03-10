@@ -76,20 +76,6 @@ public:
     }
 };
 
-class go_arena_ready_marker : public GameObjectScript
-{
-public:
-    go_arena_ready_marker() : GameObjectScript("go_arena_ready_marker") { }
-
-    bool OnGossipHello(Player* player, GameObject* /*go*/) override
-    {
-        if (Battleground* bg = player->GetBattleground())
-            bg->ReadyMarkerClicked(player);
-
-        return false;
-    }
-};
-
 /*######
 ## go_ethereum_prison
 ######*/
@@ -1878,7 +1864,6 @@ void AddSC_go_scripts()
 {
     new go_seer_of_zebhalak();
     new go_witherbark_totem_bundle();
-    new go_arena_ready_marker();
     new go_ethereum_prison();
     new go_ethereum_stasis();
     new go_resonite_cask();
