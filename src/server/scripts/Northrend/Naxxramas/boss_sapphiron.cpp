@@ -205,12 +205,22 @@ public:
                 if (target->GetGUID() == guid)
                     return false;
 
+                // If target is in melee range and has melee auto attack active, skip block check and consider target valid
+                if (target->ToUnit()->IsWithinMeleeRange(me) && target->ToUnit()->HasUnitState(UNIT_STATE_MELEE_ATTACKING) && target->ToUnit()->GetVictim() == me)
+                {
+                    if (target->IsPlayer())
+                        LOG_ERROR("sql.sql", "sapphiron ice block valid explosion target {} is meleeing!", target->GetName());
+                    return true;
+                }
+
                 if (Unit* block = ObjectAccessor::GetUnit(*me, guid))
                 {
                     if (block->IsInBetween(me, target, 2.0f) && block->IsWithinDist(target, 10.0f))
                         return false;
                 }
             }
+            if (target->IsPlayer())
+                LOG_ERROR("sql.sql", "sapphiron ice block valid explosion target {} true!", target->GetName());
             return true;
         }
 
