@@ -630,9 +630,16 @@ class spell_ulduar_teleporter : public SpellScript
         return SPELL_CAST_OK;
     }
 
+    void HandleDismount()
+    {
+        if (Unit* target = GetExplTargetUnit())
+            target->RemoveAurasByType(SPELL_AURA_MOUNTED);
+    }
+
     void Register() override
     {
         OnCheckCast += SpellCheckCastFn(spell_ulduar_teleporter::CheckRequirement);
+        BeforeCast += SpellCastFn(spell_ulduar_teleporter::HandleDismount);
     }
 };
 
